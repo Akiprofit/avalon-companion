@@ -16,7 +16,7 @@ Tracks progress against `MASTER_PLAN.md.txt`. Update this file at the end of eve
 | 8 | Endgame and victory | complete |
 | 9 | Database and auto-save | complete |
 | 10 | Polish and accessibility | complete |
-| 11 | Complete QA | not started |
+| 11 | Complete QA | complete |
 | 12 | Android release | not started |
 
 Advanced game settings (King selection mode, narrator extra delay) and the optional team
@@ -623,6 +623,68 @@ so the button was disabled and the new match could not be started at all. It now
 round table with the fresh match already waiting at PREPARATION. The roster, the composition and
 every setting carry over, the finished match keeps its result, and
 `test/widget/endgame_test.dart` proves the night can be opened from there.
+
+## Phase 11 — complete on automated gates and device
+
+Delivered: the QA pass over the finished product. No rule, screen or stored value changed; the
+phase added the coverage that was still missing and the evidence for the numbers below.
+
+- **On-device integration test** (`integration_test/app_test.dart`). The master plan lists
+  `test/integration/`; Flutter's on-device harness requires the top-level `integration_test/`
+  folder, so that is where it lives, with `integration_test` added to `dev_dependencies`. Run it
+  with `flutter test integration_test -d DEVICE_ID` while a phone is connected. Two tests run
+  the real app against the real SQLite file and the real platform channels:
+  - *the team approval vote round-trips through the real store* — opens Settings, flips
+    **Team approval vote**, reads `settings.team_vote_enabled` back from the installed database,
+    then flips it back so the device is left as it was found.
+  - *a match starts on the real database and stores no characters* — creates a five-player
+    match, confirms the round table opened, then walks `pragma_table_info` for every table in the
+    live schema and fails on any column that could hold a character, an allegiance or a role.
+    It also asserts the roster table is the game, the seat and the name only, and that the five
+    entered names are the five in the session.
+- **Schema privacy test** widened from the players table to the whole database. It walks
+  `games`, `players`, `quests`, `team_proposals`, `game_events` and `settings`, matching per
+  underscore token, so `games.assassination_outcome` — the public record of whether Merlin was
+  named — stays valid while any column that could tie a character to a seat fails the suite.
+  This replaces the narrower "no role on a player" check rather than duplicating it.
+- **Clear history** on the History screen, requested after the QA build. The section header carries
+  a `delete_sweep` action that opens `lib/features/history/clear_history_dialog.dart`: a stepper for
+  any number from 1 to what is stored, plus **All N**. Deleting starts at the bottom of the list —
+  the oldest match — and a match still in progress is never touched, because that is the match
+  **Continue Game** offers. `MatchStore.deleteHistory(count:)` does it in one transaction ordered by
+  `updatedAt`, so the votes, quests, events and seats of each deleted match cascade away with it,
+  and the action is disabled rather than hidden when there is nothing to delete.
+- **Performance** measured on the 0.12.0 release APK on the Galaxy A36 (Android 16): cold start
+  (`am start -W` after `force-stop`) 493 / 318 / 299 ms across three runs; `dumpsys meminfo`
+  with a match on the dashboard reports TOTAL PSS 106 MB and TOTAL RSS 200 MB. `dumpsys gfxinfo`
+  records a single frame for a Flutter surface, so it cannot produce jank percentiles: no
+  frame-timing claim is made.
+
+Gate evidence:
+
+| Check | Result |
+| --- | --- |
+| `flutter analyze` | No issues found |
+| `flutter test` | 257 tests pass (1 new: the whole-schema privacy scan; 9 new for clearing history) |
+| `flutter test integration_test` | 2 tests pass on the Galaxy A36 `RFCY30E0LRT` |
+| Rule coverage | 12 table tests, 29 seeded simulations (40 matches per player count, both King modes, vote on and off) and the engine/controller suites; every victory path is reached and only one fires |
+| Privacy, in source | `test/unit/privacy_test.dart` keeps the engine free of character-to-player links |
+| Privacy, on screen | no screen asks for or shows a name next to a character; the assassination records only whether Merlin was named |
+| Privacy, on disk | the whole schema and the installed database are scanned for role columns; the roster holds seat and name |
+| History clearing | `test/database/game_repository_test.dart` covers oldest-first, delete-all, more than stored, zero, the cascade and the running match kept; `test/widget/history_test.dart` covers the dialog, the stepper, All N, the snack bar, the disabled action and cancelling |
+| Device: 10 players | the setup screen accepts a ten-player table and reads "10 players — 6 good, 4 evil", with the six name fields and the counter scrollable |
+| Device: settings | settings survive a refresh, a new match and Play Again (verified in 0.12.0) |
+| Device: recovery | a force-stop mid-match restores the same match at the same phase and seat |
+
+Known limits:
+
+- The integration test drives the real database, so it edits the device's settings and leaves the
+  last match it created behind. It restores the one setting it flips but does not delete the
+  match it starts. It also needs a device without an MC PIN, because Settings opens locked and the
+  test would have no PIN to type.
+- Performance is measured on one device. There is no baseline from another phone, and Flutter's
+  own frame timings are not readable through `dumpsys gfxinfo`, so smoothness is judged by feel
+  rather than by a number.
 
 ## Cross-cutting known issues
 

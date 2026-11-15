@@ -3,11 +3,13 @@ import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/constants/routes.dart';
+import '../../core/services/feedback.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_metrics.dart';
 import '../../core/theme/app_text.dart';
 import '../../core/theme/artwork.dart';
 import '../../core/widgets/avalon_bottom_navigation.dart';
+import '../../core/widgets/avalon_icon_button.dart';
 import '../../core/widgets/avalon_screen.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/loading_state.dart';
@@ -17,6 +19,7 @@ import '../../core/widgets/section_header.dart';
 import '../../database/database_provider.dart';
 import '../../database/match_store.dart';
 import '../../game_engine/models/game_state.dart';
+import 'clear_history_dialog.dart';
 
 /// Stored matches, newest first. Read fresh each time the screen opens, so a
 /// match that just ended is already in the list.
@@ -63,39 +66,114 @@ class HistoryScreen extends ConsumerWidget {
             onPressed: () => ref.invalidate(matchHistoryProvider),
           ),
         ),
-        data: (matches) => matches.isEmpty
-            ? EmptyState(
-                title: 'No matches yet',
-                message:
-                    'Finished and abandoned matches are listed here with their '
-                    'outcome and quest record. Nothing is stored until a match '
-                    'starts.',
-                action: PrimaryButton(
-                  label: 'New Game',
-                  onPressed: () => context.goNamed(RouteNames.setup),
-                ),
-              )
-            : ListView.separated(
-                padding: const EdgeInsets.fromLTRB(
-                  Space.screenPadding,
-                  Space.md,
-                  Space.screenPadding,
-                  Space.xl,
-                ),
-                itemCount: matches.length + 1,
-                separatorBuilder: (_, _) => const SizedBox(height: Space.xs),
-                itemBuilder: (context, index) {
-                  if (index == 0) {
-                    return SectionHeader(
-                      title: 'Past matches',
-                      trailing: MetaPill(label: '${matches.length} stored'),
-                    );
-                  }
-                  return _MatchTile(summary: matches[index - 1]);
-                },
+        data: (matches) {
+          if (matches.isEmpty) {
+            return EmptyState(
+              title: 'No matches yet',
+              message:
+                  'Finished and abandoned matches are listed here with their '
+                  'outcome and quest record. Nothing is stored until a match '
+                  'starts.',
+              action: PrimaryButton(
+                label: 'New Game',
+                onPressed: () => context.goNamed(RouteNames.setup),
               ),
+            );
+          }
+
+          // A match still running is not history yet: it is the match the home
+          // screen offers to continue, so it is never deleted.
+          final inProgress = matches.where((m) => m.isInProgress).length;
+          final deletable = matches.length - inProgress;
+
+          return ListView.separated(
+            padding: const EdgeInsets.fromLTRB(
+              Space.screenPadding,
+              Space.md,
+              Space.screenPadding,
+              Space.xl,
+            ),
+            itemCount: matches.length + 1,
+            separatorBuilder: (_, _) => const SizedBox(height: Space.xs),
+            itemBuilder: (context, index) {
+              if (index == 0) {
+                return SectionHeader(
+                  title: 'Past matches',
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      MetaPill(label: '${matches.length} stored'),
+                      const SizedBox(width: Space.xxs),
+                      AvalonIconButton(
+                        key: const Key('history_clear'),
+                        icon: Icons.delete_sweep_outlined,
+                        semanticLabel: 'Clear history',
+                        tooltip: 'Clear history',
+                        onPressed: deletable == 0
+                            ? null
+                            : () => _clear(
+                                context,
+                                ref,
+                                deletable: deletable,
+                                inProgress: inProgress,
+                              ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+              return _MatchTile(summary: matches[index - 1]);
+            },
+          );
+        },
       ),
     );
+  }
+
+  /// Asks how much to delete, deletes it and re-reads the list.
+  Future<void> _clear(
+    BuildContext context,
+    WidgetRef ref, {
+    required int deletable,
+    required int inProgress,
+  }) async {
+    final choice = await showClearHistoryDialog(
+      context,
+      stored: deletable,
+      inProgress: inProgress,
+    );
+    if (choice == null || !context.mounted) return;
+
+    final store = ref.read(matchStoreProvider);
+    if (store == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('History cannot be cleared: storage is unavailable.'),
+        ),
+      );
+      return;
+    }
+
+    try {
+      final deleted = await store.deleteHistory(count: choice.count);
+      ref.read(feedbackProvider).tap();
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            deleted == 1 ? 'Deleted 1 match.' : 'Deleted $deleted matches.',
+          ),
+        ),
+      );
+      ref.invalidate(matchHistoryProvider);
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('The stored matches could not be deleted.'),
+        ),
+      );
+    }
   }
 }
 

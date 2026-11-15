@@ -106,4 +106,11 @@ abstract interface class MatchStore {
 
   /// History list, newest first.
   Future<List<MatchSummary>> matches({int limit, int offset});
+
+  /// Deletes stored history: the [count] oldest finished or abandoned matches,
+  /// or every one of them when [count] is null. A match still in progress is
+  /// never deleted — it is the match **Continue Game** offers.
+  ///
+  /// Returns how many matches were deleted.
+  Future<int> deleteHistory({int? count});
 }

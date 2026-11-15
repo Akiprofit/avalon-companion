@@ -3,6 +3,39 @@
 All notable changes to Avalon Companion are recorded here. One entry per completed
 development phase, in the order the plan defines them.
 
+## [0.12.1] — Phase 11 QA
+
+No game rule changed in this release: it is the QA pass over the finished product, adding the
+coverage that was still missing, the device evidence to go with it, and a way to clear the match
+history.
+
+### Added
+
+- **Clear history** on the History screen. The `delete_sweep` action in the section header opens
+  a dialog that takes a number of matches, or **All N**. Deletion starts at the bottom of the list
+  — the oldest match — and never touches a match still in progress, because that is the match
+  **Continue Game** offers. The count, the button label ("Delete the oldest 2", "Delete all 3
+  matches") and the confirmation say exactly what goes, and the action is disabled rather than
+  hidden when there is nothing to delete. `MatchStore.deleteHistory(count:)` deletes the
+  finished and abandoned rows in one transaction ordered by `updatedAt`, so the votes, quests,
+  events and seats of each deleted match go with it.
+- `DangerButton`, the single red-fill control in the design system, used by
+  `ConfirmationDialog` and the clear dialog.
+- `integration_test/app_test.dart`, the first on-device test. It boots the real app against the
+  installed SQLite file, flips **Team approval vote** and reads the stored row back, then creates
+  a match and inspects the live schema. Run it with `flutter test integration_test -d DEVICE_ID`
+  while a phone is connected; it leaves the database as it found it.
+- `integration_test` development dependency.
+
+### Changed
+
+- The schema privacy gate covers the whole database, not just the players table. It walks
+  `games`, `players`, `quests`, `team_proposals`, `game_events` and `settings` and fails on any
+  column that could tie a character or an allegiance to a seat. Words are matched per underscore
+  token, so `games.assassination_outcome` — the public record of whether Merlin was named — stays
+  valid. The on-device test repeats the same scan against the database the app is writing to.
+- `pubspec.yaml` version `0.12.1+15`.
+
 ## [0.12.0] — Optional team approval vote
 
 ### Added

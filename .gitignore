@@ -33,6 +33,12 @@ migrate_working_dir/
 /build/
 /coverage/
 
+# Release signing. The keystore itself lives outside the repository, and
+# `android/key.properties` holds its passwords: neither is committed.
+/android/key.properties
+*.jks
+*.keystore
+
 # Symbolication related
 app.*.symbols
 

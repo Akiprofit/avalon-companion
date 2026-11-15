@@ -2,9 +2,9 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../services/feedback.dart';
-import '../theme/app_colors.dart';
 import '../theme/app_metrics.dart';
 import '../theme/app_text.dart';
+import 'danger_button.dart';
 import 'primary_button.dart';
 import 'secondary_button.dart';
 
@@ -45,24 +45,9 @@ class ConfirmationDialog extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (isDestructive)
-              SizedBox(
-                height: 52,
-                child: Material(
-                  color: AppColors.danger,
-                  borderRadius: BorderRadius.circular(Radii.input),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(Radii.input),
-                    onTap: () => Navigator.of(context).pop(true),
-                    child: Center(
-                      child: Text(
-                        confirmLabel,
-                        style: AppText.button.copyWith(
-                          color: AppColors.parchment,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
+              DangerButton(
+                label: confirmLabel,
+                onPressed: () => Navigator.of(context).pop(true),
               )
             else
               PrimaryButton(

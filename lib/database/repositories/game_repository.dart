@@ -173,6 +173,34 @@ class GameRepository implements MatchStore {
     await (_db.delete(_db.games)..where((g) => g.id.equals(gameId))).go();
   }
 
+  /// Deletes stored history: the [count] oldest finished or abandoned matches,
+  /// or all of them when [count] is null.
+  ///
+  /// The match in progress stays: deleting it would take away the match the home
+  /// screen is offering to continue. Rows that belong to a deleted match go with
+  /// it, because every child table cascades from `Games`.
+  @override
+  Future<int> deleteHistory({int? count}) {
+    if (count != null && count <= 0) return Future.value(0);
+
+    return _db.transaction(() async {
+      final query = _db.selectOnly(_db.games)
+        ..addColumns([_db.games.id])
+        ..where(_db.games.status.equals(MatchStatus.inProgress).not())
+        // Oldest first, in the same order the history list shows them, so "the
+        // oldest two" always means the two at the bottom of what the MC sees.
+        ..orderBy([OrderingTerm.asc(_db.games.updatedAt)]);
+      if (count != null) query.limit(count);
+
+      final doomed = [
+        for (final row in await query.get()) row.read(_db.games.id)!,
+      ];
+      if (doomed.isEmpty) return 0;
+
+      return (_db.delete(_db.games)..where((g) => g.id.isIn(doomed))).go();
+    });
+  }
+
   @override
   Future<void> markAbandoned(int gameId) async {
     await (_db.update(_db.games)..where((g) => g.id.equals(gameId))).write(

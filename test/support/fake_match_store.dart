@@ -145,6 +145,23 @@ class FakeMatchStore implements MatchStore {
   Future<List<MatchSummary>> matches({int limit = 50, int offset = 0}) async =>
       summaries;
 
+  /// Deletes from the same list [matches] hands out, oldest first, so a widget
+  /// test can watch the screen update.
+  @override
+  Future<int> deleteHistory({int? count}) async {
+    _check();
+    // The real store orders by `updatedAt` ascending: oldest first.
+    final deletable = summaries.where((m) => !m.isInProgress).toList()
+      ..sort((a, b) => a.updatedAt.compareTo(b.updatedAt));
+    final doomed = count == null ? deletable : deletable.take(count).toList();
+    final doomedIds = {for (final match in doomed) match.id};
+    summaries = [
+      for (final match in summaries)
+        if (!doomedIds.contains(match.id)) match,
+    ];
+    return doomed.length;
+  }
+
   void _check() {
     if (broken) throw StateError('the disk is full');
   }
@@ -153,6 +170,7 @@ class FakeMatchStore implements MatchStore {
 /// A summary that needs no database.
 MatchSummary summaryOf({
   int id = 1,
+  DateTime? startedAt,
   String status = MatchStatus.finished,
   String? winner = 'good',
   String? winReason = WinReason.threeQuests,
@@ -165,7 +183,7 @@ MatchSummary summaryOf({
   String? assassinationOutcome,
   int? durationSeconds = 900,
 }) {
-  final now = DateTime(2026, 11, 15, 20, 30);
+  final now = startedAt ?? DateTime(2026, 11, 15, 20, 30);
   return MatchSummary(
     id: id,
     startedAt: now,

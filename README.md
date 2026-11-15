@@ -25,9 +25,10 @@ of the MC.
 Every confirmed action is written to an on-device SQLite database, so an interrupted match
 reopens where it stopped: the app offers **Continue Game** at launch with the phase, quest and
 roster already restored. **History** lists finished and abandoned matches with their quest
-record and outcome, and settings persist across restarts. Nothing is uploaded and no account
-is needed; the database never holds a character for a player, because the app is never told
-one.
+record and outcome, and can clear them — a chosen number of the oldest, or all of them, with a
+match still in progress always kept. Settings persist across restarts. Nothing is uploaded and
+no account is needed; the database never holds a character for a player, because the app is never
+told one.
 
 At the table the phone keeps its screen on during a live match, ticks and vibrates on confirmed
 actions, and can loop a low night ambience under the narration. An optional **MC PIN** locks
@@ -65,6 +66,7 @@ flutter run
 ```bash
 flutter analyze
 flutter test
+flutter test integration_test -d <device-id>   # real app on a phone, real database
 ```
 
 ## Build the APK
@@ -78,6 +80,36 @@ flutter build apk --release
 ```
 
 Output: `build/app/outputs/flutter-apk/app-release.apk`
+
+The release build is signed with the keystore named in `android/key.properties`
+(gitignored). That file points at a keystore outside the repository:
+
+```properties
+storePassword=…
+keyPassword=…
+keyAlias=avalon
+storeFile=C:/Users/<you>/.avalon/avalon-release.jks
+```
+
+Without it Gradle falls back to the debug key, which still installs for testing
+but cannot be published or updated over an install signed with the real key.
+Keep the keystore and its passwords somewhere safe: Android refuses an update
+signed with a different key, so losing them means a new package identity.
+
+## Install on a phone
+
+1. Enable **Developer options → USB debugging** and connect the phone.
+2. `adb devices` must list it.
+3. Install or update without losing the saved match and settings:
+
+   ```bash
+   adb install -r build/app/outputs/flutter-apk/app-release.apk
+   ```
+
+4. First install from a file also works: copy the APK to the phone and open it,
+   allowing "install unknown apps" for the file manager.
+5. `adb install -r` keeps the database; uninstalling removes every saved match,
+   the history and the settings.
 
 ## Project layout
 
@@ -94,6 +126,8 @@ test/
   unit/                rule tables, engine, privacy guards, narration, persistence, settings
   support/             in-memory match store and other fakes
   widget/              navigation and layout
+integration_test/      on-device run of the real app against the real database
+tool/                  make_icons.ps1, which regenerates every launcher and splash PNG
 ```
 
 Rules live in `lib/game_engine/` as pure Dart. No Flutter import is allowed there, which

@@ -234,6 +234,93 @@ void main() {
     expect(summaries.map((s) => s.id), [second, first]);
   });
 
+  group('clearing history', () {
+    test('deletes the oldest matches first and leaves the rest', () async {
+      final oldest = await repository.createMatch(newGame());
+      await repository.recordProposal(
+        gameId: oldest,
+        questNumber: 1,
+        leaderSeat: 1,
+        seats: [1, 2],
+        approve: 4,
+        reject: 1,
+        verdict: TeamVerdict.approved,
+      );
+      await repository.saveState(oldest, goodVictory());
+
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      final middle = await repository.createMatch(newGame());
+      await repository.markAbandoned(middle);
+
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      final running = await repository.createMatch(newGame());
+
+      expect(await repository.deleteHistory(count: 1), 1);
+
+      expect(
+        (await repository.matches()).map((summary) => summary.id),
+        [running, middle],
+        reason: 'the match at the bottom of the list is the oldest',
+      );
+      expect(
+        await repository.proposals(oldest),
+        isEmpty,
+        reason: 'the votes of a deleted match go with it',
+      );
+      final seats = await db.select(db.players).get();
+      expect(
+        seats.where((seat) => seat.gameId == oldest),
+        isEmpty,
+        reason: 'the seats of a deleted match go with it',
+      );
+      expect((await repository.findInProgress())?.id, running);
+    });
+
+    test('clearing everything keeps the match in progress', () async {
+      final finished = await repository.createMatch(newGame());
+      await repository.saveState(finished, goodVictory());
+
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      final abandoned = await repository.createMatch(newGame());
+      await repository.markAbandoned(abandoned);
+
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      final running = await repository.createMatch(newGame());
+
+      expect(await repository.deleteHistory(), 2);
+
+      final summaries = await repository.matches();
+      expect(summaries.map((summary) => summary.id), [running]);
+      expect(summaries.single.isInProgress, isTrue);
+      expect((await repository.findInProgress())?.id, running);
+      expect(await repository.events(finished), isEmpty);
+      expect(
+        await db.select(db.players).get(),
+        hasLength(5),
+        reason: 'only the running match still has its seats',
+      );
+    });
+
+    test('asking for more than is stored deletes what there is', () async {
+      final first = await repository.createMatch(newGame());
+      await repository.markAbandoned(first);
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      final second = await repository.createMatch(newGame());
+      await repository.markAbandoned(second);
+
+      expect(await repository.deleteHistory(count: 50), 2);
+      expect(await repository.matches(), isEmpty);
+    });
+
+    test('a count of zero deletes nothing', () async {
+      final id = await repository.createMatch(newGame());
+      await repository.markAbandoned(id);
+
+      expect(await repository.deleteHistory(count: 0), 0);
+      expect(await repository.matches(), hasLength(1));
+    });
+  });
+
   test('settings are upserted, not appended', () async {
     final settings = SettingsRepository(db);
     expect((await settings.load()).defaultPlayerCount, 5);
@@ -274,6 +361,41 @@ void main() {
         isEmpty,
         reason: 'no $forbidden column may exist on a player',
       );
+    }
+  });
+
+  test('no table in the schema can hold a character or an allegiance', () async {
+    // The composition is public and stored once per match; what must not exist
+    // is any column that ties a character to a seat, a player or a team.
+    for (final table in [
+      'games',
+      'players',
+      'quests',
+      'team_proposals',
+      'game_events',
+      'settings',
+    ]) {
+      final columns = await db.customSelect("PRAGMA table_info('$table')").get();
+      expect(columns, isNotEmpty, reason: '$table exists');
+
+      for (final row in columns) {
+        final name = row.read<String>('name').toLowerCase();
+        final tokens = name.split('_');
+        for (final forbidden in [
+          'character',
+          'role',
+          'allegiance',
+          'merlin',
+          'morgana',
+          'percival',
+        ]) {
+          expect(
+            tokens.any((token) => token == forbidden || token == '${forbidden}s'),
+            isFalse,
+            reason: '$table.$name would record which player is which character',
+          );
+        }
+      }
     }
   });
 }

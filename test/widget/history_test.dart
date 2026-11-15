@@ -98,4 +98,143 @@ void main() {
       expect(find.textContaining(name), findsNothing);
     }
   });
+
+  group('clearing history', () {
+    testWidgets('deletes the chosen number, oldest first', (tester) async {
+      final store = FakeMatchStore()
+        ..summaries = [
+          summaryOf(id: 3, startedAt: DateTime(2026, 11, 15, 21)),
+          summaryOf(id: 2, startedAt: DateTime(2026, 11, 15, 20)),
+          summaryOf(id: 1, startedAt: DateTime(2026, 11, 15, 19)),
+        ];
+      await pumpHistory(tester, store);
+
+      await tester.tap(find.byKey(const Key('history_clear')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Clear history'), findsOneWidget);
+      expect(find.text('Delete the oldest 1'), findsOneWidget);
+      expect(
+        tester
+            .widget<Text>(find.byKey(const Key('history_clear_value')))
+            .data,
+        '1',
+      );
+
+      await tester.tap(find.byKey(const Key('history_clear_increment')));
+      await tester.pumpAndSettle();
+      expect(find.text('Delete the oldest 2'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('history_clear_confirm')));
+      await tester.pumpAndSettle();
+
+      expect(
+        store.summaries.map((summary) => summary.id),
+        [3],
+        reason: 'the two oldest matches went, the newest stayed',
+      );
+      expect(find.text('Deleted 2 matches.'), findsOneWidget);
+      expect(find.text('1 stored'), findsOneWidget);
+
+      // Let the snack bar retire so no timer outlives the test.
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('the All action deletes every stored match', (tester) async {
+      final store = FakeMatchStore()
+        ..summaries = [
+          summaryOf(id: 2, startedAt: DateTime(2026, 11, 15, 20)),
+          summaryOf(id: 1, startedAt: DateTime(2026, 11, 15, 19)),
+        ];
+      await pumpHistory(tester, store);
+
+      await tester.tap(find.byKey(const Key('history_clear')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('history_clear_all')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Delete all 2 matches'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('history_clear_confirm')));
+      await tester.pumpAndSettle();
+
+      expect(store.summaries, isEmpty);
+      expect(find.text('Deleted 2 matches.'), findsOneWidget);
+      expect(find.text('No matches yet'), findsOneWidget);
+
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('a match in progress is never deleted', (tester) async {
+      final store = FakeMatchStore()
+        ..summaries = [
+          summaryOf(
+            id: 2,
+            status: MatchStatus.inProgress,
+            winner: null,
+            winReason: null,
+            questResults: const [QuestResult.success],
+            durationSeconds: null,
+          ),
+          summaryOf(id: 1, startedAt: DateTime(2026, 11, 15, 19)),
+        ];
+      await pumpHistory(tester, store);
+
+      await tester.tap(find.byKey(const Key('history_clear')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('The match in progress is kept.'), findsOneWidget);
+      expect(find.text('All 1'), findsNothing, reason: 'one match is all of them');
+      expect(find.text('Delete the match'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('history_clear_confirm')));
+      await tester.pumpAndSettle();
+
+      expect(store.summaries.map((summary) => summary.id), [2]);
+      expect(find.text('Deleted 1 match.'), findsOneWidget);
+      expect(find.text('In progress'), findsOneWidget);
+
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('the clear action is inert when nothing can go', (
+      tester,
+    ) async {
+      final store = FakeMatchStore()
+        ..summaries = [
+          summaryOf(
+            id: 1,
+            status: MatchStatus.inProgress,
+            winner: null,
+            winReason: null,
+            questResults: const [],
+            durationSeconds: null,
+          ),
+        ];
+      await pumpHistory(tester, store);
+
+      expect(find.text('1 stored'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('history_clear')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Clear history'), findsNothing);
+      expect(store.summaries, hasLength(1));
+    });
+
+    testWidgets('backing out keeps the history', (tester) async {
+      final store = FakeMatchStore()..summaries = [summaryOf()];
+      await pumpHistory(tester, store);
+
+      await tester.tap(find.byKey(const Key('history_clear')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('history_clear_cancel')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Clear history'), findsNothing);
+      expect(store.summaries, hasLength(1));
+      expect(find.textContaining('Deleted'), findsNothing);
+    });
+  });
 }
