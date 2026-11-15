@@ -65,6 +65,7 @@ development phase, in the order the plan defines them.
 | Device: History | running match and finished match listed newest first, with quest dots, outcome and duration; no player name |
 | Device: Play Again | confirmation, then a new match for the same five players; the finished row kept its Good victory instead of becoming abandoned |
 | Device: settings | Filipino, force-stop, relaunch: the language survived |
+| Device: abandon | Abort on a running match marked that row abandoned in SQLite (phase `preparation`) and left the finished row's `good` / `threeQuests` fields alone |
 | Device: app update | reinstalling the new APK over the old one kept the saved match and the settings |
 
 ## [0.8.1] — App icon

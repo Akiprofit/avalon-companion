@@ -408,6 +408,7 @@ Gate evidence:
 | Device: Play Again | confirmation, then a new match for the same five players at PREPARATION; the finished row kept its Good victory |
 | Device: History | the running match and the finished match listed newest first, "Three quests won · 28:49", no player names |
 | Device: settings | Filipino chosen, force-stop, relaunch: still Filipino and still in progress |
+| Device: abandon | Abort marked the running row `abandoned` in the pulled SQLite file; the finished row still reads `good` / `threeQuests` |
 | Device: app update | `adb install -r` over the running install kept the saved match and settings |
 
 Known limits:
