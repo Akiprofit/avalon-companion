@@ -1,0 +1,1245 @@
+# AVALON COMPANION
+## Complete Product Requirements, UI/UX Design System & Development Master Plan
+
+You are a senior Flutter engineer, software architect, game systems designer, UI/UX designer, and QA engineer.
+
+Your mission is to design and build a complete Android application called **Avalon Companion**.
+
+Do not treat this as a simple prototype. Build it as a polished, reliable, offline-first mobile application that acts as an automated Game Master (MC) for physical games of The Resistance: Avalon.
+
+The application must preserve the traditional physical-card gameplay while automating narration, game tracking, voting records, quest resolution, and victory conditions.
+
+The final deliverable must be a working Android APK.
+
+---
+
+# PART 1 — PRODUCT VISION
+
+## 1.1 Product identity
+
+Product name: Avalon Companion
+
+Product description:
+
+An automated Game Master for physical Avalon games. One person operates the application while everyone else plays using physical Avalon cards.
+
+The application handles the responsibilities normally performed by a human narrator.
+
+Core philosophy:
+
+- Physical cards remain central to gameplay.
+- One Android phone controls the entire match.
+- No internet connection required.
+- No player-to-role mapping.
+- No automated role distribution.
+- No automatic identification of Merlin.
+- The MC manually handles character distribution and assassination.
+- The application handles all public game-state calculations.
+- Narration supports English and Filipino.
+
+## 1.2 Target platform
+
+Primary: Android APK.
+
+Framework: Flutter.
+
+Programming language: Dart.
+
+The architecture should allow future iOS support without requiring a complete rewrite.
+
+## 1.3 Supported game size
+
+5–10 players.
+
+## 1.4 Character scope
+
+Base Avalon only.
+
+Supported characters:
+
+GOOD:
+- Merlin
+- Percival
+- Loyal Servant of Arthur
+
+EVIL:
+- Assassin
+- Morgana
+- Mordred
+- Oberon
+- Minion of Mordred
+
+No expansions or custom characters in the initial release.
+
+---
+
+# PART 2 — CORE GAMEPLAY ARCHITECTURE
+
+## 2.1 Physical gameplay model
+
+Players use physical:
+- Character cards
+- Success cards
+- Fail cards
+- Approve voting cards
+- Reject voting cards
+
+The application is the MC controller.
+
+The MC manually:
+- Distributes character cards.
+- Records public player names.
+- Selects quest members.
+- Counts physical votes.
+- Counts physical Success and Fail cards.
+- Handles Merlin assassination.
+
+The app must never store a mapping between player names and secret roles.
+
+## 2.2 Information privacy
+
+There are two interface contexts:
+
+PUBLIC GAME INFORMATION:
+- Player names
+- Current quest
+- Required team size
+- Current leader
+- Public team proposals
+- Voting results
+- Quest results
+- Public game status
+
+PRIVATE MC CONTROLS:
+- Settings
+- Game configuration
+- Narration controls
+- Manual corrections
+- Game management
+
+Do not create a secret-role database.
+
+Do not expose private information through notifications, logs, analytics, or screenshots.
+
+Add an optional MC PIN to protect settings and sensitive administrative actions.
+
+---
+
+# PART 3 — COMPLETE UI/UX DESIGN SYSTEM
+
+This is a premium medieval fantasy application.
+
+It should feel like a Game Master interface from an Arthurian fantasy world.
+
+Do not make it look like:
+- A generic admin dashboard.
+- A modern business application.
+- A basic CRUD application.
+- A generic mobile game template.
+
+## 3.1 Visual direction
+
+Style:
+Dark medieval fantasy.
+
+Mood:
+Mysterious, elegant, royal, atmospheric, immersive.
+
+Visual inspiration:
+- Medieval castles
+- Arthurian legends
+- Ancient manuscripts
+- Royal halls
+- Medieval heraldry
+- Swords and shields
+- Mystical night skies
+- Antique gold decorations
+
+Use original artwork and decorative elements rather than copying protected Avalon artwork.
+
+## 3.2 Color palette
+
+Create centralized theme tokens.
+
+| Token | Hex |
+|---|---|
+| Background | #0B0E14 |
+| Background Secondary | #121A28 |
+| Surface | #202B3B |
+| Surface Raised | #2A3749 |
+| Gold | #C5A15B |
+| Light Gold | #E2C98D |
+| Muted Gold | #8E7440 |
+| Parchment (primary text) | #F1F0EB |
+| Text Secondary | #BBC3CE |
+| Muted Text | #8492A6 |
+| Neutral | #8492A6 |
+| Success | #3D9B72 |
+| Danger | #B84B4B |
+| Divider | #2C3748 |
+| On Gold | #0B0E14 |
+| Gold Overlay (13%) | #22C5A15B |
+| Artwork Scrim (80%) | #CC0B0E14 |
+
+Gold is the primary accent; light gold highlights it and muted gold supports it without competing.
+
+Use green only for successful states and red for failed or rejected states.
+
+These values are the single source of truth and are implemented in `lib/core/theme/app_colors.dart`. No other file may hold a raw colour value. Derived tints (for example `withValues(alpha:)`) are allowed; new opaque colours must become tokens here first.
+
+Cinematic artwork, layered gradients and soft gold glows are allowed — and expected — on backgrounds and hero surfaces, but they must stay behind content, never reduce text contrast, and must respect the reduced-motion setting. Decorative clutter on controls is still out.
+
+## 3.3 Typography
+
+Use:
+- Cinzel or another suitable medieval display typeface for major headings.
+- Inter or another clean sans-serif for interface text.
+- Clear numeric typography for counters and scores.
+
+Typography hierarchy:
+
+Display:
+AVALON
+
+Screen heading:
+THE ROUND TABLE
+
+Section heading:
+QUEST PROGRESS
+
+Body:
+Instructions and information.
+
+Caption:
+Hints, descriptions, and secondary information.
+
+## 3.4 Component design
+
+Create reusable components:
+
+- PrimaryButton
+- SecondaryButton
+- IconButton
+- MedievalCard
+- SectionHeader
+- QuestTracker
+- PlayerTile
+- StatusIndicator
+- GoldDivider
+- ConfirmationDialog
+- BottomNavigation
+- NarrationPanel
+- GameProgressHeader
+- EmptyState
+- ErrorState
+- LoadingState
+- CinematicBackground
+- SettingsTile
+
+Use consistent padding, corner radius, spacing, shadows, and animation timing.
+
+Component names above are canonical for this project. The design-system brief
+uses different labels for the same widgets (`GoldPrimaryButton`,
+`GoldOutlinedButton`, `DarkPanel`, `MedievalSectionHeader`,
+`QuestProgressIndicator`, `NarrationPlayer`, `GameStatusIndicator`,
+`OrnamentalDivider`); `DESIGN_SYSTEM.md` holds the mapping. Do not create a
+second widget for a concept that already exists.
+
+## 3.4a Motion
+
+Motion is restrained and cinematic: fades, gentle scale, slow atmospheric
+background drift and smooth phase transitions. Durations come from the `Motion`
+tokens in `lib/core/theme/app_metrics.dart`; nothing hand-rolls a duration.
+
+A pitch-black `#000000` background must never appear — the darkest surface is
+`#0B0E14`. The app must honour the system's "remove animations" accessibility
+setting: when reduced motion is on, drift, scale and looping ambience stop, and
+transitions collapse to short fades.
+
+## 3.5 Mobile layout
+
+Design for Android phones first.
+
+Requirements:
+- Responsive layouts.
+- Safe area support.
+- Scrollable content when necessary.
+- Large touch targets.
+- One-handed usability.
+- Readable text in dim environments.
+- No horizontal overflow.
+- Support different Android screen sizes.
+
+The Game Master dashboard should prioritize important controls and minimize unnecessary navigation.
+
+---
+
+# PART 4 — COMPLETE APPLICATION SCREENS
+
+Build every screen below.
+
+## SCREEN 01 — SPLASH SCREEN
+
+Elements:
+- Original Avalon Companion emblem.
+- App title.
+- Subtle medieval animation.
+- Dark navy background.
+- Antique gold accents.
+
+Keep the splash short and elegant.
+
+## SCREEN 02 — HOME SCREEN
+
+Main elements:
+
+Logo and application name.
+
+Primary actions:
+1. New Game
+2. Continue Game
+3. Game History
+4. How to Play
+5. Settings
+
+Footer:
+Unofficial fan-made companion.
+
+New Game should be visually dominant.
+
+## SCREEN 03 — GAME SETUP
+
+Allow the MC to configure:
+
+- Player count: 5–10.
+- Player names.
+- Good and Evil team composition.
+- Character composition.
+
+Show a live summary of the selected configuration.
+
+Do not ask the MC to assign characters to players.
+
+Validate the character combination before starting.
+
+Display warnings for invalid combinations.
+
+## SCREEN 04 — GAME PREPARATION
+
+Show:
+
+- Player count.
+- Good team count.
+- Evil team count.
+- Selected character composition.
+- Quest requirements.
+- Starting leader.
+
+Provide a final confirmation before beginning the match.
+
+Include a reminder to distribute physical character cards.
+
+## SCREEN 05 — NIGHT NARRATOR
+
+This is one of the most important features.
+
+Design a full-screen immersive narration interface.
+
+Elements:
+- Current narration instruction.
+- Character or phase heading.
+- Progress indicator.
+- Play / Pause.
+- Previous instruction.
+- Next instruction.
+- Replay.
+- Language selection.
+- Narration speed.
+- Optional ambient audio.
+- Emergency stop.
+
+Narration should support:
+- English
+- Filipino
+
+The app should use Android Text-to-Speech.
+
+Provide a fallback if the selected voice is unavailable.
+
+IMPORTANT:
+
+Because there is no player-role mapping, narration must be based on the selected game character configuration.
+
+Never attempt to identify individual players.
+
+For characters not included in the game, skip their narration instructions.
+
+## SCREEN 06 — DAY PHASE
+
+Display:
+- Current leader.
+- Player list.
+- Current quest.
+- Required quest team size.
+- Discussion timer.
+- Continue button.
+
+Allow the MC to manually choose the next action.
+
+## SCREEN 07 — TEAM SELECTION
+
+Allow the MC to select players for the quest.
+
+Requirements:
+- Display all player names.
+- Prevent duplicate selection.
+- Enforce required team size.
+- Show selected-player count.
+- Allow removal of selected players.
+- Confirm the team before voting.
+
+Do not associate selected players with secret characters.
+
+## SCREEN 08 — TEAM VOTING
+
+The MC counts physical Approve and Reject cards and enters the totals.
+
+Inputs:
+- Approve count.
+- Reject count.
+
+Validation:
+- Total votes must equal total players.
+
+Calculation:
+- More than half Approve = approved.
+- Otherwise = rejected.
+
+Display:
+- Approve total.
+- Reject total.
+- Approval percentage.
+- Final result.
+
+Track consecutive rejected proposals.
+
+After five consecutive rejected proposals, Evil wins.
+
+## SCREEN 09 — QUEST RESOLUTION
+
+The MC enters:
+
+- Number of Success cards.
+- Number of Fail cards.
+
+Validation:
+- Total submitted cards must equal selected quest members.
+
+Calculate the quest result automatically.
+
+Standard rule:
+One Fail card causes quest failure.
+
+Special rule:
+On Quest 4 with seven or more players, at least two Fail cards are required for quest failure.
+
+Display:
+- Success count.
+- Fail count.
+- Quest result.
+- Current Good score.
+- Current Evil score.
+
+Require MC confirmation before saving.
+
+## SCREEN 10 — GAME DASHBOARD
+
+This is the central gameplay interface.
+
+Show:
+
+- Current game status.
+- Player names.
+- Current leader.
+- Current quest.
+- Five quest trackers.
+- Required team size.
+- Consecutive rejection counter.
+- Good quest victories.
+- Evil quest failures.
+- Current phase.
+
+Primary controls:
+- Continue
+- Night Narration
+- Team Selection
+- Voting
+- Quest Resolution
+
+Only show controls appropriate to the current game state.
+
+## SCREEN 11 — ASSASSINATION PHASE
+
+When Good completes three successful quests:
+
+Display:
+
+GOOD HAS COMPLETED THREE QUESTS.
+
+The MC manually conducts Merlin assassination.
+
+The app must NOT attempt to identify Merlin.
+
+The MC records the outcome using:
+
+- Merlin correctly identified.
+- Merlin not identified.
+
+If Merlin is correctly identified:
+Evil wins.
+
+If Merlin is not identified:
+Good wins.
+
+Do not request or store the identity of the assassinated player.
+
+## SCREEN 12 — VICTORY SCREEN
+
+Create two distinct victory screens.
+
+GOOD VICTORY:
+- Royal gold and blue visual treatment.
+- Three successful quests displayed.
+- Merlin survived.
+- Final match summary.
+
+EVIL VICTORY:
+- Dark crimson and gold visual treatment.
+- Three failed quests or five rejected teams, or successful Merlin assassination.
+- Final match summary.
+
+Actions:
+- View Results
+- New Game
+- Return Home
+
+## SCREEN 13 — GAME HISTORY
+
+Display previous matches.
+
+Include:
+- Date
+- Player count
+- Winner
+- Number of successful quests
+- Number of failed quests
+- Game duration
+
+Do not store secret player-role information.
+
+## SCREEN 14 — GAME DETAILS
+
+Show:
+- Match summary
+- Quest history
+- Voting history
+- Rejected team count
+- Victory condition
+- Timeline of public game events
+
+## SCREEN 15 — SETTINGS
+
+Sections:
+
+GENERAL:
+- Keep screen awake.
+- Confirmation dialogs.
+- Haptic feedback.
+- Display brightness guidance.
+
+NARRATION:
+- Default language.
+- Voice selection.
+- Speech speed.
+- Volume.
+- Ambient audio.
+- Automatic narration progression.
+
+GAME:
+- Default player count.
+- Discussion timer.
+- Confirmation before game reset.
+
+SECURITY:
+- Optional MC PIN.
+- Lock settings.
+- Clear game history.
+
+ABOUT:
+- App version.
+- Privacy information.
+- Credits.
+- Unofficial fan-made disclaimer.
+
+---
+
+# PART 5 — OFFICIAL BASE GAME RULE ENGINE
+
+Implement the game rules in a separate, independently testable Dart module.
+
+Never put core rules directly inside Flutter widgets.
+
+## 5.1 Team composition
+
+| Players | Good | Evil |
+|---|---:|---:|
+| 5 | 3 | 2 |
+| 6 | 4 | 2 |
+| 7 | 4 | 3 |
+| 8 | 5 | 3 |
+| 9 | 6 | 3 |
+| 10 | 6 | 4 |
+
+## 5.2 Quest team sizes
+
+| Players | Q1 | Q2 | Q3 | Q4 | Q5 |
+|---|---:|---:|---:|---:|---:|
+| 5 | 2 | 3 | 2 | 3 | 3 |
+| 6 | 2 | 3 | 4 | 3 | 4 |
+| 7 | 2 | 3 | 3 | 4 | 4 |
+| 8 | 3 | 4 | 4 | 5 | 5 |
+| 9 | 3 | 4 | 4 | 5 | 5 |
+| 10 | 3 | 4 | 4 | 5 | 5 |
+
+## 5.3 Quest failure rules
+
+Normal quests:
+At least one Fail card causes failure.
+
+Quest 4:
+For seven or more players, at least two Fail cards are required.
+
+All other quests:
+At least one Fail card causes failure.
+
+## 5.4 Voting rules
+
+Each player casts one physical vote.
+
+Approval requires more than half of all votes to be Approve.
+
+A tie is rejected.
+
+Track consecutive rejected proposals.
+
+Five consecutive rejected teams cause Evil victory.
+
+A successfully approved team resets the rejection counter.
+
+## 5.5 Leader rotation
+
+The leadership token moves to the next player in seating order after each proposal resolution.
+
+Implement this consistently for accepted and rejected teams.
+
+## 5.6 Victory conditions
+
+GOOD:
+- Complete three successful quests.
+- Survive Merlin assassination.
+
+EVIL:
+- Complete three failed quests.
+- Cause five consecutive rejected teams.
+- Correctly identify Merlin during assassination.
+
+## 5.7 Game state machine
+
+Implement explicit states:
+
+- Setup
+- Preparation
+- Night
+- DayDiscussion
+- TeamSelection
+- TeamVoting
+- QuestResolution
+- Assassination
+- GoodVictory
+- EvilVictory
+- Paused
+
+Only permit valid transitions.
+
+Prevent:
+- Skipping required phases.
+- Resolving an incomplete quest.
+- Starting a new quest after victory.
+- Recording invalid vote totals.
+- Recording invalid quest card totals.
+- Resolving the same quest twice.
+
+---
+
+# PART 6 — NARRATION ENGINE
+
+Build a reusable narration engine.
+
+## 6.1 Script architecture
+
+Narration must be stored separately from widgets.
+
+Use structured narration data.
+
+Each instruction should contain:
+- Instruction ID.
+- Phase.
+- English text.
+- Filipino text.
+- Applicable character requirements.
+- Sequence number.
+- Optional pause duration.
+
+## 6.2 Night narration behavior
+
+The base-game narration must correctly support:
+
+1. Everyone closes their eyes.
+2. Evil players open their eyes and identify one another.
+3. Evil players close their eyes.
+4. Merlin opens their eyes and identifies Evil players except Mordred.
+5. Merlin closes their eyes.
+6. Percival opens their eyes and sees Merlin and Morgana.
+7. Percival closes their eyes.
+8. Everyone opens their eyes.
+
+This is an initial narration sequence, not a rigid script for every possible role combination.
+
+The system must conditionally include or skip instructions based on selected characters.
+
+IMPORTANT:
+Oberon is not known to the other Evil players.
+
+Ensure narration does not accidentally instruct Oberon to identify teammates.
+
+## 6.3 Voice system
+
+Use Android Text-to-Speech.
+
+Features:
+- English narration.
+- Filipino narration.
+- Adjustable speech speed.
+- Voice selection where available.
+- Pause and resume.
+- Replay.
+- Skip.
+- Volume control.
+- Optional ambient sound.
+
+Handle audio interruptions and unavailable language voices gracefully.
+
+---
+
+# PART 7 — TECHNICAL ARCHITECTURE
+
+Use a clean, modular, feature-first architecture.
+
+Recommended technologies:
+
+| Component | Technology |
+|---|---|
+| UI | Flutter |
+| Language | Dart |
+| State management | Riverpod |
+| Navigation | GoRouter |
+| Local database | Drift / SQLite |
+| Narration | Flutter TTS |
+| Audio | Just Audio |
+| Animations | Flutter |
+| Testing | Flutter Test |
+
+## 7.1 Suggested folder structure
+
+lib/
+  main.dart
+
+  app/
+    app.dart
+    router.dart
+    bootstrap.dart
+
+  core/
+    theme/
+    constants/
+    errors/
+    utilities/
+    widgets/
+
+  features/
+    home/
+    setup/
+    preparation/
+    narration/
+    day_phase/
+    team_selection/
+    voting/
+    quests/
+    dashboard/
+    assassination/
+    victory/
+    history/
+    settings/
+
+  game_engine/
+    models/
+    rules/
+    state/
+    controllers/
+    validators/
+
+  narration_engine/
+    models/
+    scripts/
+    services/
+    controllers/
+
+  database/
+    tables/
+    repositories/
+    migrations/
+
+  shared/
+    models/
+    widgets/
+
+assets/
+  images/
+  icons/
+  audio/
+  fonts/
+  narration/
+
+test/
+  unit/
+  widget/
+  integration/
+
+## 7.2 Architecture rules
+
+- Keep game logic independent of UI.
+- Keep narration scripts independent of screen widgets.
+- Use repositories for database access.
+- Use immutable state models where practical.
+- Avoid oversized files.
+- Avoid duplicated logic.
+- Avoid global mutable state.
+- Handle exceptions properly.
+- Use descriptive names.
+- Document complex game rules.
+- Build reusable widgets.
+
+---
+
+# PART 8 — DATABASE AND DATA PERSISTENCE
+
+Use SQLite through Drift.
+
+Suggested tables:
+
+Games:
+- id
+- created_at
+- updated_at
+- player_count
+- status
+- winner
+- duration_seconds
+
+Players:
+- id
+- game_id
+- display_name
+- seat_number
+
+Quests:
+- id
+- game_id
+- quest_number
+- required_players
+- success_count
+- fail_count
+- result
+
+TeamProposals:
+- id
+- game_id
+- quest_number
+- leader_seat
+- selected_seats
+- approve_count
+- reject_count
+- result
+
+GameEvents:
+- id
+- game_id
+- event_type
+- event_description
+- created_at
+
+Settings:
+- id
+- narration_language
+- narration_speed
+- voice_id
+- ambient_audio_enabled
+- keep_screen_awake
+- mc_pin_enabled
+
+Do NOT create a PlayerRoles table.
+
+Do NOT create any field associating player names with characters.
+
+Persist game progress so the MC can resume an interrupted match.
+
+Use safe database migrations.
+
+---
+
+# PART 9 — TESTING AND QUALITY ASSURANCE
+
+Game logic must have comprehensive automated tests.
+
+Test player counts:
+5, 6, 7, 8, 9, 10.
+
+Test:
+- Team composition.
+- Quest team requirements.
+- Quest 4 special rule.
+- Approval majority.
+- Rejected team.
+- Five consecutive rejections.
+- Leader rotation.
+- Quest scoring.
+- Three successful quests.
+- Three failed quests.
+- Assassination outcomes.
+- Invalid phase transitions.
+- Incomplete vote totals.
+- Incomplete quest submissions.
+- Auto-save and recovery.
+
+Privacy tests:
+- No player-role mapping.
+- No role information in public dashboard.
+- No role information in history.
+- No secret-role notifications.
+
+UI tests:
+- Screen navigation.
+- Small-screen layouts.
+- Dark theme consistency.
+- Button states.
+- Form validation.
+- Narration controls.
+
+Run:
+flutter analyze
+
+flutter test
+
+Resolve all errors and important warnings before release.
+
+---
+
+# PART 10 — DEVELOPMENT PHASES
+
+Develop in the following order.
+
+Do not skip phases.
+
+## PHASE 1 — PROJECT FOUNDATION AND UI/UX
+
+Deliver:
+- Flutter project structure.
+- Theme system.
+- Design tokens.
+- Reusable components.
+- Navigation.
+- Splash screen.
+- Home screen.
+- Setup screen.
+- Preparation screen.
+- Dashboard.
+- Narration preview.
+- Settings.
+
+Acceptance:
+All screens navigate correctly.
+Responsive layouts work.
+No placeholder buttons that appear functional but do nothing.
+
+## PHASE 2 — GAME ENGINE
+
+Deliver:
+- Game models.
+- Team composition validation.
+- Quest team-size calculations.
+- Quest rules.
+- Voting rules.
+- Leader rotation.
+- Game state machine.
+- Victory calculations.
+
+Acceptance:
+All game logic passes automated unit tests.
+
+## PHASE 3 — GAME SETUP AND SESSION MANAGEMENT
+
+Deliver:
+- Player setup.
+- Character composition setup.
+- Configuration validation.
+- Game creation.
+- Game initialization.
+- Session state.
+
+Acceptance:
+The MC can create valid matches for 5–10 players.
+
+## PHASE 4 — NIGHT NARRATION ENGINE
+
+Deliver:
+- Structured scripts.
+- English narration.
+- Filipino narration.
+- Conditional narration.
+- TTS integration.
+- Pause and resume.
+- Replay and skip.
+- Audio interruption handling.
+
+Acceptance:
+Night narration runs correctly for different base-game character configurations.
+
+## PHASE 5 — DAY PHASE AND TEAM SELECTION
+
+Deliver:
+- Current leader.
+- Discussion timer.
+- Player list.
+- Quest team selection.
+- Required team-size validation.
+- Team confirmation.
+
+Acceptance:
+The MC can prepare valid quest teams.
+
+## PHASE 6 — PHYSICAL VOTING SYSTEM
+
+Deliver:
+- Approve counter.
+- Reject counter.
+- Vote validation.
+- Approval calculation.
+- Rejection counter.
+- Leader rotation.
+- Five-rejection victory.
+
+Acceptance:
+Physical votes are recorded accurately.
+
+## PHASE 7 — QUEST RESOLUTION
+
+Deliver:
+- Success counter.
+- Fail counter.
+- Card-total validation.
+- Quest 4 special rule.
+- Quest scoreboard.
+- Automatic result calculation.
+- MC confirmation.
+
+Acceptance:
+Quest outcomes match the game rules.
+
+## PHASE 8 — ENDGAME AND VICTORY
+
+Deliver:
+- Three successful quest detection.
+- Three failed quest detection.
+- Manual assassination confirmation.
+- Good victory screen.
+- Evil victory screen.
+- Final summary.
+
+Acceptance:
+All victory paths work correctly.
+
+## PHASE 9 — DATABASE AND AUTO-SAVE
+
+Deliver:
+- SQLite integration.
+- Game persistence.
+- Match history.
+- Game event history.
+- Session recovery.
+- Settings persistence.
+
+Acceptance:
+The application recovers an interrupted match without losing confirmed progress.
+
+## PHASE 10 — POLISH AND ACCESSIBILITY
+
+Deliver:
+- Animations.
+- Sound effects.
+- Haptic feedback.
+- Screen-awake behavior.
+- MC PIN.
+- Confirmation dialogs.
+- Loading states.
+- Error handling.
+- Accessibility improvements.
+
+Acceptance:
+The app is usable in real physical-game environments.
+
+## PHASE 11 — COMPLETE QA
+
+Deliver:
+- Unit tests.
+- Widget tests.
+- Integration tests.
+- Game simulation tests.
+- Privacy verification.
+- Device testing.
+- Performance checks.
+
+Acceptance:
+No critical game-rule errors or data privacy issues.
+
+## PHASE 12 — ANDROID RELEASE
+
+Deliver:
+- App icon.
+- Splash assets.
+- Android configuration.
+- Release APK.
+- Version information.
+- Build instructions.
+- Installation guide.
+
+Run:
+
+flutter clean
+
+flutter pub get
+
+flutter analyze
+
+flutter test
+
+flutter build apk --release
+
+Final output:
+
+build/app/outputs/flutter-apk/app-release.apk
+
+Acceptance:
+APK installs and launches on a real Android device.
+
+---
+
+# PART 11 — DEVELOPMENT WORKFLOW FOR THE AI CODING AGENT
+
+Follow these instructions throughout development.
+
+1. Inspect the entire existing repository before changing anything.
+2. Identify existing working features.
+3. Preserve useful existing code.
+4. Do not rewrite the entire project unnecessarily.
+5. Do not generate all features as one giant file.
+6. Implement one phase at a time.
+7. Run flutter analyze after meaningful changes.
+8. Run relevant tests after each phase.
+9. Fix errors before continuing.
+10. Update README.md.
+11. Maintain CHANGELOG.md.
+12. Keep DEVELOPMENT_PLAN.md updated.
+13. Report completed features and incomplete features honestly.
+14. Never claim an APK was built unless the build succeeded.
+15. Never claim tests passed unless they were executed successfully.
+
+When requirements are unclear, make conservative implementation decisions and document them.
+
+Do not silently change the agreed gameplay design.
+
+Do not add online multiplayer, player-role assignment, expansions, or unrelated features without explicit approval.
+
+## Required phase completion report
+
+At the end of each phase, provide:
+
+- Features completed.
+- Files created.
+- Files modified.
+- Architecture decisions.
+- Tests executed.
+- Test results.
+- Known issues.
+- Remaining tasks.
+- Next phase.
+
+Do not move to the next phase until the current phase meets its acceptance criteria.
+
+---
+
+# PART 12 — FINAL PRODUCT DEFINITION
+
+The final application should provide:
+
+- A premium dark medieval fantasy interface.
+- One-phone MC control.
+- Physical-card gameplay support.
+- English and Filipino automated narration.
+- Base Avalon character configuration.
+- No player-to-role mapping.
+- Manual Merlin assassination.
+- Correct 5–10 player game rules.
+- Team selection.
+- Physical vote recording.
+- Quest resolution.
+- Victory tracking.
+- Offline operation.
+- Game history.
+- Auto-save.
+- Android APK distribution.
+
+The result must be a complete, stable, polished, usable Avalon Game Master companion.
+
+# START HERE
+
+First, inspect the existing project repository.
+
+If this is the Phase 1 starter project, preserve and improve it instead of replacing it.
+
+Then:
+
+1. Audit the existing code.
+2. Compare it with this specification.
+3. Create DEVELOPMENT_PLAN.md.
+4. Create CHANGELOG.md.
+5. Identify missing Phase 1 requirements.
+6. Complete Phase 1.
+7. Run Flutter analysis and tests.
+8. Report the results.
+9. Prepare for Phase 2.
+
+Do not merely describe how to build the application.
+
+Actually implement the project in the repository.
+
+Your priority is correctness, privacy, usability, maintainability, and polished design.
