@@ -18,21 +18,55 @@ abstract interface class TtsService {
   /// Whether [locale] (a BCP-47 tag such as `fil-PH`) has a voice installed.
   Future<bool> isLanguageAvailable(String locale);
 
+  /// The installed voices that can speak [locale], best first.
+  ///
+  /// Empty when the engine exposes no voice list; the caller then leaves the
+  /// engine to choose, which is what happens before this existed.
+  Future<List<TtsVoice>> voices(String locale);
+
   /// Speaks [text] and completes when the utterance finishes, is stopped or
   /// fails. Returns false when nothing could be spoken.
   ///
   /// [pitch] is the narrator profile: below 1.0 is deeper, above is lighter.
+  /// [voiceId] is an exact installed voice from [voices]; null lets the engine
+  /// pick the best voice for [locale].
   Future<bool> speak(
     String text, {
     required String locale,
     required double rate,
     required double volume,
     required double pitch,
+    String? voiceId,
   });
 
   Future<void> stop();
 
   Future<void> dispose();
+}
+
+/// One installed voice, as the settings screen lists it.
+class TtsVoice {
+  const TtsVoice({
+    required this.id,
+    required this.name,
+    required this.locale,
+    this.networkRequired = false,
+  });
+
+  /// Engine-specific identifier, stable for this installation.
+  final String id;
+
+  /// Display name, e.g. `en-gb-x-gba-local`.
+  final String name;
+
+  /// BCP-47 tag, e.g. `en-GB`.
+  final String locale;
+
+  /// True when the engine needs a network connection for this voice. The
+  /// narrator stays offline, so these are listed but not offered.
+  final bool networkRequired;
+
+  String get label => '$name · $locale';
 }
 
 /// Used when no platform engine exists, and in tests. Speaks nothing and
@@ -54,12 +88,16 @@ class SilentTtsService implements TtsService {
   Future<bool> isLanguageAvailable(String locale) async => false;
 
   @override
+  Future<List<TtsVoice>> voices(String locale) async => const [];
+
+  @override
   Future<bool> speak(
     String text, {
     required String locale,
     required double rate,
     required double volume,
     required double pitch,
+    String? voiceId,
   }) async => false;
 
   @override

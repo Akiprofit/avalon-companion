@@ -3,6 +3,84 @@
 All notable changes to Avalon Companion are recorded here. One entry per completed
 development phase, in the order the plan defines them.
 
+## [0.11.0] — Advanced game settings: King every round, narrator extra delay
+
+### Added
+
+- **King selection mode** (Settings → Game). *Automatic* spins the wheel at the start of every
+  round and sends the table straight to it after a resolved vote or quest, so a new King leads
+  each quest; *Manual* (the default) leaves the wheel closed until the MC opens it, and the
+  leadership token keeps its own order. Either way the wheel leaves out the King who has just
+  served, so nobody leads twice in a row while somebody else can lead. The opening draw of a
+  match still takes the whole table. A "Draw a new King" action appears on the dashboard in
+  manual mode.
+- **Narrator extra delay** (Settings → Narration). 0, 1, 2, 3, 5, 7 or 10 seconds, or a custom
+  0–20 seconds. The extra silence starts only after the line has finished speaking (the TTS
+  completion callback, or the length estimate when the phone has no voice), is added to the
+  script's own beat, and is cancelled by pause, skip, replay or leaving the screen. Settings
+  shows the effect in plain words: "Each narration slide will wait an additional 3 seconds
+  before continuing."
+- The "Automatic narration" switch now starts the night reading on its own, which is what makes
+  the extra delay apply without the MC pressing play.
+
+### Fixed
+
+- The wheel no longer claims "every seat takes part in the draw" once the serving King is
+  standing down; the caption follows the same rule as the draw itself.
+
+### Changed
+
+- `GameEngine.resolveTeamVote` and `recordQuest` take `drawLord:`; with it the match returns to
+  `Phase.lordSelection` instead of `dayDiscussion`, and the token stays with the serving King
+  until the wheel lands so the draw knows whom to leave out. `GameEngine.beginLordDraw` and
+  `GameEngine.drawableLordSeats` are the two new pure rules.
+- Drift schema version 4 adds `Settings.king_selection` and `Settings.narrator_extra_delay_ms`,
+  with an explicit `addColumn` migration from v3.
+- The narration controller holds its inter-line wait in a cancellable timer instead of an
+  awaited `Future.delayed`, so a stopped or restarted night can never advance twice.
+
+## [0.10.0] — Phase 10: polish and accessibility
+
+### Added
+
+- **The optional MC PIN.** Settings → Security sets a four-to-eight digit PIN. It is stored as
+  a salted, 20 000-round SHA-256 digest (`rounds$salt$digest`) in the one `Settings` row — never
+  the digits, never in `AppSettings`. When a PIN is set, Settings opens locked and Abort asks
+  for it before discarding a round; unlocking lasts the app session, so the MC types it once.
+  The match itself stays playable without it, and a damaged hash locks instead of opening.
+- **Platform feedback** (`lib/core/services/feedback.dart`): a short vibration on confirmed
+  dialog actions and on the phase change, plus an optional system tone. Haptics and sound are
+  separate switches, and `SilentFeedback` covers both being off.
+- **The wheel lands with a confirmation.** The Lord draw clicks when it stops, so a tap the MC
+  did not watch still registers.
+- **A real night ambience bed.** `res/raw/ambient_night.wav` is a generated 20-second seamless
+  low drone, looped by the activity at 0.35 volume only while narration is on screen and the
+  app is in the foreground. The existing "Ambient audio" switch now controls something.
+- **Keep screen awake** is a window flag applied by the activity whenever a match is live and
+  the preference is on, and released when the match ends or the app leaves.
+- **Voice picker.** The speech engine now lists its installed, offline voices for the chosen
+  language, and Settings → Narration lets the MC pick one (or Automatic). The choice is stored
+  in `Settings.voiceId` and used for every line. A phone that exposes no voice list keeps the
+  previous "best installed voice" behaviour.
+- Loading states on the history list and the narration screen, with a plain label instead of a
+  bare spinner.
+
+### Changed
+
+- `MainActivity` gained a second channel, `com.avalon.companion/host`, for the screen-awake
+  flag and the ambience loop. It is a no-op everywhere else, so tests stay hermetic.
+- Drift schema version 3 adds `Settings.sound_effects` and `Settings.mc_pin_hash`, with an
+  explicit `addColumn` migration from v2. Existing matches and preferences survive the update.
+- `crypto` is now a direct dependency for the PIN digest.
+
+### Fixed
+
+- The dashboard and narration app bars no longer carry a duplicate status chip, so both titles
+  fit at 360 dp.
+- The bottom navigation and the splash screen grow or scroll instead of overflowing at a 200%
+  text scale.
+- Counter steppers and the dashboard's Pause/Abort row are 48 dp high, the documented minimum.
+
 ## [0.9.0] — Phase 9: saved matches, recovery and history
 
 ### Added

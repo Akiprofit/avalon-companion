@@ -17,6 +17,8 @@ class NarrationState {
     this.rate = 0.9,
     this.volume = 0.8,
     this.pitch = 0.92,
+    this.voiceId,
+    this.extraDelay = Duration.zero,
     this.voiceNotice,
   });
 
@@ -30,6 +32,14 @@ class NarrationState {
   /// Voice depth: below 1.0 is deeper. The default gives the narration a
   /// mature, restrained register.
   final double pitch;
+
+  /// Exact installed voice chosen in settings; null means the best for the
+  /// language. Kept here so a mid-match language switch re-picks a voice.
+  final String? voiceId;
+
+  /// Silence the MC asked for after every line, on top of the script's own
+  /// beat. It starts only once the line has finished speaking.
+  final Duration extraDelay;
 
   /// Shown under the panel when the chosen language has no installed voice.
   final String? voiceNotice;
@@ -53,6 +63,9 @@ class NarrationState {
     double? rate,
     double? volume,
     double? pitch,
+    String? voiceId,
+    bool clearVoice = false,
+    Duration? extraDelay,
     String? voiceNotice,
     bool clearVoiceNotice = false,
   }) {
@@ -64,6 +77,8 @@ class NarrationState {
       rate: rate ?? this.rate,
       volume: volume ?? this.volume,
       pitch: pitch ?? this.pitch,
+      voiceId: clearVoice ? null : (voiceId ?? this.voiceId),
+      extraDelay: extraDelay ?? this.extraDelay,
       voiceNotice: clearVoiceNotice ? null : (voiceNotice ?? this.voiceNotice),
     );
   }
@@ -77,6 +92,11 @@ class NarrationState {
 class NarrationController extends Notifier<NarrationState> {
   Timer? _timer;
 
+  /// The wait between two lines. Held so a pause, a skip or a restart can end it
+  /// early instead of leaving a timer to fire into a panel the MC has moved.
+  Timer? _waitTimer;
+  Completer<void>? _wait;
+
   /// Bumped whenever speech is cancelled, so a late utterance callback cannot
   /// advance a panel the MC already moved.
   int _generation = 0;
@@ -85,6 +105,7 @@ class NarrationController extends Notifier<NarrationState> {
   NarrationState build() {
     ref.onDispose(() {
       _cancelTimer();
+      _cancelWait();
       _generation++;
     });
     return NarrationState(
@@ -113,6 +134,8 @@ class NarrationController extends Notifier<NarrationState> {
       rate: state.rate,
       volume: state.volume,
       pitch: state.pitch,
+      voiceId: state.voiceId,
+      extraDelay: state.extraDelay,
     );
   }
 
@@ -179,8 +202,29 @@ class NarrationController extends Notifier<NarrationState> {
     state = state.copyWith(volume: volume);
   }
 
+  /// Extra silence after every line. It applies from the next line on: a line
+  /// that is already speaking is never interrupted by a settings change.
+  void setExtraDelay(Duration delay) {
+    final capped = Duration(
+      milliseconds: delay.inMilliseconds.clamp(0, 20000),
+    );
+    if (state.extraDelay == capped) return;
+    state = state.copyWith(extraDelay: capped);
+  }
+
   Future<void> setPitch(double pitch) async {
     state = state.copyWith(pitch: pitch);
+    if (state.isAutoPlaying) {
+      _silence();
+      await _speakCurrent();
+    }
+  }
+
+  /// Chooses an exact installed voice, or null for "the best available".
+  Future<void> setVoice(String? voiceId) async {
+    state = voiceId == null
+        ? state.copyWith(clearVoice: true)
+        : state.copyWith(voiceId: voiceId);
     if (state.isAutoPlaying) {
       _silence();
       await _speakCurrent();
@@ -202,6 +246,7 @@ class NarrationController extends Notifier<NarrationState> {
 
   Future<void> _speakCurrent() async {
     _cancelTimer();
+    _cancelWait();
     final generation = ++_generation;
     await _tts.stop();
     final current = state.current;
@@ -231,16 +276,19 @@ class NarrationController extends Notifier<NarrationState> {
       rate: state.rate,
       volume: state.volume,
       pitch: state.pitch,
+      voiceId: state.voiceId,
     );
     if (generation != _generation) return;
     if (!spoken) return;
 
     if (!state.isAutoPlaying) return;
     if (state.canGoForward) {
-      // The Royal Chronicler pauses between instructions; the script decides
-      // how long, so the table has time to move the physical cards.
-      if (current.pauseAfter > Duration.zero) {
-        await Future<void>.delayed(current.pauseAfter);
+      // Speech has finished — only now does the wait begin: the script's own
+      // beat plus the MC's extra delay. The table gets the time it asked for to
+      // move its physical cards before the next line appears.
+      final wait = current.pauseAfter + state.extraDelay;
+      if (wait > Duration.zero) {
+        await _waitFor(wait);
         if (generation != _generation || !state.isAutoPlaying) return;
       }
       state = state.copyWith(index: state.index + 1);
@@ -254,6 +302,7 @@ class NarrationController extends Notifier<NarrationState> {
   void _silence() {
     _generation++;
     _cancelTimer();
+    _cancelWait();
     unawaited(_tts.stop());
   }
 
@@ -271,14 +320,38 @@ class NarrationController extends Notifier<NarrationState> {
     _cancelTimer();
     final current = state.current;
     if (current == null) return;
-    _timer = Timer(estimateSpeechDuration(current), () {
-      if (!state.isAutoPlaying) return;
-      if (state.canGoForward) {
-        next();
-      } else {
-        pause();
-      }
+    _timer = Timer(
+      estimateSpeechDuration(current) + state.extraDelay,
+      () {
+        if (!state.isAutoPlaying) return;
+        if (state.canGoForward) {
+          next();
+        } else {
+          pause();
+        }
+      },
+    );
+  }
+
+  /// Waits [duration] unless something cancels it first.
+  Future<void> _waitFor(Duration duration) {
+    _cancelWait();
+    if (duration <= Duration.zero) return Future<void>.value();
+    final completer = Completer<void>();
+    _wait = completer;
+    _waitTimer = Timer(duration, () {
+      _waitTimer = null;
+      if (!completer.isCompleted) completer.complete();
     });
+    return completer.future;
+  }
+
+  void _cancelWait() {
+    _waitTimer?.cancel();
+    _waitTimer = null;
+    final pending = _wait;
+    _wait = null;
+    if (pending != null && !pending.isCompleted) pending.complete();
   }
 
   void _cancelTimer() {

@@ -16,6 +16,7 @@ import '../../core/widgets/section_header.dart';
 import '../../game_engine/controllers/game_session_controller.dart';
 import '../../game_engine/models/game_state.dart';
 import '../../game_engine/models/phase.dart';
+import '../settings/settings_controller.dart';
 
 /// Screen 09 — the MC records the two cards played on the quest.
 ///
@@ -101,7 +102,8 @@ class _QuestResolutionScreenState extends ConsumerState<QuestResolutionScreen> {
     });
 
     final controller = ref.read(gameSessionProvider.notifier);
-    controller.recordQuest(failCards: _fail);
+    final drawLord = ref.read(settingsProvider).kingsDrawnAutomatically;
+    controller.recordQuest(failCards: _fail, drawLord: drawLord);
     final after = ref.read(gameSessionProvider);
     if (!mounted) return;
 
@@ -118,6 +120,9 @@ class _QuestResolutionScreenState extends ConsumerState<QuestResolutionScreen> {
         : after?.phase == Phase.assassination
         ? 'Three quests have succeeded. $score. The assassin now wakes and '
               'chooses a name.'
+        : after?.phase == Phase.lordSelection
+        ? 'Quest ${after?.questNumber ?? 2} begins. $score. The wheel now '
+              'draws the King who will lead the round.'
         : 'The leader token returns to the table. $score.';
 
     await showDialog<void>(
@@ -135,7 +140,13 @@ class _QuestResolutionScreenState extends ConsumerState<QuestResolutionScreen> {
         ],
       ),
     );
-    if (mounted) context.goNamed(RouteNames.dashboard);
+    if (mounted) {
+      context.goNamed(
+        after?.phase == Phase.lordSelection
+            ? RouteNames.lordSelection
+            : RouteNames.dashboard,
+      );
+    }
   }
 
   @override

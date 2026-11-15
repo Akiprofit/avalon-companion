@@ -45,51 +45,60 @@ class _SplashScreenState extends State<SplashScreen> {
       backgroundColor: AppColors.background,
       body: CinematicBackground(
         imageAsset: Artwork.splash,
-        child: Center(
-          child: TweenAnimationBuilder<double>(
-            tween: Tween(begin: 0, end: 1),
-            duration: motionDuration(context, Motion.dramatic),
-            curve: Curves.easeOutCubic,
-            builder: (context, value, child) => Opacity(
-              opacity: reduced ? 1 : value,
-              child: Transform.scale(
-                scale: reduced ? 1 : 0.94 + 0.06 * value,
-                child: child,
-              ),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _Seal(),
-                const SizedBox(height: Space.xl),
-                const Text('AVALON', style: AppText.display),
-                const SizedBox(height: Space.xs),
-                Text(
-                  'COMPANION',
-                  style: AppText.caption.copyWith(
-                    letterSpacing: 6,
-                    color: AppColors.mutedGold,
-                    fontWeight: FontWeight.w600,
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            padding: const EdgeInsets.all(Space.lg),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight - Space.lg * 2),
+              child: Center(
+                child: TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0, end: 1),
+                  duration: motionDuration(context, Motion.dramatic),
+                  curve: Curves.easeOutCubic,
+                  builder: (context, value, child) => Opacity(
+                    opacity: reduced ? 1 : value,
+                    child: Transform.scale(
+                      scale: reduced ? 1 : 0.94 + 0.06 * value,
+                      child: child,
+                    ),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _Seal(),
+                      const SizedBox(height: Space.xl),
+                      const Text('AVALON', style: AppText.display),
+                      const SizedBox(height: Space.xs),
+                      Text(
+                        'COMPANION',
+                        style: AppText.caption.copyWith(
+                          letterSpacing: 6,
+                          color: AppColors.mutedGold,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: Space.xxxl),
+                      if (reduced)
+                        Text(
+                          'Preparing the table…',
+                          style: AppText.caption.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                        )
+                      else
+                        const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 1.6,
+                            color: AppColors.mutedGold,
+                          ),
+                        ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: Space.xxxl),
-                if (reduced)
-                  Text(
-                    'Preparing the table…',
-                    style: AppText.caption.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                  )
-                else
-                  const SizedBox(
-                    width: 22,
-                    height: 22,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 1.6,
-                      color: AppColors.mutedGold,
-                    ),
-                  ),
-              ],
+              ),
             ),
           ),
         ),

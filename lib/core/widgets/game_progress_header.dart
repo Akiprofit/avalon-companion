@@ -15,6 +15,7 @@ class GameProgressHeader extends StatelessWidget {
     required this.requiredTeamSize,
     required this.rejectionCount,
     required this.phaseLabel,
+    this.phaseTone = StatusTone.active,
     this.questSlots = const [
       QuestSlot.current,
       QuestSlot.pending,
@@ -29,6 +30,9 @@ class GameProgressHeader extends StatelessWidget {
   final int requiredTeamSize;
   final int rejectionCount;
   final String phaseLabel;
+
+  /// Tone of the phase chip: danger while the match is paused.
+  final StatusTone phaseTone;
   final List<QuestSlot> questSlots;
 
   @override
@@ -46,7 +50,7 @@ class GameProgressHeader extends StatelessWidget {
               Flexible(
                 child: StatusIndicator(
                   label: phaseLabel,
-                  tone: StatusTone.active,
+                  tone: phaseTone,
                 ),
               ),
               const SizedBox(width: Space.xs),

@@ -59,8 +59,9 @@ class VictoryScreen extends ConsumerWidget {
     if (game == null) return;
     final confirmed =
         !ref.read(settingsConfirmProvider) ||
-        await showConfirmation(
+        await confirmAction(
           context,
+          ref,
           title: 'Play again?',
           message:
               'A new match begins with the same ${game.playerCount} players. '

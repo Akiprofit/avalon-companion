@@ -5,11 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/constants/routes.dart';
-import '../../core/theme/app_metrics.dart';
-import '../../core/theme/app_text.dart';
+import '../../core/services/host_services.dart';
 import '../../core/theme/artwork.dart';
 import '../../core/widgets/avalon_screen.dart';
 import '../../core/widgets/confirmation_dialog.dart';
+import '../../core/widgets/loading_state.dart';
 import '../../core/widgets/narration_panel.dart';
 import '../../game_engine/controllers/game_session_controller.dart';
 import '../../narration_engine/controllers/narration_controller.dart';
@@ -30,10 +30,13 @@ class NarrationScreen extends ConsumerStatefulWidget {
 
 class _NarrationScreenState extends ConsumerState<NarrationScreen>
     with WidgetsBindingObserver {
+  late final HostServices _host;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _host = ref.read(hostServicesProvider);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final game = ref.read(gameSessionProvider);
@@ -42,28 +45,46 @@ class _NarrationScreenState extends ConsumerState<NarrationScreen>
 
       controller.setVolume(settings.volume);
       controller.setRate(settings.narrationRate);
+      controller.setExtraDelay(settings.narratorExtraDelay);
       unawaited(controller.setPitch(settings.narrationPitch));
+      unawaited(controller.setVoice(settings.narratorVoiceId));
       if (game != null) {
         controller.load(game.composition);
         controller.setLanguage(settings.defaultLanguage);
       }
-      unawaited(controller.prepare());
+      unawaited(
+        controller.prepare().then((_) async {
+          if (!mounted) return;
+          // "Automatic narration": the night starts reading by itself, so every
+          // line gets its own beat plus the extra delay the MC configured.
+          if (settings.autoAdvance) await controller.toggleAutoPlay();
+        }),
+      );
       ref.read(gameSessionProvider.notifier).startNight();
+      unawaited(_host.setAmbient(settings.ambientAudio));
     });
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    unawaited(_host.setAmbient(false));
     super.dispose();
   }
 
   /// A call, the notification shade or the screen locking takes the app away:
-  /// stop talking rather than narrating an empty room.
+  /// stop talking — and stop the bed under it — rather than narrating an empty
+  /// room. The ambience returns with the app.
   @override
   void didChangeAppLifecycleState(AppLifecycleState lifecycle) {
-    if (lifecycle == AppLifecycleState.resumed) return;
+    if (lifecycle == AppLifecycleState.resumed) {
+      if (ref.read(settingsProvider).ambientAudio) {
+        unawaited(_host.setAmbient(true));
+      }
+      return;
+    }
     unawaited(ref.read(narrationControllerProvider.notifier).pause());
+    unawaited(_host.setAmbient(false));
   }
 
   Future<void> _finishNight() async {
@@ -73,8 +94,9 @@ class _NarrationScreenState extends ConsumerState<NarrationScreen>
   }
 
   Future<void> _confirmExit() async {
-    final leave = await showConfirmation(
+    final leave = await confirmAction(
       context,
+      ref,
       title: 'Leave the narration?',
       message:
           'The match keeps its state. You can reopen the night narration from '
@@ -92,9 +114,15 @@ class _NarrationScreenState extends ConsumerState<NarrationScreen>
     final state = ref.watch(narrationControllerProvider);
     final controller = ref.read(narrationControllerProvider.notifier);
 
+    // A change in settings applies from the next line, never mid-sentence.
+    ref.listen(
+      settingsProvider.select((s) => s.narratorExtraDelay),
+      (_, next) => controller.setExtraDelay(next),
+    );
+
     if (state.isEmpty) {
-      return const AvalonScreen(
-        child: Center(child: CircularProgressIndicator()),
+      return AvalonScreen(
+        child: LoadingState(label: 'Preparing the night…'),
       );
     }
 
@@ -111,18 +139,6 @@ class _NarrationScreenState extends ConsumerState<NarrationScreen>
           icon: const Icon(Icons.arrow_back),
           onPressed: _confirmExit,
         ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: Space.md),
-            child: Center(
-              child: Text(
-                '${state.language == NarrationLanguage.filipino ? 'FILIPINO' : 'ENGLISH'}'
-                ' · ${state.rate.toStringAsFixed(2)}x',
-                style: AppText.caption,
-              ),
-            ),
-          ),
-        ],
       ),
       child: NarrationPanel(
         heading: current.heading,

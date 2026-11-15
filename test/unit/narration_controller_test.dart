@@ -24,6 +24,7 @@ class FakeTtsService implements TtsService {
   double? lastRate;
   double? lastVolume;
   double? lastPitch;
+  String? lastVoiceId;
   int stopCount = 0;
   bool initialised = false;
 
@@ -45,18 +46,23 @@ class FakeTtsService implements TtsService {
       languages.contains(locale);
 
   @override
+  Future<List<TtsVoice>> voices(String locale) async => const [];
+
+  @override
   Future<bool> speak(
     String text, {
     required String locale,
     required double rate,
     required double volume,
     required double pitch,
+    String? voiceId,
   }) {
     spoken.add(text);
     lastLocale = locale;
     lastRate = rate;
     lastVolume = volume;
     lastPitch = pitch;
+    lastVoiceId = voiceId;
     final completion = Completer<bool>();
     _pending = completion;
     return completion.future;
@@ -396,6 +402,95 @@ void main() {
     expect(state().index, state().total - 1);
     expect(state().canGoForward, isFalse);
     expect(state().current!.id, sequenceIds().last);
+  });
+
+  test('the extra delay starts only after the line has finished', () async {
+    setUpController();
+    controller().setExtraDelay(const Duration(seconds: 2));
+    await settle();
+
+    unawaited(controller().toggleAutoPlay());
+    await settle();
+    expect(tts.spoken, hasLength(1));
+
+    tts.completeSpeech();
+    await settle();
+
+    // Speech is over, but the script's beat plus the extra delay still run: the
+    // table gets its time to move the physical cards.
+    expect(state().index, 0);
+    await Future<void>.delayed(const Duration(milliseconds: 1200));
+    await settle();
+    expect(state().index, 0, reason: 'the extra delay is still counting');
+    expect(tts.spoken, hasLength(1), reason: 'nothing is spoken during the wait');
+
+    await Future<void>.delayed(const Duration(milliseconds: 2200));
+    await settle();
+    expect(state().index, 1);
+    expect(tts.spoken, hasLength(2));
+
+    unawaited(controller().pause());
+    await settle();
+  });
+
+  test('skipping during the extra delay leaves no timer behind', () async {
+    setUpController();
+    controller().setExtraDelay(const Duration(seconds: 2));
+    await settle();
+
+    unawaited(controller().toggleAutoPlay());
+    await settle();
+    tts.completeSpeech();
+    await settle();
+
+    unawaited(controller().skipToEnd());
+    await settle();
+    final index = state().index;
+    expect(state().isAutoPlaying, isFalse);
+
+    await Future<void>.delayed(const Duration(milliseconds: 3000));
+    await settle();
+
+    expect(state().index, index, reason: 'a cancelled delay cannot advance');
+    expect(tts.spoken, hasLength(1), reason: 'and cannot speak again');
+  });
+
+  test('restarting a line mid-delay advances exactly once', () async {
+    setUpController();
+    controller().setExtraDelay(const Duration(seconds: 1));
+    await settle();
+
+    unawaited(controller().toggleAutoPlay());
+    await settle();
+    tts.completeSpeech();
+    await settle();
+
+    // The MC repeats the line before the panel has moved on.
+    unawaited(controller().replay());
+    await settle();
+    expect(state().index, 0);
+    tts.completeSpeech();
+    await settle();
+
+    await Future<void>.delayed(const Duration(milliseconds: 2400));
+    await settle();
+
+    expect(state().index, 1, reason: 'exactly one advance, not two');
+
+    unawaited(controller().pause());
+    await settle();
+  });
+
+  test('the delay is capped and carried into a reload', () {
+    setUpController();
+
+    controller().setExtraDelay(const Duration(minutes: 5));
+    expect(state().extraDelay, const Duration(seconds: 20));
+
+    controller().setExtraDelay(const Duration(seconds: 3));
+    controller().load(compositionFor(5));
+    expect(state().extraDelay, const Duration(seconds: 3));
+    expect(state().index, 0);
   });
 
   test('the night sequence depends on the composition only', () async {

@@ -54,8 +54,9 @@ class GameSessionController extends Notifier<GameState?> {
     _apply(GameEngine.endNight(game));
   }
 
-  /// Draws the first Lord. The wheel picks the seat; the engine validates it
-  /// and moves the table into the day.
+  /// Draws the Lord. The wheel picks the seat; the engine validates it and
+  /// moves the table into the day. Used once after the night, and again at the
+  /// start of every round in the automatic King mode.
   void chooseLord(int seat) {
     final game = state;
     if (game == null || game.phase != Phase.lordSelection) return;
@@ -65,9 +66,21 @@ class GameSessionController extends Notifier<GameState?> {
       await store.addEvent(
         id,
         'lordDrawn',
-        'The wheel drew the first Lord: seat $seat.',
+        'The wheel drew the Lord for quest ${game.questNumber}: seat $seat.',
       );
     });
+  }
+
+  /// Opens the wheel between rounds. Ignored unless the table is between a
+  /// vote and the cards, so a draw can never interrupt a running tally.
+  void beginLordDraw() {
+    final game = state;
+    if (game == null) return;
+    if (game.phase != Phase.dayDiscussion &&
+        game.phase != Phase.teamSelection) {
+      return;
+    }
+    _apply(GameEngine.beginLordDraw(game));
   }
 
   /// Starts a fresh match with the same table.
@@ -114,8 +127,9 @@ class GameSessionController extends Notifier<GameState?> {
   }
 
   /// Applies the vote: approval sends the team to the quest, rejection moves
-  /// the leader token, and five rejections end the match for evil.
-  void resolveTeamVote() {
+  /// the leader token — or opens the wheel for a new King when [drawLord] is set
+  /// — and five rejections end the match for evil.
+  void resolveTeamVote({bool drawLord = false}) {
     final game = state;
     if (game == null || game.phase != Phase.teamVoting) return;
 
@@ -125,7 +139,7 @@ class GameSessionController extends Notifier<GameState?> {
     final seats = [...game.currentTeam];
     final approve = game.approveVotes;
     final reject = game.rejectVotes;
-    final next = GameEngine.resolveTeamVote(game);
+    final next = GameEngine.resolveTeamVote(game, drawLord: drawLord);
 
     final verdict = next.phase == Phase.questResolution
         ? TeamVerdict.approved
@@ -146,14 +160,19 @@ class GameSessionController extends Notifier<GameState?> {
 
   /// Records the cards played on the approved quest. Only the fail count is
   /// needed: the engine derives the successes from the team size, decides the
-  /// quest 4 two-fail rule and moves the match on.
-  void recordQuest({required int failCards}) {
+  /// quest 4 two-fail rule and moves the match on — to the next round, or to the
+  /// wheel when [drawLord] is set.
+  void recordQuest({required int failCards, bool drawLord = false}) {
     final game = state;
     if (game == null || game.phase != Phase.questResolution) return;
 
     final questNumber = game.questNumber;
     final requiredPlayers = game.currentTeam.length;
-    final next = GameEngine.recordQuest(game, failCards: failCards);
+    final next = GameEngine.recordQuest(
+      game,
+      failCards: failCards,
+      drawLord: drawLord,
+    );
 
     final result = next.questResults.last;
     _applyWith(next, (store, id) async {

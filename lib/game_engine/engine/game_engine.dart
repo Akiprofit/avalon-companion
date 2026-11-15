@@ -85,13 +85,51 @@ abstract final class GameEngine {
   /// LordSelection -> DayDiscussion. Sets the seat drawn by the wheel.
   ///
   /// The draw itself is random and lives in the UI; this command is pure so the
-  /// transition stays testable and an impossible seat is refused.
+  /// transition stays testable and an impossible seat is refused. It is used
+  /// once after the night and again at the start of every round when the table
+  /// draws a new King (see [beginLordDraw]).
   static GameState chooseLord(GameState state, {required int seat}) {
     _require(state.phase == Phase.lordSelection, state,
-        'The Lord is chosen once, after the night.');
+        'The Lord is only chosen while the wheel is open.');
     _require(state.playerAtSeat(seat) != null, state,
         'There is no player in seat $seat.');
     return state.copyWith(leaderSeat: seat, phase: Phase.dayDiscussion);
+  }
+
+  /// Opens the wheel for the current round.
+  ///
+  /// Used by the manual King mode: the MC asks for a draw between rounds. The
+  /// leadership token is left where it is until the wheel lands, so the draw
+  /// knows which King has just served and can avoid repeating them.
+  static GameState beginLordDraw(GameState state) {
+    _require(state.phase != Phase.lordSelection, state,
+        'The wheel is already open.');
+    _require(
+      state.phase == Phase.dayDiscussion || state.phase == Phase.teamSelection,
+      state,
+      'A new King is drawn between rounds, not during a vote or a quest.',
+    );
+    return state.copyWith(phase: Phase.lordSelection);
+  }
+
+  /// Seats the wheel may land on for the draw that is open now.
+  ///
+  /// The opening draw of a match takes the whole table: no King has served yet,
+  /// so every seat is equally owed the token. Every later draw leaves out the
+  /// King who has just served, so one player does not lead twice in a row while
+  /// there is somebody else to lead. A single-seat table still draws that seat.
+  static List<int> drawableLordSeats(GameState state) {
+    final seats = [for (final player in state.players) player.seat];
+    if (seats.length < 2) return seats;
+    final firstDrawOfMatch =
+        state.questNumber == 1 &&
+        state.questResults.isEmpty &&
+        state.rejectionCount == 0;
+    if (firstDrawOfMatch) return seats;
+    return [
+      for (final seat in seats)
+        if (seat != state.leaderSeat) seat,
+    ];
   }
 
   /// DayDiscussion -> TeamSelection.
@@ -142,8 +180,13 @@ abstract final class GameEngine {
   /// Resolves the vote, applies the rejection counter and rotates the token.
   ///
   /// The token advances after every resolved proposal, approved or rejected
-  /// (master plan §5.5).
-  static GameState resolveTeamVote(GameState state) {
+  /// (master plan §5.5). With [drawLord] the token is left with the King who
+  /// has just served and the table returns to the wheel instead: the draw — not
+  /// seating order — picks the next King, and it can avoid repeating a player.
+  static GameState resolveTeamVote(
+    GameState state, {
+    bool drawLord = false,
+  }) {
     _require(state.phase == Phase.teamVoting, state,
         'There is no team vote to resolve.');
     _require(state.votesComplete, state,
@@ -156,7 +199,7 @@ abstract final class GameEngine {
     if (approved) {
       return state.copyWith(
         phase: Phase.questResolution,
-        leaderSeat: nextLeader,
+        leaderSeat: drawLord ? state.leaderSeat : nextLeader,
         rejectionCount: 0,
       );
     }
@@ -172,8 +215,8 @@ abstract final class GameEngine {
     }
 
     return state.copyWith(
-      phase: Phase.dayDiscussion,
-      leaderSeat: nextLeader,
+      phase: drawLord ? Phase.lordSelection : Phase.dayDiscussion,
+      leaderSeat: drawLord ? state.leaderSeat : nextLeader,
       rejectionCount: rejections,
       currentTeam: const [],
       approveVotes: 0,
@@ -184,8 +227,13 @@ abstract final class GameEngine {
   /// QuestResolution: records one resolved quest and moves the match on.
   ///
   /// Three successes send the game to the assassination; three failures end it
-  /// for evil. Anything else returns to discussion with the next quest number.
-  static GameState recordQuest(GameState state, {required int failCards}) {
+  /// for evil. Anything else returns to discussion with the next quest number,
+  /// or to the wheel when [drawLord] asks for a new King first.
+  static GameState recordQuest(
+    GameState state, {
+    required int failCards,
+    bool drawLord = false,
+  }) {
     _require(state.phase == Phase.questResolution, state,
         'Quests are only resolved after an approved team.');
     _require(state.questResults.length + 1 == state.questNumber, state,
@@ -226,7 +274,7 @@ abstract final class GameEngine {
     }
 
     return state.copyWith(
-      phase: Phase.dayDiscussion,
+      phase: drawLord ? Phase.lordSelection : Phase.dayDiscussion,
       questResults: results,
       questNumber: state.questNumber + 1,
       rejectionCount: 0,

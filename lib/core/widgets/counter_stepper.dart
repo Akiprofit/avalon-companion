@@ -92,7 +92,7 @@ class CounterStepper extends StatelessWidget {
                     icon: Icons.remove_rounded,
                     semanticLabel: 'Remove one from $label',
                     onPressed: canDecrement ? onDecrement : null,
-                    size: 44,
+                    size: kMinTapTarget,
                   ),
                   const SizedBox(width: Space.lg),
                   AvalonIconButton(
@@ -100,7 +100,7 @@ class CounterStepper extends StatelessWidget {
                     icon: Icons.add_rounded,
                     semanticLabel: 'Add one to $label',
                     onPressed: canIncrement ? onIncrement : null,
-                    size: 44,
+                    size: kMinTapTarget,
                   ),
                 ],
               ),

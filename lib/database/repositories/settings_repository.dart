@@ -6,8 +6,8 @@ import '../app_database.dart';
 
 /// Reads and writes the single `Settings` row (id = 1).
 ///
-/// The table stores preferences only — no PIN, no player, no role. The PIN is
-/// never written anywhere (master plan §2.2, PART 8).
+/// The table stores preferences only — no player, no role, and no readable PIN:
+/// `mc_pin_hash` is a salted digest (`PinRepository`), never the digits.
 class SettingsRepository {
   SettingsRepository(this._db);
 
@@ -46,13 +46,17 @@ class SettingsRepository {
       narrationSpeed: Value(settings.narrationRate),
       narrationPitch: Value(settings.narrationPitch),
       volume: Value(settings.volume),
+      voiceId: Value(settings.narratorVoiceId),
       ambientAudioEnabled: Value(settings.ambientAudio),
       autoAdvance: Value(settings.autoAdvance),
       keepScreenAwake: Value(settings.keepScreenAwake),
       confirmations: Value(settings.confirmations),
       haptics: Value(settings.haptics),
+      soundEffects: Value(settings.soundEffects),
       discussionSeconds: Value(settings.discussionSeconds),
       defaultPlayerCount: Value(settings.defaultPlayerCount),
+      kingSelection: Value(settings.kingSelectionMode.name),
+      narratorExtraDelayMs: Value(settings.narratorExtraDelay.inMilliseconds),
     );
   }
 
@@ -68,11 +72,17 @@ class SettingsRepository {
       volume: row.volume,
       autoAdvance: row.autoAdvance,
       ambientAudio: row.ambientAudioEnabled,
+      narratorVoiceId: row.voiceId,
       keepScreenAwake: row.keepScreenAwake,
       confirmations: row.confirmations,
       haptics: row.haptics,
+      soundEffects: row.soundEffects,
       discussionSeconds: row.discussionSeconds,
       defaultPlayerCount: row.defaultPlayerCount,
+      kingSelectionMode: KingSelectionMode.fromStorage(row.kingSelection),
+      narratorExtraDelay: Duration(
+        milliseconds: row.narratorExtraDelayMs.clamp(0, 30000),
+      ),
     );
   }
 }

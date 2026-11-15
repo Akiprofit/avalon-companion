@@ -10,6 +10,7 @@ import '../../core/theme/artwork.dart';
 import '../../core/widgets/avalon_bottom_navigation.dart';
 import '../../core/widgets/avalon_screen.dart';
 import '../../core/widgets/empty_state.dart';
+import '../../core/widgets/loading_state.dart';
 import '../../core/widgets/medieval_card.dart';
 import '../../core/widgets/primary_button.dart';
 import '../../core/widgets/section_header.dart';
@@ -49,9 +50,7 @@ class HistoryScreen extends ConsumerWidget {
         },
       ),
       child: history.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: AppColors.gold),
-        ),
+        loading: () => LoadingState(label: 'Reading the record…'),
         error: (error, _) => EmptyState(
           title: 'History unavailable',
           message:

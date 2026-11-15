@@ -2820,6 +2820,21 @@ class $SettingsTable extends Settings
     ),
     defaultValue: const Constant(true),
   );
+  static const VerificationMeta _soundEffectsMeta = const VerificationMeta(
+    'soundEffects',
+  );
+  @override
+  late final GeneratedColumn<bool> soundEffects = GeneratedColumn<bool>(
+    'sound_effects',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("sound_effects" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
   static const VerificationMeta _discussionSecondsMeta = const VerificationMeta(
     'discussionSeconds',
   );
@@ -2858,6 +2873,40 @@ class $SettingsTable extends Settings
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _mcPinHashMeta = const VerificationMeta(
+    'mcPinHash',
+  );
+  @override
+  late final GeneratedColumn<String> mcPinHash = GeneratedColumn<String>(
+    'mc_pin_hash',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _kingSelectionMeta = const VerificationMeta(
+    'kingSelection',
+  );
+  @override
+  late final GeneratedColumn<String> kingSelection = GeneratedColumn<String>(
+    'king_selection',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('manual'),
+  );
+  static const VerificationMeta _narratorExtraDelayMsMeta =
+      const VerificationMeta('narratorExtraDelayMs');
+  @override
+  late final GeneratedColumn<int> narratorExtraDelayMs = GeneratedColumn<int>(
+    'narrator_extra_delay_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -2871,9 +2920,13 @@ class $SettingsTable extends Settings
     keepScreenAwake,
     confirmations,
     haptics,
+    soundEffects,
     discussionSeconds,
     defaultPlayerCount,
     mcPinEnabled,
+    mcPinHash,
+    kingSelection,
+    narratorExtraDelayMs,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -2973,6 +3026,15 @@ class $SettingsTable extends Settings
         haptics.isAcceptableOrUnknown(data['haptics']!, _hapticsMeta),
       );
     }
+    if (data.containsKey('sound_effects')) {
+      context.handle(
+        _soundEffectsMeta,
+        soundEffects.isAcceptableOrUnknown(
+          data['sound_effects']!,
+          _soundEffectsMeta,
+        ),
+      );
+    }
     if (data.containsKey('discussion_seconds')) {
       context.handle(
         _discussionSecondsMeta,
@@ -2997,6 +3059,30 @@ class $SettingsTable extends Settings
         mcPinEnabled.isAcceptableOrUnknown(
           data['mc_pin_enabled']!,
           _mcPinEnabledMeta,
+        ),
+      );
+    }
+    if (data.containsKey('mc_pin_hash')) {
+      context.handle(
+        _mcPinHashMeta,
+        mcPinHash.isAcceptableOrUnknown(data['mc_pin_hash']!, _mcPinHashMeta),
+      );
+    }
+    if (data.containsKey('king_selection')) {
+      context.handle(
+        _kingSelectionMeta,
+        kingSelection.isAcceptableOrUnknown(
+          data['king_selection']!,
+          _kingSelectionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('narrator_extra_delay_ms')) {
+      context.handle(
+        _narratorExtraDelayMsMeta,
+        narratorExtraDelayMs.isAcceptableOrUnknown(
+          data['narrator_extra_delay_ms']!,
+          _narratorExtraDelayMsMeta,
         ),
       );
     }
@@ -3053,6 +3139,10 @@ class $SettingsTable extends Settings
         DriftSqlType.bool,
         data['${effectivePrefix}haptics'],
       )!,
+      soundEffects: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}sound_effects'],
+      )!,
       discussionSeconds: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}discussion_seconds'],
@@ -3064,6 +3154,18 @@ class $SettingsTable extends Settings
       mcPinEnabled: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}mc_pin_enabled'],
+      )!,
+      mcPinHash: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}mc_pin_hash'],
+      ),
+      kingSelection: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}king_selection'],
+      )!,
+      narratorExtraDelayMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}narrator_extra_delay_ms'],
       )!,
     );
   }
@@ -3086,9 +3188,23 @@ class SettingsRecord extends DataClass implements Insertable<SettingsRecord> {
   final bool keepScreenAwake;
   final bool confirmations;
   final bool haptics;
+  final bool soundEffects;
   final int discussionSeconds;
   final int defaultPlayerCount;
   final bool mcPinEnabled;
+
+  /// Salted SHA-256 of the MC PIN as `salt:hash`; null when no PIN is set.
+  ///
+  /// A four-digit PIN is a lock on the table, not a password vault: this keeps
+  /// it out of plain sight in the file and off every screen. See
+  /// `PinRepository`.
+  final String? mcPinHash;
+
+  /// `automatic` or `manual` — whether the wheel draws a King every round.
+  final String kingSelection;
+
+  /// Extra silence after each spoken narration line, in milliseconds.
+  final int narratorExtraDelayMs;
   const SettingsRecord({
     required this.id,
     required this.narrationLanguage,
@@ -3101,9 +3217,13 @@ class SettingsRecord extends DataClass implements Insertable<SettingsRecord> {
     required this.keepScreenAwake,
     required this.confirmations,
     required this.haptics,
+    required this.soundEffects,
     required this.discussionSeconds,
     required this.defaultPlayerCount,
     required this.mcPinEnabled,
+    this.mcPinHash,
+    required this.kingSelection,
+    required this.narratorExtraDelayMs,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -3121,9 +3241,15 @@ class SettingsRecord extends DataClass implements Insertable<SettingsRecord> {
     map['keep_screen_awake'] = Variable<bool>(keepScreenAwake);
     map['confirmations'] = Variable<bool>(confirmations);
     map['haptics'] = Variable<bool>(haptics);
+    map['sound_effects'] = Variable<bool>(soundEffects);
     map['discussion_seconds'] = Variable<int>(discussionSeconds);
     map['default_player_count'] = Variable<int>(defaultPlayerCount);
     map['mc_pin_enabled'] = Variable<bool>(mcPinEnabled);
+    if (!nullToAbsent || mcPinHash != null) {
+      map['mc_pin_hash'] = Variable<String>(mcPinHash);
+    }
+    map['king_selection'] = Variable<String>(kingSelection);
+    map['narrator_extra_delay_ms'] = Variable<int>(narratorExtraDelayMs);
     return map;
   }
 
@@ -3142,9 +3268,15 @@ class SettingsRecord extends DataClass implements Insertable<SettingsRecord> {
       keepScreenAwake: Value(keepScreenAwake),
       confirmations: Value(confirmations),
       haptics: Value(haptics),
+      soundEffects: Value(soundEffects),
       discussionSeconds: Value(discussionSeconds),
       defaultPlayerCount: Value(defaultPlayerCount),
       mcPinEnabled: Value(mcPinEnabled),
+      mcPinHash: mcPinHash == null && nullToAbsent
+          ? const Value.absent()
+          : Value(mcPinHash),
+      kingSelection: Value(kingSelection),
+      narratorExtraDelayMs: Value(narratorExtraDelayMs),
     );
   }
 
@@ -3167,9 +3299,15 @@ class SettingsRecord extends DataClass implements Insertable<SettingsRecord> {
       keepScreenAwake: serializer.fromJson<bool>(json['keepScreenAwake']),
       confirmations: serializer.fromJson<bool>(json['confirmations']),
       haptics: serializer.fromJson<bool>(json['haptics']),
+      soundEffects: serializer.fromJson<bool>(json['soundEffects']),
       discussionSeconds: serializer.fromJson<int>(json['discussionSeconds']),
       defaultPlayerCount: serializer.fromJson<int>(json['defaultPlayerCount']),
       mcPinEnabled: serializer.fromJson<bool>(json['mcPinEnabled']),
+      mcPinHash: serializer.fromJson<String?>(json['mcPinHash']),
+      kingSelection: serializer.fromJson<String>(json['kingSelection']),
+      narratorExtraDelayMs: serializer.fromJson<int>(
+        json['narratorExtraDelayMs'],
+      ),
     );
   }
   @override
@@ -3187,9 +3325,13 @@ class SettingsRecord extends DataClass implements Insertable<SettingsRecord> {
       'keepScreenAwake': serializer.toJson<bool>(keepScreenAwake),
       'confirmations': serializer.toJson<bool>(confirmations),
       'haptics': serializer.toJson<bool>(haptics),
+      'soundEffects': serializer.toJson<bool>(soundEffects),
       'discussionSeconds': serializer.toJson<int>(discussionSeconds),
       'defaultPlayerCount': serializer.toJson<int>(defaultPlayerCount),
       'mcPinEnabled': serializer.toJson<bool>(mcPinEnabled),
+      'mcPinHash': serializer.toJson<String?>(mcPinHash),
+      'kingSelection': serializer.toJson<String>(kingSelection),
+      'narratorExtraDelayMs': serializer.toJson<int>(narratorExtraDelayMs),
     };
   }
 
@@ -3205,9 +3347,13 @@ class SettingsRecord extends DataClass implements Insertable<SettingsRecord> {
     bool? keepScreenAwake,
     bool? confirmations,
     bool? haptics,
+    bool? soundEffects,
     int? discussionSeconds,
     int? defaultPlayerCount,
     bool? mcPinEnabled,
+    Value<String?> mcPinHash = const Value.absent(),
+    String? kingSelection,
+    int? narratorExtraDelayMs,
   }) => SettingsRecord(
     id: id ?? this.id,
     narrationLanguage: narrationLanguage ?? this.narrationLanguage,
@@ -3220,9 +3366,13 @@ class SettingsRecord extends DataClass implements Insertable<SettingsRecord> {
     keepScreenAwake: keepScreenAwake ?? this.keepScreenAwake,
     confirmations: confirmations ?? this.confirmations,
     haptics: haptics ?? this.haptics,
+    soundEffects: soundEffects ?? this.soundEffects,
     discussionSeconds: discussionSeconds ?? this.discussionSeconds,
     defaultPlayerCount: defaultPlayerCount ?? this.defaultPlayerCount,
     mcPinEnabled: mcPinEnabled ?? this.mcPinEnabled,
+    mcPinHash: mcPinHash.present ? mcPinHash.value : this.mcPinHash,
+    kingSelection: kingSelection ?? this.kingSelection,
+    narratorExtraDelayMs: narratorExtraDelayMs ?? this.narratorExtraDelayMs,
   );
   SettingsRecord copyWithCompanion(SettingsCompanion data) {
     return SettingsRecord(
@@ -3251,6 +3401,9 @@ class SettingsRecord extends DataClass implements Insertable<SettingsRecord> {
           ? data.confirmations.value
           : this.confirmations,
       haptics: data.haptics.present ? data.haptics.value : this.haptics,
+      soundEffects: data.soundEffects.present
+          ? data.soundEffects.value
+          : this.soundEffects,
       discussionSeconds: data.discussionSeconds.present
           ? data.discussionSeconds.value
           : this.discussionSeconds,
@@ -3260,6 +3413,13 @@ class SettingsRecord extends DataClass implements Insertable<SettingsRecord> {
       mcPinEnabled: data.mcPinEnabled.present
           ? data.mcPinEnabled.value
           : this.mcPinEnabled,
+      mcPinHash: data.mcPinHash.present ? data.mcPinHash.value : this.mcPinHash,
+      kingSelection: data.kingSelection.present
+          ? data.kingSelection.value
+          : this.kingSelection,
+      narratorExtraDelayMs: data.narratorExtraDelayMs.present
+          ? data.narratorExtraDelayMs.value
+          : this.narratorExtraDelayMs,
     );
   }
 
@@ -3277,9 +3437,13 @@ class SettingsRecord extends DataClass implements Insertable<SettingsRecord> {
           ..write('keepScreenAwake: $keepScreenAwake, ')
           ..write('confirmations: $confirmations, ')
           ..write('haptics: $haptics, ')
+          ..write('soundEffects: $soundEffects, ')
           ..write('discussionSeconds: $discussionSeconds, ')
           ..write('defaultPlayerCount: $defaultPlayerCount, ')
-          ..write('mcPinEnabled: $mcPinEnabled')
+          ..write('mcPinEnabled: $mcPinEnabled, ')
+          ..write('mcPinHash: $mcPinHash, ')
+          ..write('kingSelection: $kingSelection, ')
+          ..write('narratorExtraDelayMs: $narratorExtraDelayMs')
           ..write(')'))
         .toString();
   }
@@ -3297,9 +3461,13 @@ class SettingsRecord extends DataClass implements Insertable<SettingsRecord> {
     keepScreenAwake,
     confirmations,
     haptics,
+    soundEffects,
     discussionSeconds,
     defaultPlayerCount,
     mcPinEnabled,
+    mcPinHash,
+    kingSelection,
+    narratorExtraDelayMs,
   );
   @override
   bool operator ==(Object other) =>
@@ -3316,9 +3484,13 @@ class SettingsRecord extends DataClass implements Insertable<SettingsRecord> {
           other.keepScreenAwake == this.keepScreenAwake &&
           other.confirmations == this.confirmations &&
           other.haptics == this.haptics &&
+          other.soundEffects == this.soundEffects &&
           other.discussionSeconds == this.discussionSeconds &&
           other.defaultPlayerCount == this.defaultPlayerCount &&
-          other.mcPinEnabled == this.mcPinEnabled);
+          other.mcPinEnabled == this.mcPinEnabled &&
+          other.mcPinHash == this.mcPinHash &&
+          other.kingSelection == this.kingSelection &&
+          other.narratorExtraDelayMs == this.narratorExtraDelayMs);
 }
 
 class SettingsCompanion extends UpdateCompanion<SettingsRecord> {
@@ -3333,9 +3505,13 @@ class SettingsCompanion extends UpdateCompanion<SettingsRecord> {
   final Value<bool> keepScreenAwake;
   final Value<bool> confirmations;
   final Value<bool> haptics;
+  final Value<bool> soundEffects;
   final Value<int> discussionSeconds;
   final Value<int> defaultPlayerCount;
   final Value<bool> mcPinEnabled;
+  final Value<String?> mcPinHash;
+  final Value<String> kingSelection;
+  final Value<int> narratorExtraDelayMs;
   final Value<int> rowid;
   const SettingsCompanion({
     this.id = const Value.absent(),
@@ -3349,9 +3525,13 @@ class SettingsCompanion extends UpdateCompanion<SettingsRecord> {
     this.keepScreenAwake = const Value.absent(),
     this.confirmations = const Value.absent(),
     this.haptics = const Value.absent(),
+    this.soundEffects = const Value.absent(),
     this.discussionSeconds = const Value.absent(),
     this.defaultPlayerCount = const Value.absent(),
     this.mcPinEnabled = const Value.absent(),
+    this.mcPinHash = const Value.absent(),
+    this.kingSelection = const Value.absent(),
+    this.narratorExtraDelayMs = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   SettingsCompanion.insert({
@@ -3366,9 +3546,13 @@ class SettingsCompanion extends UpdateCompanion<SettingsRecord> {
     this.keepScreenAwake = const Value.absent(),
     this.confirmations = const Value.absent(),
     this.haptics = const Value.absent(),
+    this.soundEffects = const Value.absent(),
     this.discussionSeconds = const Value.absent(),
     this.defaultPlayerCount = const Value.absent(),
     this.mcPinEnabled = const Value.absent(),
+    this.mcPinHash = const Value.absent(),
+    this.kingSelection = const Value.absent(),
+    this.narratorExtraDelayMs = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id);
   static Insertable<SettingsRecord> custom({
@@ -3383,9 +3567,13 @@ class SettingsCompanion extends UpdateCompanion<SettingsRecord> {
     Expression<bool>? keepScreenAwake,
     Expression<bool>? confirmations,
     Expression<bool>? haptics,
+    Expression<bool>? soundEffects,
     Expression<int>? discussionSeconds,
     Expression<int>? defaultPlayerCount,
     Expression<bool>? mcPinEnabled,
+    Expression<String>? mcPinHash,
+    Expression<String>? kingSelection,
+    Expression<int>? narratorExtraDelayMs,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -3401,10 +3589,15 @@ class SettingsCompanion extends UpdateCompanion<SettingsRecord> {
       if (keepScreenAwake != null) 'keep_screen_awake': keepScreenAwake,
       if (confirmations != null) 'confirmations': confirmations,
       if (haptics != null) 'haptics': haptics,
+      if (soundEffects != null) 'sound_effects': soundEffects,
       if (discussionSeconds != null) 'discussion_seconds': discussionSeconds,
       if (defaultPlayerCount != null)
         'default_player_count': defaultPlayerCount,
       if (mcPinEnabled != null) 'mc_pin_enabled': mcPinEnabled,
+      if (mcPinHash != null) 'mc_pin_hash': mcPinHash,
+      if (kingSelection != null) 'king_selection': kingSelection,
+      if (narratorExtraDelayMs != null)
+        'narrator_extra_delay_ms': narratorExtraDelayMs,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -3421,9 +3614,13 @@ class SettingsCompanion extends UpdateCompanion<SettingsRecord> {
     Value<bool>? keepScreenAwake,
     Value<bool>? confirmations,
     Value<bool>? haptics,
+    Value<bool>? soundEffects,
     Value<int>? discussionSeconds,
     Value<int>? defaultPlayerCount,
     Value<bool>? mcPinEnabled,
+    Value<String?>? mcPinHash,
+    Value<String>? kingSelection,
+    Value<int>? narratorExtraDelayMs,
     Value<int>? rowid,
   }) {
     return SettingsCompanion(
@@ -3438,9 +3635,13 @@ class SettingsCompanion extends UpdateCompanion<SettingsRecord> {
       keepScreenAwake: keepScreenAwake ?? this.keepScreenAwake,
       confirmations: confirmations ?? this.confirmations,
       haptics: haptics ?? this.haptics,
+      soundEffects: soundEffects ?? this.soundEffects,
       discussionSeconds: discussionSeconds ?? this.discussionSeconds,
       defaultPlayerCount: defaultPlayerCount ?? this.defaultPlayerCount,
       mcPinEnabled: mcPinEnabled ?? this.mcPinEnabled,
+      mcPinHash: mcPinHash ?? this.mcPinHash,
+      kingSelection: kingSelection ?? this.kingSelection,
+      narratorExtraDelayMs: narratorExtraDelayMs ?? this.narratorExtraDelayMs,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -3481,6 +3682,9 @@ class SettingsCompanion extends UpdateCompanion<SettingsRecord> {
     if (haptics.present) {
       map['haptics'] = Variable<bool>(haptics.value);
     }
+    if (soundEffects.present) {
+      map['sound_effects'] = Variable<bool>(soundEffects.value);
+    }
     if (discussionSeconds.present) {
       map['discussion_seconds'] = Variable<int>(discussionSeconds.value);
     }
@@ -3489,6 +3693,17 @@ class SettingsCompanion extends UpdateCompanion<SettingsRecord> {
     }
     if (mcPinEnabled.present) {
       map['mc_pin_enabled'] = Variable<bool>(mcPinEnabled.value);
+    }
+    if (mcPinHash.present) {
+      map['mc_pin_hash'] = Variable<String>(mcPinHash.value);
+    }
+    if (kingSelection.present) {
+      map['king_selection'] = Variable<String>(kingSelection.value);
+    }
+    if (narratorExtraDelayMs.present) {
+      map['narrator_extra_delay_ms'] = Variable<int>(
+        narratorExtraDelayMs.value,
+      );
     }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
@@ -3510,9 +3725,13 @@ class SettingsCompanion extends UpdateCompanion<SettingsRecord> {
           ..write('keepScreenAwake: $keepScreenAwake, ')
           ..write('confirmations: $confirmations, ')
           ..write('haptics: $haptics, ')
+          ..write('soundEffects: $soundEffects, ')
           ..write('discussionSeconds: $discussionSeconds, ')
           ..write('defaultPlayerCount: $defaultPlayerCount, ')
           ..write('mcPinEnabled: $mcPinEnabled, ')
+          ..write('mcPinHash: $mcPinHash, ')
+          ..write('kingSelection: $kingSelection, ')
+          ..write('narratorExtraDelayMs: $narratorExtraDelayMs, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -5773,9 +5992,13 @@ typedef $$SettingsTableCreateCompanionBuilder = SettingsCompanion Function({
   Value<bool> keepScreenAwake,
   Value<bool> confirmations,
   Value<bool> haptics,
+  Value<bool> soundEffects,
   Value<int> discussionSeconds,
   Value<int> defaultPlayerCount,
   Value<bool> mcPinEnabled,
+  Value<String?> mcPinHash,
+  Value<String> kingSelection,
+  Value<int> narratorExtraDelayMs,
   Value<int> rowid,
 });
 typedef $$SettingsTableUpdateCompanionBuilder = SettingsCompanion Function({
@@ -5790,9 +6013,13 @@ typedef $$SettingsTableUpdateCompanionBuilder = SettingsCompanion Function({
   Value<bool> keepScreenAwake,
   Value<bool> confirmations,
   Value<bool> haptics,
+  Value<bool> soundEffects,
   Value<int> discussionSeconds,
   Value<int> defaultPlayerCount,
   Value<bool> mcPinEnabled,
+  Value<String?> mcPinHash,
+  Value<String> kingSelection,
+  Value<int> narratorExtraDelayMs,
   Value<int> rowid,
 });
 
@@ -5860,6 +6087,11 @@ class $$SettingsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<bool> get soundEffects => $composableBuilder(
+    column: $table.soundEffects,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<int> get discussionSeconds => $composableBuilder(
     column: $table.discussionSeconds,
     builder: (column) => ColumnFilters(column),
@@ -5872,6 +6104,21 @@ class $$SettingsTableFilterComposer
 
   ColumnFilters<bool> get mcPinEnabled => $composableBuilder(
     column: $table.mcPinEnabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get mcPinHash => $composableBuilder(
+    column: $table.mcPinHash,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get kingSelection => $composableBuilder(
+    column: $table.kingSelection,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get narratorExtraDelayMs => $composableBuilder(
+    column: $table.narratorExtraDelayMs,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -5940,6 +6187,11 @@ class $$SettingsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get soundEffects => $composableBuilder(
+    column: $table.soundEffects,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get discussionSeconds => $composableBuilder(
     column: $table.discussionSeconds,
     builder: (column) => ColumnOrderings(column),
@@ -5952,6 +6204,21 @@ class $$SettingsTableOrderingComposer
 
   ColumnOrderings<bool> get mcPinEnabled => $composableBuilder(
     column: $table.mcPinEnabled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get mcPinHash => $composableBuilder(
+    column: $table.mcPinHash,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kingSelection => $composableBuilder(
+    column: $table.kingSelection,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get narratorExtraDelayMs => $composableBuilder(
+    column: $table.narratorExtraDelayMs,
     builder: (column) => ColumnOrderings(column),
   );
 }
@@ -6012,6 +6279,11 @@ class $$SettingsTableAnnotationComposer
   GeneratedColumn<bool> get haptics =>
       $composableBuilder(column: $table.haptics, builder: (column) => column);
 
+  GeneratedColumn<bool> get soundEffects => $composableBuilder(
+    column: $table.soundEffects,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<int> get discussionSeconds => $composableBuilder(
     column: $table.discussionSeconds,
     builder: (column) => column,
@@ -6024,6 +6296,19 @@ class $$SettingsTableAnnotationComposer
 
   GeneratedColumn<bool> get mcPinEnabled => $composableBuilder(
     column: $table.mcPinEnabled,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get mcPinHash =>
+      $composableBuilder(column: $table.mcPinHash, builder: (column) => column);
+
+  GeneratedColumn<String> get kingSelection => $composableBuilder(
+    column: $table.kingSelection,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get narratorExtraDelayMs => $composableBuilder(
+    column: $table.narratorExtraDelayMs,
     builder: (column) => column,
   );
 }
@@ -6070,9 +6355,13 @@ class $$SettingsTableTableManager
                 Value<bool> keepScreenAwake = const Value.absent(),
                 Value<bool> confirmations = const Value.absent(),
                 Value<bool> haptics = const Value.absent(),
+                Value<bool> soundEffects = const Value.absent(),
                 Value<int> discussionSeconds = const Value.absent(),
                 Value<int> defaultPlayerCount = const Value.absent(),
                 Value<bool> mcPinEnabled = const Value.absent(),
+                Value<String?> mcPinHash = const Value.absent(),
+                Value<String> kingSelection = const Value.absent(),
+                Value<int> narratorExtraDelayMs = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SettingsCompanion(
                 id: id,
@@ -6086,9 +6375,13 @@ class $$SettingsTableTableManager
                 keepScreenAwake: keepScreenAwake,
                 confirmations: confirmations,
                 haptics: haptics,
+                soundEffects: soundEffects,
                 discussionSeconds: discussionSeconds,
                 defaultPlayerCount: defaultPlayerCount,
                 mcPinEnabled: mcPinEnabled,
+                mcPinHash: mcPinHash,
+                kingSelection: kingSelection,
+                narratorExtraDelayMs: narratorExtraDelayMs,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -6104,9 +6397,13 @@ class $$SettingsTableTableManager
                 Value<bool> keepScreenAwake = const Value.absent(),
                 Value<bool> confirmations = const Value.absent(),
                 Value<bool> haptics = const Value.absent(),
+                Value<bool> soundEffects = const Value.absent(),
                 Value<int> discussionSeconds = const Value.absent(),
                 Value<int> defaultPlayerCount = const Value.absent(),
                 Value<bool> mcPinEnabled = const Value.absent(),
+                Value<String?> mcPinHash = const Value.absent(),
+                Value<String> kingSelection = const Value.absent(),
+                Value<int> narratorExtraDelayMs = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SettingsCompanion.insert(
                 id: id,
@@ -6120,9 +6417,13 @@ class $$SettingsTableTableManager
                 keepScreenAwake: keepScreenAwake,
                 confirmations: confirmations,
                 haptics: haptics,
+                soundEffects: soundEffects,
                 discussionSeconds: discussionSeconds,
                 defaultPlayerCount: defaultPlayerCount,
                 mcPinEnabled: mcPinEnabled,
+                mcPinHash: mcPinHash,
+                kingSelection: kingSelection,
+                narratorExtraDelayMs: narratorExtraDelayMs,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

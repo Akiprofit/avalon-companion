@@ -36,8 +36,9 @@ class _AssassinationScreenState extends ConsumerState<AssassinationScreen> {
   Future<void> _record({required bool merlinIdentified}) async {
     if (_recording) return;
 
-    final confirmed = await showConfirmation(
+    final confirmed = await confirmAction(
       context,
+      ref,
       title: merlinIdentified
           ? 'Record a successful assassination?'
           : "Record Merlin's escape?",

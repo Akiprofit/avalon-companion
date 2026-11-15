@@ -1,5 +1,7 @@
 import 'package:material_ui/material_ui.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../services/feedback.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_metrics.dart';
 import '../theme/app_text.dart';
@@ -100,4 +102,30 @@ Future<bool> showConfirmation(
     ),
   );
   return result ?? false;
+}
+
+/// [showConfirmation] with the MC's feedback settings applied.
+///
+/// A confirmed action clicks and vibrates once, so a tap that the MC could not
+/// watch still feels acknowledged. Cancelling stays silent on purpose: nothing
+/// happened.
+Future<bool> confirmAction(
+  BuildContext context,
+  WidgetRef ref, {
+  required String title,
+  required String message,
+  required String confirmLabel,
+  String cancelLabel = 'Cancel',
+  bool isDestructive = true,
+}) async {
+  final confirmed = await showConfirmation(
+    context,
+    title: title,
+    message: message,
+    confirmLabel: confirmLabel,
+    cancelLabel: cancelLabel,
+    isDestructive: isDestructive,
+  );
+  if (confirmed) ref.read(feedbackProvider).tap();
+  return confirmed;
 }

@@ -10,14 +10,16 @@ player-to-role mapping anywhere in the app or its storage.
 
 ## Status
 
-Phase 9 of 12 is implemented: a full match, from setup to victory, and a record of it that
-survives the app closing. A match can be created for 5–10 players, the night is spoken aloud by
-the phone in English or Filipino — English in a British narrator voice with deliberate pauses —
-the wheel draws the first Lord, and the MC runs the discussion timer, proposes a quest team,
-records the table's vote and the success and fail cards that come back from the quest. The
-engine applies the quest 4 two-fail rule, keeps the score and decides when the match is over;
-the accusation records only whether Merlin was named, and the result screen summarises the
-match without ever naming a player. **Play Again** deals the same table a fresh match.
+Phase 10 of 12 is implemented, plus the advanced game settings: the finished product, until the
+QA and release passes. A match can be created for 5–10 players, the night is spoken aloud by the
+phone in English or Filipino — English in a British narrator voice with deliberate pauses, now
+chosen from the voices actually installed on the phone — the wheel draws the first Lord (and,
+with the automatic King mode, the King of every round), and the MC runs the discussion timer,
+proposes a quest team, records the table's vote and the success and fail cards that come back
+from the quest. The engine applies the quest 4 two-fail rule, keeps the score and decides when
+the match is over; the accusation records only whether Merlin was named, and the result screen
+summarises the match without ever naming a player. **Play Again** deals the same table a fresh
+match.
 
 Every confirmed action is written to an on-device SQLite database, so an interrupted match
 reopens where it stopped: the app offers **Continue Game** at launch with the phase, quest and
@@ -26,9 +28,21 @@ record and outcome, and settings persist across restarts. Nothing is uploaded an
 is needed; the database never holds a character for a player, because the app is never told
 one.
 
-Phases 5, 6, 8 and 9 have been verified by automated gates; Phases 5, 6 and 8 also on a Galaxy
-A36. See `DEVELOPMENT_PLAN.md` for the phase table, `DESIGN_SYSTEM.md` for the visual system
-and `CHANGELOG.md` for what has shipped.
+At the table the phone keeps its screen on during a live match, ticks and vibrates on confirmed
+actions, and can loop a low night ambience under the narration. An optional **MC PIN** locks
+Settings and Abort behind a salted digest — a lock on the table, not encryption — while the
+match itself stays playable without it. The UI survives a 200% text scale, honours Android's
+reduced-motion setting, and keeps every control at least 48 dp.
+
+Two further settings shape the flow. **King selection mode** chooses whether the wheel spins by
+itself at the start of every round (a new King each quest, never the same player twice in a row
+while others can lead) or only when the MC asks for it. **Narrator extra delay** adds 0–20
+seconds of silence after every spoken line, counted from the moment the voice stops, so the
+table has time to move its physical cards.
+
+Phases 5, 6, 8, 9 and 10 have been verified by automated gates; Phases 5, 6, 8 and 9 also on
+a Galaxy A36. See `DEVELOPMENT_PLAN.md` for the phase table, `DESIGN_SYSTEM.md` for the visual
+system and `CHANGELOG.md` for what has shipped.
 
 ## Requirements
 

@@ -11,10 +11,12 @@ import '../../core/widgets/avalon_icon_button.dart';
 import '../../core/widgets/avalon_screen.dart';
 import '../../core/widgets/confirmation_dialog.dart';
 import '../../core/widgets/game_progress_header.dart';
+import '../../core/widgets/mc_pin_dialog.dart';
 import '../../core/widgets/medieval_card.dart';
 import '../../core/widgets/player_tile.dart';
 import '../../core/widgets/primary_button.dart';
 import '../../core/widgets/quest_tracker.dart';
+import '../../core/widgets/secondary_button.dart';
 import '../../core/widgets/section_header.dart';
 import '../../core/widgets/status_indicator.dart';
 import '../../game_engine/controllers/game_session_controller.dart';
@@ -49,6 +51,15 @@ class DashboardScreen extends ConsumerWidget {
         game.phase == Phase.dayDiscussion || game.phase == Phase.teamSelection;
     final canOpenNarration =
         game.phase == Phase.preparation || game.phase == Phase.night;
+    // In the manual King mode the MC asks for a draw between rounds; the wheel
+    // stays closed otherwise.
+    final kingsManual = ref.watch(
+      settingsProvider.select((s) => !s.kingsDrawnAutomatically),
+    );
+    final canDrawKing =
+        kingsManual &&
+        (game.phase == Phase.dayDiscussion ||
+            game.phase == Phase.teamSelection);
 
     return AvalonScreen(
       padded: false,
@@ -61,8 +72,9 @@ class DashboardScreen extends ConsumerWidget {
           tooltip: 'Home',
           onPressed: () async {
             final leave = !ref.read(settingsConfirmProvider) ||
-                await showConfirmation(
+                await confirmAction(
                   context,
+                  ref,
                   title: 'Leave the match?',
                   message:
                       'The match stays in progress. You can continue it from '
@@ -73,17 +85,6 @@ class DashboardScreen extends ConsumerWidget {
             if (leave && context.mounted) context.goNamed(RouteNames.home);
           },
         ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: Space.sm),
-            child: Center(
-              child: StatusIndicator(
-                label: isPaused ? 'PAUSED' : game.phase.label,
-                tone: isPaused ? StatusTone.danger : StatusTone.active,
-              ),
-            ),
-          ),
-        ],
       ),
       bottom: Padding(
         padding: const EdgeInsets.fromLTRB(
@@ -148,6 +149,18 @@ class DashboardScreen extends ConsumerWidget {
                     ? () => context.goNamed(RouteNames.narration)
                     : null,
               ),
+            if (canDrawKing) ...[
+              const SizedBox(height: Space.xs),
+              SecondaryButton(
+                key: const Key('dashboard_draw_king'),
+                label: 'Draw a new King',
+                icon: Icons.casino_outlined,
+                onPressed: () {
+                  ref.read(gameSessionProvider.notifier).beginLordDraw();
+                  context.goNamed(RouteNames.lordSelection);
+                },
+              ),
+            ],
             if (!finished) ...[
               const SizedBox(height: Space.xs),
               Row(
@@ -172,8 +185,19 @@ class DashboardScreen extends ConsumerWidget {
                       label: 'Abort',
                       tone: AppColors.danger,
                       onPressed: () async {
-                        final confirmed = await showConfirmation(
+                        final allowed = await requestPin(
                           context,
+                          ref,
+                          title: 'Abort the match',
+                          message:
+                              'Aborting discards the round in progress. '
+                              'Enter the MC PIN to continue.',
+                          confirmLabel: 'Proceed',
+                        );
+                        if (!allowed || !context.mounted) return;
+                        final confirmed = await confirmAction(
+                          context,
+                          ref,
                           title: 'Abort the match?',
                           message:
                               'The current round, the quest results and the '
@@ -202,6 +226,7 @@ class DashboardScreen extends ConsumerWidget {
             requiredTeamSize: requiredSize,
             rejectionCount: game.rejectionCount,
             phaseLabel: game.phase.label,
+            phaseTone: isPaused ? StatusTone.danger : StatusTone.active,
             questSlots: game.questSlots,
           ),
           Expanded(
@@ -326,8 +351,8 @@ class DashboardScreen extends ConsumerWidget {
                               ? 'The match is over. Open the result to review '
                                     'the final summary.'
                               : game.phase == Phase.lordSelection
-                              ? 'Draw the first Lord of the match; the wheel '
-                                    'picks the seat at random.'
+                              ? 'Draw the King for this round; the wheel picks '
+                                    'the seat at random.'
                               : isDiscussion
                               ? 'Talk it through, then choose the quest team.'
                               : game.phase == Phase.teamVoting
@@ -373,7 +398,7 @@ class _SmallAction extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 44,
+      height: kMinTapTarget,
       child: Material(
         color: AppColors.surface,
         shape: RoundedRectangleBorder(

@@ -16,8 +16,11 @@ void main() {
     bool keepAwake = true,
     bool confirmations = true,
     bool haptics = true,
+    bool soundEffects = true,
     int discussion = 300,
     int players = 5,
+    String kingSelection = 'manual',
+    int extraDelayMs = 0,
   }) {
     return SettingsRecord(
       id: 1,
@@ -31,9 +34,13 @@ void main() {
       keepScreenAwake: keepAwake,
       confirmations: confirmations,
       haptics: haptics,
+      soundEffects: soundEffects,
       discussionSeconds: discussion,
       defaultPlayerCount: players,
       mcPinEnabled: false,
+      mcPinHash: null,
+      kingSelection: kingSelection,
+      narratorExtraDelayMs: extraDelayMs,
     );
   }
 
@@ -48,8 +55,12 @@ void main() {
       keepScreenAwake: false,
       confirmations: false,
       haptics: false,
+      soundEffects: false,
+      narratorVoiceId: 'en-gb-x-gba-local',
+      narratorExtraDelay: Duration(seconds: 7),
       discussionSeconds: 420,
       defaultPlayerCount: 8,
+      kingSelectionMode: KingSelectionMode.automatic,
     );
 
     final companion = SettingsRepository.encode(saved);
@@ -58,13 +69,17 @@ void main() {
     expect(companion.narrationSpeed.value, 1.2);
     expect(companion.narrationPitch.value, 0.75);
     expect(companion.volume.value, 0.35);
+    expect(companion.voiceId.value, 'en-gb-x-gba-local');
     expect(companion.autoAdvance.value, true);
     expect(companion.ambientAudioEnabled.value, true);
     expect(companion.keepScreenAwake.value, false);
     expect(companion.confirmations.value, false);
     expect(companion.haptics.value, false);
+    expect(companion.soundEffects.value, false);
     expect(companion.discussionSeconds.value, 420);
     expect(companion.defaultPlayerCount.value, 8);
+    expect(companion.kingSelection.value, 'automatic');
+    expect(companion.narratorExtraDelayMs.value, 7000);
 
     final decoded = SettingsRepository.decode(
       record(
@@ -77,8 +92,11 @@ void main() {
         keepAwake: false,
         confirmations: false,
         haptics: false,
+        soundEffects: false,
         discussion: 420,
         players: 8,
+        kingSelection: 'automatic',
+        extraDelayMs: 7000,
       ),
     );
 
@@ -91,8 +109,16 @@ void main() {
     expect(decoded.keepScreenAwake, isFalse);
     expect(decoded.confirmations, isFalse);
     expect(decoded.haptics, isFalse);
+    expect(decoded.soundEffects, isFalse);
     expect(decoded.discussionSeconds, 420);
     expect(decoded.defaultPlayerCount, 8);
+    expect(decoded.kingSelectionMode, KingSelectionMode.automatic);
+    expect(decoded.narratorExtraDelay, const Duration(seconds: 7));
+  });
+
+  test('an unknown King mode falls back to the manual wheel', () {
+    final decoded = SettingsRepository.decode(record(kingSelection: 'klingon'));
+    expect(decoded.kingSelectionMode, KingSelectionMode.manual);
   });
 
   test('an unknown language falls back to English instead of failing', () {
@@ -100,9 +126,14 @@ void main() {
     expect(decoded.defaultLanguage, NarrationLanguage.english);
   });
 
-  test('the stored row holds no PIN and no player data', () {
+  test('the stored row holds no readable PIN and no player data', () {
     final columns = record().toColumns(false).keys.toList();
     expect(columns, isNot(contains('pin')));
+    expect(
+      columns,
+      contains('mc_pin_hash'),
+      reason: 'only a salted digest is stored, never the digits',
+    );
     expect(
       columns,
       contains('mc_pin_enabled'),
@@ -117,5 +148,11 @@ void main() {
     expect(defaults.discussionSeconds, 300);
     expect(defaults.defaultPlayerCount, 5);
     expect(defaults.confirmations, isTrue);
+    expect(defaults.haptics, isTrue);
+    expect(defaults.soundEffects, isTrue);
+    expect(defaults.narratorVoiceId, isNull);
+    expect(defaults.kingSelectionMode, KingSelectionMode.manual);
+    expect(defaults.narratorExtraDelay, Duration.zero);
+    expect(defaults.kingsDrawnAutomatically, isFalse);
   });
 }

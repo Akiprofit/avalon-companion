@@ -1,9 +1,11 @@
 package com.avalon.companion
 
+import android.media.MediaPlayer
 import android.os.Bundle
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import android.speech.tts.Voice
+import android.view.WindowManager
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodCall
@@ -16,13 +18,20 @@ import java.util.UUID
  *
  * The app speaks narration lines and nothing else. No text is logged, stored or
  * sent anywhere: [TextToSpeech] synthesises on the device.
+ *
+ * The second channel carries the two behaviours only the activity can provide:
+ * the keep-screen-on flag during a live match, and the night ambience loop.
  */
 class MainActivity : FlutterActivity() {
     private companion object {
         const val CHANNEL = "com.avalon.companion/tts"
+        const val HOST_CHANNEL = "com.avalon.companion/host"
 
         /** The Royal Chronicler's default: British English. */
         const val DEFAULT_LOCALE = "en-GB"
+
+        /** The bed sits under a voice, so it stays well below it. */
+        const val AMBIENT_VOLUME = 0.35f
     }
 
     private var channel: MethodChannel? = null
@@ -30,12 +39,66 @@ class MainActivity : FlutterActivity() {
     private var ready = false
     private var pendingInit: MethodChannel.Result? = null
 
+    private var hostChannel: MethodChannel? = null
+    private var ambient: MediaPlayer? = null
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         val methodChannel =
             MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL)
         channel = methodChannel
         methodChannel.setMethodCallHandler { call, result -> handle(call, result) }
+
+        val host = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, HOST_CHANNEL)
+        hostChannel = host
+        host.setMethodCallHandler { call, result ->
+            when (call.method) {
+                "setKeepAwake" -> {
+                    setKeepAwake(call.arguments == true)
+                    result.success(true)
+                }
+                "setAmbient" -> {
+                    setAmbient(call.arguments == true)
+                    result.success(true)
+                }
+                else -> result.notImplemented()
+            }
+        }
+    }
+
+    /** Window flag, so the table never has to wake the phone mid-quest. */
+    private fun setKeepAwake(on: Boolean) {
+        runOnUiThread {
+            if (on) {
+                window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            } else {
+                window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            }
+        }
+    }
+
+    /** Starts or stops the looping night bed, shipped in `res/raw`. */
+    private fun setAmbient(on: Boolean) {
+        runOnUiThread {
+            try {
+                if (on) {
+                    val player =
+                        ambient
+                            ?: MediaPlayer.create(this, R.raw.ambient_night)?.apply {
+                                isLooping = true
+                                setVolume(AMBIENT_VOLUME, AMBIENT_VOLUME)
+                            }
+                    ambient = player
+                    player?.start()
+                } else {
+                    ambient?.stop()
+                    ambient?.release()
+                    ambient = null
+                }
+            } catch (_: Exception) {
+                ambient = null
+            }
+        }
     }
 
     private fun handle(call: MethodCall, result: MethodChannel.Result) {
@@ -49,6 +112,10 @@ class MainActivity : FlutterActivity() {
             "isLanguageAvailable" -> {
                 val locale = call.argument<String>("locale") ?: DEFAULT_LOCALE
                 result.success(hasVoiceFor(locale))
+            }
+            "voices" -> {
+                val locale = call.argument<String>("locale") ?: DEFAULT_LOCALE
+                result.success(voicesFor(locale))
             }
             else -> result.notImplemented()
         }
@@ -100,6 +167,7 @@ class MainActivity : FlutterActivity() {
         val rate = call.argument<Double>("rate") ?: 1.0
         val volume = call.argument<Double>("volume") ?: 1.0
         val pitch = call.argument<Double>("pitch") ?: 1.0
+        val voiceId = call.argument<String>("voiceId")
         val engine = engine
 
         if (!ready || engine == null || text.isNullOrBlank()) {
@@ -109,7 +177,7 @@ class MainActivity : FlutterActivity() {
 
         // Pick the installed voice first: setting a voice can reset rate and
         // pitch on some engines, so they are applied afterwards.
-        val voice = selectVoice(locale)
+        val voice = voiceId?.let { exactVoice(it) } ?: selectVoice(locale)
         if (voice != null) {
             engine.voice = voice
         } else {
@@ -184,6 +252,51 @@ class MainActivity : FlutterActivity() {
         }
     }
 
+    /**
+     * The installed, offline voices that can speak [tag], best first.
+     *
+     * Same usability rule as [selectVoice]: a voice that needs the network or
+     * is only advertised is not something the table can rely on, so it is not
+     * offered in settings either.
+     */
+    private fun voicesFor(tag: String): List<Map<String, Any>> {
+        val engine = engine ?: return emptyList()
+        val wanted = Locale.forLanguageTag(tag)
+        return try {
+            engine.voices.orEmpty()
+                .filter { it.locale.language.equals(wanted.language, ignoreCase = true) }
+                .filter { voice ->
+                    !voice.isNetworkConnectionRequired &&
+                        voice.features.none { it.equals("notInstalled", ignoreCase = true) }
+                }
+                .sortedWith(
+                    compareByDescending<Voice> {
+                        it.locale.country.equals(wanted.country, ignoreCase = true)
+                    }.thenByDescending { it.quality }
+                )
+                .map { voice ->
+                    mapOf(
+                        "id" to voice.name,
+                        "name" to voice.name,
+                        "locale" to voice.locale.toLanguageTag(),
+                        "network" to voice.isNetworkConnectionRequired,
+                    )
+                }
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
+
+    /** The voice with exactly [name], if the engine still has it installed. */
+    private fun exactVoice(name: String): Voice? {
+        val engine = engine ?: return null
+        return try {
+            engine.voices?.firstOrNull { it.name == name }
+        } catch (_: Exception) {
+            null
+        }
+    }
+
     private fun notifyDart(method: String, utteranceId: String?) {
         val channel = channel ?: return
         runOnUiThread { channel.invokeMethod(method, utteranceId) }
@@ -196,6 +309,10 @@ class MainActivity : FlutterActivity() {
         ready = false
         channel?.setMethodCallHandler(null)
         channel = null
+        ambient?.release()
+        ambient = null
+        hostChannel?.setMethodCallHandler(null)
+        hostChannel = null
         super.onDestroy()
     }
 }

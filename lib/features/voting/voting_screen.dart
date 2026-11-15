@@ -17,6 +17,7 @@ import '../../game_engine/controllers/game_session_controller.dart';
 import '../../game_engine/models/game_state.dart';
 import '../../game_engine/models/phase.dart';
 import '../../game_engine/rules/avalon_tables.dart';
+import '../settings/settings_controller.dart';
 
 /// Screen 07 — the MC records the physical vote.
 ///
@@ -73,14 +74,16 @@ class _VotingScreenState extends ConsumerState<VotingScreen> {
     });
 
     final approved = AvalonTables.isApproved(_approve, _reject);
+    final drawLord = ref.read(settingsProvider).kingsDrawnAutomatically;
     final controller = ref.read(gameSessionProvider.notifier);
     controller.recordVotes(approve: _approve, reject: _reject);
-    controller.resolveTeamVote();
+    controller.resolveTeamVote(drawLord: drawLord);
 
     final after = ref.read(gameSessionProvider);
     if (!mounted) return;
 
     final evilWins = after?.phase == Phase.evilVictory;
+    final drawsKing = after?.phase == Phase.lordSelection;
     final nextLeader = after?.leader.displayName ?? 'the next player';
     final title = approved
         ? 'The team is approved'
@@ -93,6 +96,8 @@ class _VotingScreenState extends ConsumerState<VotingScreen> {
         : evilWins
         ? 'Five proposals were rejected. The table is deadlocked and Evil '
               'wins.'
+        : drawsKing
+        ? 'The wheel now draws a new King, who will propose the next team.'
         : 'The leader token passes to $nextLeader. The table discusses again.';
 
     await showDialog<void>(
@@ -110,7 +115,11 @@ class _VotingScreenState extends ConsumerState<VotingScreen> {
         ],
       ),
     );
-    if (mounted) context.goNamed(RouteNames.dashboard);
+    if (mounted) {
+      context.goNamed(
+        drawsKing ? RouteNames.lordSelection : RouteNames.dashboard,
+      );
+    }
   }
 
   @override

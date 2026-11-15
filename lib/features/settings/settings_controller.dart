@@ -37,6 +37,19 @@ class SettingsController extends Notifier<AppSettings> {
   void setDefaultPlayerCount(int count) =>
       update((s) => s.copyWith(defaultPlayerCount: count.clamp(5, 10)));
 
+  void setKingSelectionMode(KingSelectionMode mode) =>
+      update((s) => s.copyWith(kingSelectionMode: mode));
+
+  /// Extra silence after every narration line; capped so a slide can never
+  /// stall the night for longer than half a minute.
+  void setNarratorExtraDelay(Duration delay) => update(
+    (s) => s.copyWith(
+      narratorExtraDelay: Duration(
+        milliseconds: delay.inMilliseconds.clamp(0, 20000),
+      ),
+    ),
+  );
+
   /// Fire-and-forget write. The store is null when the app runs without a
   /// database (tests, or a device where the file could not be opened).
   void _persist() {

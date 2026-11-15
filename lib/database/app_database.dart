@@ -117,8 +117,8 @@ class GameEvents extends Table {
 
 /// One row, id = 1 — master plan PART 8, `Settings`.
 ///
-/// `mc_pin_enabled` is the only PIN-related column: the PIN itself is never
-/// stored, here or anywhere else.
+/// `mc_pin_hash` holds a salted SHA-256 of the optional MC PIN, never the PIN
+/// itself: the app only needs to answer "is this the same PIN?".
 @DataClassName('SettingsRecord')
 class Settings extends Table {
   IntColumn get id => integer()();
@@ -135,11 +135,27 @@ class Settings extends Table {
       boolean().withDefault(const Constant(true))();
   BoolColumn get confirmations => boolean().withDefault(const Constant(true))();
   BoolColumn get haptics => boolean().withDefault(const Constant(true))();
+  BoolColumn get soundEffects => boolean().withDefault(const Constant(true))();
   IntColumn get discussionSeconds =>
       integer().withDefault(const Constant(300))();
   IntColumn get defaultPlayerCount =>
       integer().withDefault(const Constant(5))();
   BoolColumn get mcPinEnabled => boolean().withDefault(const Constant(false))();
+
+  /// Salted SHA-256 of the MC PIN as `salt:hash`; null when no PIN is set.
+  ///
+  /// A four-digit PIN is a lock on the table, not a password vault: this keeps
+  /// it out of plain sight in the file and off every screen. See
+  /// `PinRepository`.
+  TextColumn get mcPinHash => text().nullable()();
+
+  /// `automatic` or `manual` — whether the wheel draws a King every round.
+  TextColumn get kingSelection =>
+      text().withDefault(const Constant('manual'))();
+
+  /// Extra silence after each spoken narration line, in milliseconds.
+  IntColumn get narratorExtraDelayMs =>
+      integer().withDefault(const Constant(0))();
 }
 
 @DriftDatabase(
@@ -149,7 +165,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -157,6 +173,16 @@ class AppDatabase extends _$AppDatabase {
       // v2 added the current proposal, so an interrupted vote can be restored.
       if (from < 2) {
         await m.addColumn(games, games.currentTeam);
+      }
+      // v3 added the sound-effects switch and the optional MC PIN hash.
+      if (from < 3) {
+        await m.addColumn(settings, settings.soundEffects);
+        await m.addColumn(settings, settings.mcPinHash);
+      }
+      // v4 added the King selection mode and the narration extra delay.
+      if (from < 4) {
+        await m.addColumn(settings, settings.kingSelection);
+        await m.addColumn(settings, settings.narratorExtraDelayMs);
       }
     },
     beforeOpen: (details) async {

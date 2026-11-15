@@ -45,8 +45,10 @@ class AvalonBottomNavigation extends StatelessWidget {
       ),
       child: SafeArea(
         top: false,
-        child: SizedBox(
-          height: 62,
+        child: ConstrainedBox(
+          // A minimum rather than a fixed height: at large text sizes the
+          // labels grow and the bar grows with them instead of clipping.
+          constraints: const BoxConstraints(minHeight: 62),
           child: Row(
             children: [
               for (final destination in destinations)
@@ -86,19 +88,26 @@ class _NavItem extends StatelessWidget {
       child: InkWell(
         key: Key('nav_${destination.routeName}'),
         onTap: onTap,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(destination.icon, size: 21, color: color),
-            const SizedBox(height: Space.xxs),
-            Text(
-              destination.label,
-              style: AppText.caption.copyWith(
-                color: color,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: Space.xs),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(destination.icon, size: 21, color: color),
+              const SizedBox(height: Space.xxs),
+              Text(
+                destination.label,
+                style: AppText.caption.copyWith(
+                  color: color,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                ),
+                maxLines: 2,
+                textAlign: TextAlign.center,
+                overflow: TextOverflow.ellipsis,
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

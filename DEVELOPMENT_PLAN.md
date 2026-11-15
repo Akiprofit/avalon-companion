@@ -15,9 +15,12 @@ Tracks progress against `MASTER_PLAN.md.txt`. Update this file at the end of eve
 | 7 | Quest resolution | complete |
 | 8 | Endgame and victory | complete |
 | 9 | Database and auto-save | complete |
-| 10 | Polish and accessibility | not started |
+| 10 | Polish and accessibility | complete |
 | 11 | Complete QA | not started |
 | 12 | Android release | not started |
+
+Advanced game settings (King selection mode, narrator extra delay) shipped after Phase 10 and
+before the QA pass; see the section below the Phase 10 entry.
 
 ## Phase 1 — complete
 
@@ -417,6 +420,135 @@ Known limits:
 - The database is one SQLite file in the app's data directory; there is no export or backup
   yet. Phase 10 adds the settings affordances around it, Phase 12 the release checklist.
 
+## Phase 10 — complete on automated gates and device
+
+Delivered: the app is usable in a real physical-game environment. The phone behaves like a
+device at a table — it stays awake, ticks, vibrates, and can lay a low ambience under the
+narration — and the screens hold up at large text sizes and with Android's reduced-motion
+setting on. The MC can lock Settings and Abort behind a PIN. No new plugin was added for any of
+it.
+
+- `lib/core/services/host_services.dart` — `HostServices` with `setKeepAwake` and `setAmbient`,
+  implemented by `AndroidHostServices` over a second method channel,
+  `com.avalon.companion/host`. `NoHostServices` is the default, so widget tests never touch a
+  platform channel and a missing host cannot break a match.
+- `MainActivity` applies `FLAG_KEEP_SCREEN_ON` while a match is live and the preference is on,
+  and releases it when the match ends, the app leaves, or the preference is switched off.
+- The night ambience is `res/raw/ambient_night.wav`: a generated 20-second seamless mono drone
+  (A2, E3, A3, C#4, E4, A4 partials, 1-second fades at both ends), looped by a `MediaPlayer` at
+  0.35 volume. The narration screen starts it when it opens and when the app resumes, and stops
+  it on dispose and whenever the app leaves the foreground.
+- `lib/core/services/feedback.dart` — `Feedback` with `tap`, `phaseChange` and `warning`.
+  `PlatformFeedback` uses `HapticFeedback` plus `SystemSound.play`, gated by two settings;
+  `SilentFeedback` is used when haptics are off. `confirmAction(context, ref, ...)` is
+  `showConfirmation` plus one confirmed tap, and replaces it on the assassination, leaving the
+  dashboard, leaving narration and Play Again. The wheel clicks when it lands.
+- `AppSettings` gained `soundEffects` and `narratorVoiceId`; `Settings` gained
+  `sound_effects` and `mc_pin_hash` at schema version 3, with an explicit `addColumn`
+  migration from v2. The existing `voice_id` and `mc_pin_enabled` columns are now used.
+- The MC PIN: `PinRepository` writes `rounds$salt$digest` — 20 000 rounds of salted SHA-256 —
+  and only ever answers "is this the same PIN?". `PinController` holds the hash and the
+  session's unlocked flag; `requestPin` and `requestNewPin` are the only ways in. With a PIN
+  set, Settings renders a lock view instead of its content, and Abort asks for the PIN before
+  it asks for the abort confirmation. Unlocking lasts until the app is closed, and a match is
+  playable whether or not the PIN is entered.
+- The voice picker asks the engine for its voices over the TTS channel (`voices`), lists only
+  installed offline voices for the chosen language, and passes an exact `voiceId` back on every
+  line. "Automatic" keeps the previous ranking, which stays the fallback when a stored voice
+  has been uninstalled.
+- Accessibility: the dashboard phase chip exists once (it was duplicated in the app bar, which
+  is what truncated the title at 360 dp), the narration app bar carries only its title, the
+  bottom navigation grows instead of clipping and the splash screen scrolls at a 200% text
+  scale, counter steppers and Pause/Abort are 48 dp, and the wheel, cinematic background and
+  page transitions already honoured reduced motion.
+
+Gate evidence:
+
+| Check | Result |
+| --- | --- |
+| `flutter analyze` | No issues found |
+| `flutter test` | 184 tests pass (13 new) |
+| New tests | `test/unit/pin_test.dart` (4, digest format and failure cases), `test/database/pin_repository_test.dart` (5, real in-memory SQLite), `test/widget/accessibility_test.dart` (4) |
+| Large text | Settings and the dashboard render at a 200% text scale with no overflow |
+| PIN lock | with a digest seeded, Settings shows the lock view; a wrong PIN keeps it locked with an inline error; the right PIN shows the preferences |
+| No PIN | Settings opens straight away and offers "Set a PIN" |
+| PIN storage | the saved value is a `rounds$salt$digest` triple, never the digits; clearing it leaves language, discussion length and both feedback switches intact |
+
+Known limits:
+
+- The PIN is a table lock, not encryption (see cross-cutting issues).
+- The ambience is one looped file with a fixed volume; there is no music or per-phase sting.
+
+## Advanced game settings - complete
+
+Two table preferences the MC can change between matches, both stored in the existing one-row
+`Settings` table and both applied without a restart.
+
+### King selection mode (Settings → Game)
+
+- **Automatic** — the wheel spins at the start of every round. `resolveTeamVote(drawLord: true)`
+  and `recordQuest(drawLord: true)` return the match to `Phase.lordSelection` instead of
+  `dayDiscussion`; the voting and quest screens then open the wheel directly, and the wheel
+  starts its own spin on arrival, so the MC only hands the phone over.
+- **Manual** (default) — the token keeps its order and the wheel stays closed until the MC uses
+  "Choose the Lord" or the new "Draw a new King" action on the dashboard. That action calls
+  `GameSessionController.beginLordDraw`, which is refused outside `dayDiscussion` and
+  `teamSelection`, so a draw can never interrupt a tally.
+- The draw itself is unchanged (`LordSelectionScreen`): a real random seat, a reel animated to
+  land on it, then the engine records the seat. What changed is **who may be drawn**.
+  `GameEngine.drawableLordSeats` excludes the serving King from every draw after the opening one
+  — that is, once a quest has been resolved or a proposal rejected. The opening draw of a match
+  still takes the whole table, and a one-seat table still draws that seat.
+- Because the token is left with the serving King while the wheel is open, the exclusion is
+  derived from public state only: no draw history is stored, and `playAgain` builds a fresh
+  `GameState`, which is exactly the reset the roster needs.
+- The wheel's own caption says who takes part in the draw, so the table is never told that
+  "every seat" takes part when the serving King is standing down.
+
+### Narrator extra delay (Settings → Narration)
+
+- Presets 0, 1, 2, 3, 5, 7 and 10 seconds plus a custom 0–20 seconds slider, with a live sentence
+  under the chips.
+- The delay is enforced in `NarrationController`: speech must finish first, then the script's own
+  `pauseAfter` and the configured delay run together, then the panel advances. The wait is a
+  cancellable timer (`_waitFor` / `_cancelWait`) rather than an awaited `Future.delayed`, so
+  pause, skip, replay, a language change and leaving the screen all end it; a generation counter
+  makes a late wait or utterance callback unable to advance twice. When the phone has no speech
+  engine, the same delay is added to `estimateSpeechDuration`.
+- A change applies from the next line — a line already speaking is never interrupted. The
+  "Automatic narration" switch now actually starts the night reading, which is what lets the
+  delay apply unattended.
+
+Gate evidence:
+
+| Check | Result |
+| --- | --- |
+| `flutter analyze` | No issues found |
+| `flutter test` | 205 tests pass (21 new) |
+| King rules | `test/unit/king_selection_test.dart` (10): opening draw takes the table, a new King after every quest and after a rejected proposal, the serving King is excluded, manual mode keeps the token order, the wheel opens on demand and never mid-vote, a single eligible player is drawn, Play Again resets the history, the roster is never duplicated |
+| Narration timing | `test/unit/narration_controller_test.dart` (+4): the delay starts only after speech ends, skipping mid-delay leaves no timer, replaying mid-delay advances exactly once, the value is capped and survives a reload |
+| Settings persistence | `test/unit/settings_store_test.dart`: both new fields round-trip through `Settings`, an unknown King mode falls back to manual, drift schema v4 migrates from v3 |
+| Settings UI | `test/widget/king_and_timing_settings_test.dart` (6): both controls, the live preview, the custom dialog, and the wheel spinning by itself in automatic mode while waiting for a tap in manual mode |
+
+Device evidence (Pixel-class phone, `RFCY30E0LRT`, debug APK 0.11.0):
+
+| Check | Result |
+| --- | --- |
+| Settings shows the controls | "King selection mode" with Automatic/Manual (selected chip filled and ticked) plus the sentence preview, and "Extra delay after each line" with 0/1/2/3/5/7/10/Custom |
+| Live preview | Tapping 3 s changed the caption to "Each narration slide will wait an additional 3 seconds before continuing." |
+| Persistence | Automatic + 3 s survived a force-stop and relaunch; the About card reads 0.11.0 |
+| Automatic wheel | After the night the wheel opened and spun by itself, landed on a seat and announced "Leads the table for quest 1"; no dashboard draw action was offered |
+| Automatic after a quest | Recording a quest returned to the wheel with "The vote is settled. Draw the King for quest 3", which spun itself and picked a different player from the King who had just served |
+| Manual wheel | "Draw a new King" appears on the Day dashboard, opens the wheel and waits: "Wheel of seats, not yet spun" with a "Choose the Lord" button |
+| Extra delay on real TTS | With automatic narration and 10 s: the panel stayed on each line well past the end of speech (1/11 held ~19 s, then roughly 14–18 s per line) instead of the ~4–6 s a zero delay gives; nothing spoke twice |
+
+Known limits:
+
+- The opening draw of a match takes the whole table, so a redraw before the first proposal may
+  land on the same King again. From the second round on the serving King is always left out.
+- The extra delay is a silent wait: it adds time after the line, not before it, and it does not
+  change the length of the script's own beat.
+
 ## Cross-cutting known issues
 
 - A match that is interrupted mid-vote restores its proposed team but starts the tally again
@@ -436,16 +568,26 @@ Known limits:
   toolchain on this machine) and `keepDebugSymbols` keeps everything. Functionally fine; it
   must be resolved before the release build in Phase 12 — either by installing the NDK
   properly or by shipping a split-ABI release without the strip step.
-- The dashboard and narration app bars truncate their titles on 360 dp because the trailing
-  chips take priority. Scheduled for Phase 10 polish. The new voting app bar is short enough
-  to avoid it.
+- The MC PIN is a lock on the table, not a security boundary: a four-digit PIN with a salted
+  SHA-256 digest stops a curious player from changing settings or aborting a round, and the
+  digest sits in the one `Settings` row. It is not encryption of the database, and anyone with
+  the unlocked phone and developer tools can read the matches — there is nothing secret in them
+  to read. Unlocking lasts the app session; closing the app locks it again.
+- The debug APK is ~1.4 GB because AGP cannot strip the Flutter engine libraries (no NDK
+  toolchain on this machine) and `keepDebugSymbols` keeps everything. Functionally fine; it
+  must be resolved before the release build in Phase 12 — either by installing the NDK
+  properly or by shipping a split-ABI release without the strip step.
 - The bundled plates are public-domain paintings, not commissioned art: they were chosen for
   mood and composition, so a few are only loosely on-subject (the Excalibur plate is
   Waterhouse's *Magic Circle*). Replacing them with commissioned plates only requires new
   files under the same names.
-- The narrator voice is the best installed British English voice, not a fixed recording: the
-  TTS API exposes no gender or timbre, so the phone decides. **Voice depth** compensates; a
-  voice picker is the Phase 10 follow-up.
+- The narrator voice is whichever installed voice the MC picks, or the best offline voice for
+  the language: the TTS API exposes no gender or timbre, so the phone decides. **Voice depth**
+  still shifts the register, and the picker lists only voices the engine reports as installed
+  and offline — a phone that hides its voice list falls back to Automatic.
+- The night ambience is one generated 20-second WAV in `res/raw`, looped by the activity. It is
+  a bed, not a soundtrack: there is no music, no per-phase sting and no volume separate from
+  the master. Phase 12 can replace the file without touching code.
 - Gradle is pinned in two places (`org.gradle.java.home` in `android/gradle.properties` and
   the JDK paths there). The generated `android/gradle/gradle-daemon-jvm.properties` was
   renamed to `.bak`: its toolchain criteria won over `org.gradle.java.home` and made Gradle
@@ -454,7 +596,6 @@ Known limits:
 
 ## Next phase
 
-Phase 10 — polish and accessibility: 360 dp layout and app-bar truncation, a voice picker for
-the installed en-GB voices, contrast and touch-target audit, reduced-motion coverage on the new
-wheel and history list, and the remainder of the design-system refresh. Phase 11 is the full QA
-pass, Phase 12 the signed release.
+Phase 11 — complete QA: unit, widget, integration and simulation coverage over the finished
+product, a privacy verification pass on screen and on disk, device testing of the full match
+and the Phase 10 behaviours, and performance checks. Phase 12 is the signed release.

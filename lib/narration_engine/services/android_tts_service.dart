@@ -84,12 +84,38 @@ class AndroidTtsService implements TtsService {
   }
 
   @override
+  Future<List<TtsVoice>> voices(String locale) async {
+    await initialize();
+    if (!_isAvailable) return const [];
+    try {
+      final rows =
+          await _channel.invokeMethod<List<Object?>>('voices', {
+            'locale': locale,
+          }) ??
+          const [];
+      return [
+        for (final row in rows)
+          if (row is Map)
+            TtsVoice(
+              id: row['id'] as String? ?? '',
+              name: row['name'] as String? ?? '',
+              locale: row['locale'] as String? ?? locale,
+              networkRequired: row['network'] == true,
+            ),
+      ];
+    } on PlatformException {
+      return const [];
+    }
+  }
+
+  @override
   Future<bool> speak(
     String text, {
     required String locale,
     required double rate,
     required double volume,
     required double pitch,
+    String? voiceId,
   }) async {
     await initialize();
     if (!_isAvailable) return false;
@@ -106,6 +132,7 @@ class AndroidTtsService implements TtsService {
             'rate': rate,
             'volume': volume,
             'pitch': pitch,
+            'voiceId': ?voiceId,
           }) ??
           false;
       if (!started) {

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/models/app_settings.dart';
 import 'app_database.dart';
 import 'repositories/game_repository.dart';
+import 'repositories/pin_repository.dart';
 import 'repositories/settings_repository.dart';
 
 /// Opens the on-device SQLite file. Called once, from `bootstrap()`.
@@ -32,11 +33,23 @@ final settingsStoreProvider = Provider<SettingsRepository?>((ref) {
   return db == null ? null : SettingsRepository(db);
 });
 
+/// The MC PIN store. Null when there is no database, which also means no PIN.
+final pinStoreProvider = Provider<PinRepository?>((ref) {
+  final db = ref.watch(appDatabaseProvider);
+  return db == null ? null : PinRepository(db);
+});
+
 /// Settings read before the first frame, so the first narration already uses
 /// the stored language and speed instead of flashing the defaults.
 final initialSettingsProvider = Provider<AppSettings>(
   (ref) => const AppSettings(),
 );
+
+/// The stored MC PIN hash (`rounds$salt$digest`), read before the first frame.
+///
+/// Null when no PIN is set. Kept out of `AppSettings` on purpose: settings are
+/// copied into UI state, and the PIN should never travel with them.
+final initialPinHashProvider = Provider<String?>((ref) => null);
 
 /// A match that was running when the app last closed, offered as Continue Game.
 final restoredMatchProvider = Provider<StoredMatch?>((ref) => null);

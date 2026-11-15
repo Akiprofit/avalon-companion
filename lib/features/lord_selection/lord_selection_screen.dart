@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/constants/routes.dart';
+import '../../core/services/feedback.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_metrics.dart';
 import '../../core/theme/app_motion.dart';
@@ -16,15 +17,22 @@ import '../../core/widgets/primary_button.dart';
 import '../../core/widgets/secondary_button.dart';
 import '../../core/widgets/section_header.dart';
 import '../../game_engine/controllers/game_session_controller.dart';
+import '../../game_engine/engine/game_engine.dart';
 import '../../game_engine/models/phase.dart';
 import '../../game_engine/models/player.dart';
+import '../settings/settings_controller.dart';
 
-/// Screen 06 — the first Lord is drawn at random.
+/// Screen 06 — the Lord (King) is drawn by the wheel.
 ///
 /// The draw is real: a seat is picked from the seated players when the wheel
 /// starts spinning, and the reel is animated to land on it. The engine then
 /// records that seat as the leader, so nothing downstream depends on the
 /// animation. Only public seats and names take part.
+///
+/// With "New King every round" the wheel starts itself as soon as the screen
+/// opens; in the manual mode the MC presses the button. Either way the same
+/// draw runs, and the King who has just served is left out of it so nobody
+/// leads twice in a row.
 class LordSelectionScreen extends ConsumerStatefulWidget {
   const LordSelectionScreen({super.key, this.random});
 
@@ -51,6 +59,23 @@ class _LordSelectionScreenState extends ConsumerState<LordSelectionScreen>
   int? _winnerIndex;
   bool _spinning = false;
   bool _revealed = false;
+  bool _autoStarted = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Automatic King mode: the round is opened by the wheel itself, so the MC
+    // only has to hand the phone to the table.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _autoStarted) return;
+      _autoStarted = true;
+      final game = ref.read(gameSessionProvider);
+      final automatic = ref.read(settingsProvider).kingsDrawnAutomatically;
+      if (automatic && game != null && game.phase == Phase.lordSelection) {
+        _draw();
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -62,10 +87,15 @@ class _LordSelectionScreenState extends ConsumerState<LordSelectionScreen>
     final game = ref.read(gameSessionProvider);
     if (game == null || game.players.isEmpty || _spinning) return;
 
+    // The engine decides who may be drawn: everybody on the first draw of the
+    // match, and everybody but the King who has just served after that.
+    final candidates = GameEngine.drawableLordSeats(game);
+    if (candidates.isEmpty) return;
     final random = widget.random ?? _fallbackRandom;
-    final index = random.nextInt(game.players.length);
+    final seat = candidates[random.nextInt(candidates.length)];
+    final index = game.players.indexWhere((player) => player.seat == seat);
     setState(() {
-      _winnerIndex = index;
+      _winnerIndex = index < 0 ? 0 : index;
       _spinning = true;
       _revealed = false;
     });
@@ -76,6 +106,7 @@ class _LordSelectionScreenState extends ConsumerState<LordSelectionScreen>
     );
     _spin.forward(from: 0).whenComplete(() {
       if (!mounted) return;
+      ref.read(feedbackProvider).tap();
       setState(() {
         _spinning = false;
         _revealed = true;
@@ -98,10 +129,15 @@ class _LordSelectionScreenState extends ConsumerState<LordSelectionScreen>
     }
 
     // Revisiting the screen after the draw shows the standing Lord instead of
-    // offering a second spin: the engine only accepts one draw per match.
+    // offering a second spin: the engine only accepts one draw per round.
     final alreadyDrawn = game.phase != Phase.lordSelection;
+    final firstDraw = game.questResults.isEmpty && game.rejectionCount == 0;
     final players = game.players;
     final required = game.requiredTeamSize;
+    // Who may be drawn now: the whole table on the opening draw, everybody but
+    // the King who has just served after that.
+    final seatsInDraw =
+        GameEngine.drawableLordSeats(game).length;
 
     return AvalonScreen(
       padded: false,
@@ -173,9 +209,12 @@ class _LordSelectionScreenState extends ConsumerState<LordSelectionScreen>
                     children: [
                       Text(
                         alreadyDrawn
-                            ? 'The Lord for this match is already drawn.'
-                            : 'The night is over. Draw the first Lord of the '
-                                  'round table.',
+                            ? 'The King for this round is already drawn.'
+                            : firstDraw
+                            ? 'The night is over. Draw the first Lord of the '
+                                  'round table.'
+                            : 'The vote is settled. Draw the King for quest '
+                                  '${game.questNumber}.',
                         key: const Key('lord_heading'),
                         style: AppText.body,
                       ),
@@ -183,8 +222,10 @@ class _LordSelectionScreenState extends ConsumerState<LordSelectionScreen>
                       Text(
                         'The Lord puts forward the team for quest '
                         '${game.questNumber}, which needs $required '
-                        '${required == 1 ? 'player' : 'players'}. Every seat '
-                        'takes part in the draw.',
+                        '${required == 1 ? 'player' : 'players'}. '
+                        '${seatsInDraw < players.length ? 'The King who has '
+                                  'just served sits this draw out.' : 'Every '
+                                  'seat takes part in the draw.'}',
                         style: AppText.caption,
                       ),
                     ],
@@ -211,7 +252,10 @@ class _LordSelectionScreenState extends ConsumerState<LordSelectionScreen>
                 ),
                 if (_revealed && !alreadyDrawn) ...[
                   const SizedBox(height: Space.md),
-                  _Announcement(name: players[_winnerIndex!].displayName),
+                  _Announcement(
+                    name: players[_winnerIndex!].displayName,
+                    questNumber: game.questNumber,
+                  ),
                 ],
                 const SizedBox(height: Space.lg),
                 const SectionHeader(title: 'At the table'),
@@ -380,9 +424,10 @@ class _FadeEdge extends StatelessWidget {
 
 /// The drawn name, with the sentence the MC reads out.
 class _Announcement extends StatelessWidget {
-  const _Announcement({required this.name});
+  const _Announcement({required this.name, required this.questNumber});
 
   final String name;
+  final int questNumber;
 
   @override
   Widget build(BuildContext context) {
@@ -406,7 +451,7 @@ class _Announcement extends StatelessWidget {
           ),
           const SizedBox(height: Space.xxs),
           Text(
-            'Leads the table for quest 1.',
+            'Leads the table for quest $questNumber.',
             style: AppText.caption,
             textAlign: TextAlign.center,
           ),
