@@ -3,6 +3,40 @@
 All notable changes to Avalon Companion are recorded here. One entry per completed
 development phase, in the order the plan defines them.
 
+## [1.0.0] — Phase 12 Android release
+
+The first release build: the same app Phase 11 verified, packaged, signed and installed on a
+phone. No game rule changed.
+
+### Added
+
+- A signed release APK, built with `flutter build apk --release` against the NDK that
+  `android/app/build.gradle.kts` pins, so AGP strips Flutter's engine with `llvm-strip` and the
+  APK ships at **60.0 MB** instead of the ~500 MB the unstripped build produced. The build is
+  signed by the keystore named in the gitignored `android/key.properties`, verified with
+  `apksigner verify` (signer `CN=Avalon Companion`) and `zipalign -c -p 4`, and carries version
+  `1.0.0` (`versionCode` 16), `minSdk` 24, `targetSdk` 36 and the arm64, arm and x86_64 ABIs.
+- `tool/make_icons.ps1` and the README's build and install guide, so the next build — launcher
+  icon, splash, signature and install — can be reproduced from a clean checkout.
+
+### Changed
+
+- `pubspec.yaml` version `1.0.0+16`; the app's About footer reads **Phase 12**.
+
+### Verified
+
+| Check | Result |
+| --- | --- |
+| `flutter analyze` | No issues found |
+| `flutter test` | 257 tests pass |
+| `flutter test integration_test` | 2 tests pass on the Galaxy A36 `RFCY30E0LRT` |
+| Release build | 60.0 MB APK, `versionName` 1.0.0, `versionCode` 16, arm64-v8a + armeabi-v7a + x86_64 |
+| Signature | `apksigner verify` reports one signer, `CN=Avalon Companion`, SHA-256 `1aa864f1…a570b808` |
+| Alignment | `zipalign -c -p 4` passes |
+| Install | `adb install` succeeds on a clean phone; the app launches to Home with **v1.0.0** in the splash |
+| Launcher icon | shown by One UI at its own mask: navy plate, gold shield, no white edge and no crop |
+| Device: 10 players | the setup screen reads "10 players — 6 good, 4 evil" with ten seats |
+
 ## [0.12.1] — Phase 11 QA
 
 No game rule changed in this release: it is the QA pass over the finished product, adding the

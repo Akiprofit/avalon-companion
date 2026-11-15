@@ -17,7 +17,7 @@ Tracks progress against `MASTER_PLAN.md.txt`. Update this file at the end of eve
 | 9 | Database and auto-save | complete |
 | 10 | Polish and accessibility | complete |
 | 11 | Complete QA | complete |
-| 12 | Android release | not started |
+| 12 | Android release | complete |
 
 Advanced game settings (King selection mode, narrator extra delay) and the optional team
 approval vote shipped after Phase 10 and before the QA pass; see the sections below the Phase 10
@@ -686,6 +686,52 @@ Known limits:
   own frame timings are not readable through `dumpsys gfxinfo`, so smoothness is judged by feel
   rather than by a number.
 
+## Phase 12 — complete: signed 1.0.0 release
+
+Delivered: the release build, signed and installed on the phone. Version 1.0.0+16; no rule,
+screen or stored value changed.
+
+- **Release build.** `flutter build apk --release` with Android NDK 28.2.13676358 (r28c)
+  installed at the version `android/app/build.gradle.kts` pins. AGP's strip step now runs, so
+  Flutter's three engine libraries are stripped with `llvm-strip` and the APK is **60.0 MB**
+  (62,936,522 bytes) — arm64-v8a, armeabi-v7a and x86_64 in one file, `minSdk` 24,
+  `targetSdk` 36.
+- **Signing.** The release keystore lives outside the repository, at
+  `C:/Users/<mc>/.avalon/avalon-release.jks` (alias `avalon`); `android/key.properties` names it
+  and is gitignored. `apksigner verify --print-certs` reports one signer,
+  `CN=Avalon Companion, OU=Game Master, …`, SHA-256 `1aa864f1…a570b808`. Without
+  `key.properties` the build falls back to the debug key, which installs but cannot update a
+  release-signed install.
+- **Checks.** `zipalign -c -p 4` passes; `aapt2 dump badging` reads `com.avalon.companion`,
+  `versionCode` 16, `versionName` 1.0.0.
+- **Install and smoke test.** `adb install` on the Galaxy A36 (Android 16) after removing the old
+  debug install, because a release signature cannot update a debug-signed app. The app opened on
+  Home, the splash read **v1.0.0**, One UI drew the launcher icon in its own mask — navy plate,
+  gold shield, no white edge, no crop — and the setup screen accepted a ten-player table
+  ("10 players — 6 good, 4 evil").
+
+Gate evidence:
+
+| Check | Result |
+| --- | --- |
+| `flutter analyze` | No issues found |
+| `flutter test` | 257 tests pass |
+| `flutter test integration_test` | 2 tests pass on the Galaxy A36 `RFCY30E0LRT` |
+| Release APK | 60.0 MB, `versionName` 1.0.0, `versionCode` 16, three ABIs |
+| Signature | one signer, `CN=Avalon Companion`, SHA-256 `1aa864f1…a570b808` |
+| Alignment | `zipalign -c -p 4` passes |
+| Device: launch | installed release build opens on Home; splash shows v1.0.0 |
+| Device: icon | launcher mask applied by One UI; no white plate or clipped artwork |
+| Device: 10 players | setup reads "10 players — 6 good, 4 evil" with ten seats |
+
+Known limits:
+
+- The APK carries all three ABIs so one file serves every phone; `flutter build apk
+  --split-per-abi` would cut each download to roughly a third, at the cost of three files to
+  hand out.
+- The keystore is the app's only identity. There is no upload key and no Play Store listing, so
+  losing the keystore means a new package on Android rather than an update.
+
 ## Cross-cutting known issues
 
 - A match that is interrupted mid-vote restores its proposed team but starts the tally again
@@ -696,15 +742,13 @@ Known limits:
   rule.
 - The Android build pins `path_provider_android` below 2.3 through
   `dependency_overrides`. From 2.3 it depends on `package:jni`, which compiles a native
-  helper with CMake and needs a complete Android NDK; the NDK folder on this machine
-  (`ndk/28.2.13676358`) holds only `source.properties`, so the build fails at
-  `:jni:configureCMakeDebug[arm64-v8a]` with `CMAKE_C_COMPILER not set`. The app only needs
-  the documents directory, so the last platform-channel implementation is enough. Remove the
-  pin once the NDK is installed properly — which the release build needs anyway.
-- The debug APK is ~1.4 GB because AGP cannot strip the Flutter engine libraries (no NDK
-  toolchain on this machine) and `keepDebugSymbols` keeps everything. Functionally fine; it
-  must be resolved before the release build in Phase 12 — either by installing the NDK
-  properly or by shipping a split-ABI release without the strip step.
+  helper with CMake and needs a complete Android NDK. The NDK is now installed
+  (`ndk/28.2.13676358`, r28c), so the pin could be lifted and tested; until then the last
+  platform-channel implementation serves the documents directory the app asks for.
+- `AVALON_KEEP_SYMBOLS=1` exists for a machine without the pinned NDK: it skips the strip step
+  and produces an APK around 500 MB, for local testing only. Gradle's daemon keeps the variable
+  it was started with, so stop it (`android\gradlew.bat --stop`) after changing it. With the NDK
+  installed, both debug and release builds strip normally.
 - The MC PIN is a lock on the table, not a security boundary: a four-digit PIN with a salted
   SHA-256 digest stops a curious player from changing settings or aborting a round, and the
   digest sits in the one `Settings` row. It is not encryption of the database, and anyone with
@@ -724,7 +768,7 @@ Known limits:
   and offline — a phone that hides its voice list falls back to Automatic.
 - The night ambience is one generated 20-second WAV in `res/raw`, looped by the activity. It is
   a bed, not a soundtrack: there is no music, no per-phase sting and no volume separate from
-  the master. Phase 12 can replace the file without touching code.
+  the master. A later release can replace the file without touching code.
 - Gradle is pinned in two places (`org.gradle.java.home` in `android/gradle.properties` and
   the JDK paths there). The generated `android/gradle/gradle-daemon-jvm.properties` was
   renamed to `.bak`: its toolchain criteria won over `org.gradle.java.home` and made Gradle
@@ -733,6 +777,8 @@ Known limits:
 
 ## Next phase
 
-Phase 11 — complete QA: unit, widget, integration and simulation coverage over the finished
-product, a privacy verification pass on screen and on disk, device testing of the full match
-and the Phase 10 behaviours, and performance checks. Phase 12 is the signed release.
+No phase is scheduled: **1.0.0** is the released build, signed, installed and verified on the
+phone. Work after 1.0.0 would be maintenance rather than plan phases — lifting the
+`path_provider_android` pin now that the NDK is installed, split-per-abi APKs if download size
+matters, commissioned artwork to replace the public-domain plates, or a Play Store listing with
+its own upload key.

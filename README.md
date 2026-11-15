@@ -44,9 +44,10 @@ table has time to move its physical cards. A third, **Team approval vote**, can 
 off for a house rule: the leader's team then goes straight to the quest, rejections are never
 counted, and the token still passes on when the quest is resolved.
 
-Phases 5, 6, 8, 9 and 10 have been verified by automated gates; Phases 5, 6, 8 and 9 also on
-a Galaxy A36. See `DEVELOPMENT_PLAN.md` for the phase table, `DESIGN_SYSTEM.md` for the visual
-system and `CHANGELOG.md` for what has shipped.
+Every phase has been verified by automated gates — `flutter analyze`, 257 unit and widget tests,
+two on-device integration tests — and on a Galaxy A36 (Android 16) through a signed 1.0.0 release
+build. See `DEVELOPMENT_PLAN.md` for the phase table, `DESIGN_SYSTEM.md` for the visual system and
+`CHANGELOG.md` for what has shipped.
 
 ## Requirements
 
@@ -79,7 +80,8 @@ flutter test
 flutter build apk --release
 ```
 
-Output: `build/app/outputs/flutter-apk/app-release.apk`
+Output: `build/app/outputs/flutter-apk/app-release.apk`, about 60 MB — the
+Flutter engine for arm64, arm and x86_64, stripped.
 
 The release build is signed with the keystore named in `android/key.properties`
 (gitignored). That file points at a keystore outside the repository:
@@ -95,6 +97,22 @@ Without it Gradle falls back to the debug key, which still installs for testing
 but cannot be published or updated over an install signed with the real key.
 Keep the keystore and its passwords somewhere safe: Android refuses an update
 signed with a different key, so losing them means a new package identity.
+
+### Check the signature and alignment
+
+```powershell
+$bt = "$env:LOCALAPPDATA\Android\Sdk\build-tools\36.0.0"
+& "$bt\zipalign.exe" -c -p 4 build\app\outputs\flutter-apk\app-release.apk
+& "$bt\apksigner.bat" verify --print-certs build\app\outputs\flutter-apk\app-release.apk
+```
+
+`zipalign -c` is silent and exits 0 when the APK is aligned; `apksigner verify`
+prints the signer. The build strips Flutter's engine libraries with the NDK
+pinned in `android/app/build.gradle.kts` (`ndkVersion`); without that NDK the
+strip step fails the build. On a machine that has no NDK, set
+`AVALON_KEEP_SYMBOLS=1` to skip stripping instead — the APK grows to about
+500 MB and is only for local testing. Stop the Gradle daemon after changing the
+variable (`android\gradlew.bat --stop`), or it keeps the old environment.
 
 ## Install on a phone
 
