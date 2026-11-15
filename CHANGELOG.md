@@ -3,6 +3,58 @@
 All notable changes to Avalon Companion are recorded here. One entry per completed
 development phase, in the order the plan defines them.
 
+## [0.12.0] — Optional team approval vote
+
+### Added
+
+- **Team approval vote** (Settings → Game). The base game's approve/reject vote can be switched
+  off for a house rule. With it off, confirming a team sends the table straight to quest
+  resolution: no tally is recorded, the rejection counter stays at zero, and five rejections can
+  never end a match. Team size, seat checks and the quest 4 two-fail rule are unchanged, and the
+  leadership token still passes to the next player — or to the wheel — once the quest is
+  resolved, so one player does not lead every round.
+- The progress strip reads **VOTE Off** instead of a rejection counter while the vote is off,
+  the team selection screen says the team goes straight to the quest, and How to Play mentions
+  the house rule.
+
+### Changed
+
+- `GameEngine.proposeTeam` takes `skipVote:` and opens `Phase.questResolution` directly;
+  `GameEngine.recordQuest` hands the leadership token on when the quest was resolved without a
+  vote, while the wheel keeps the serving King so its draw can still leave them out.
+- Drift schema version 5 adds `Settings.team_vote_enabled`, default on, with an explicit
+  `addColumn` migration from v4. The switch is read when a team is confirmed, so an interrupted
+  match carries on normally.
+- `GameProgressHeader` takes `showRejections:` so no in-game screen advertises a rule the table
+  has turned off.
+- `pubspec.yaml` version `0.12.0+14`.
+
+### Icon
+
+- New launcher icon from `assets/branding/new_app_icon.png`. The source is a mockup with the
+  artwork on a white plate, so every density was rebuilt from the art alone: the legacy and round
+  icons are clipped by their own mask, and the adaptive foreground sits on the app's navy
+  `#04101D` plate with transparent corners, so no white edge shows under any launcher shape.
+
+### Fixed
+
+- **Play Again** now lands on the round table with the fresh match already waiting. It used to
+  bounce through the setup preparation screen, whose "Begin the match" button starts a match from
+  the setup draft — and that draft had just been cleared, so the button stayed disabled and the
+  new match could not be started at all. The roster, the composition and every setting, including
+  the approval-vote switch, still carry over, and the finished match keeps its result.
+
+### Verified
+
+| Check | Result |
+| --- | --- |
+| `flutter analyze` | No issues found |
+| `flutter test` | 247 tests pass (8 engine/controller and 4 widget tests new; the simulation suite now plays every player count with the vote both on and off) |
+| Engine rules | `test/unit/team_vote_setting_test.dart`: off goes straight to the quest with no tally, on still votes, size and seat checks unchanged, the token passes on, the wheel still excludes the serving King, a whole match without a vote counts no rejection, quest 4 still needs two fail cards |
+| Settings storage | `test/unit/settings_store_test.dart`: the switch round-trips through `Settings`, defaults to on, and drift schema v5 migrates from v4 |
+| Screen flow | `test/widget/team_vote_setting_test.dart`: the switch and its live caption, off → quest resolution with no voting screen, on → the vote, a questless-of-vote round returning to the day with the token moved |
+| Simulation | `test/unit/game_simulation_test.dart`: 40 seeded matches per player count across both King modes and both vote modes, exactly one victory path fires, no rejection is ever counted without a vote |
+
 ## [0.11.0] — Advanced game settings: King every round, narrator extra delay
 
 ### Added

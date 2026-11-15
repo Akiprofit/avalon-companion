@@ -56,6 +56,9 @@ class DashboardScreen extends ConsumerWidget {
     final kingsManual = ref.watch(
       settingsProvider.select((s) => !s.kingsDrawnAutomatically),
     );
+    final voteOn = ref.watch(
+      settingsProvider.select((s) => s.teamVoteEnabled),
+    );
     final canDrawKing =
         kingsManual &&
         (game.phase == Phase.dayDiscussion ||
@@ -225,6 +228,7 @@ class DashboardScreen extends ConsumerWidget {
             questNumber: game.questNumber,
             requiredTeamSize: requiredSize,
             rejectionCount: game.rejectionCount,
+            showRejections: voteOn,
             phaseLabel: game.phase.label,
             phaseTone: isPaused ? StatusTone.danger : StatusTone.active,
             questSlots: game.questSlots,

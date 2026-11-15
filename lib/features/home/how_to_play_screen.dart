@@ -49,6 +49,8 @@ class HowToPlayScreen extends StatelessWidget {
             'team goes on the quest; a tie is a rejection.',
         'A rejection passes the leader token to the next player, and five '
             'rejections in a row win the game for evil.',
+        'Settings can switch the approval vote off for a house-rules game: the '
+            'leader\'s team then goes straight to the quest.',
       ],
     ),
     (

@@ -203,7 +203,20 @@ void main() {
     expect(game.rejectionCount, 0);
     expect(game.merlinIdentified, isNull);
     expect(game.isFinished, isFalse);
-    expect(find.text('PREPARATION'), findsWidgets);
+    expect(find.text('THE ROUND TABLE'), findsWidgets);
+    expect(
+      find.byKey(const Key('dashboard_open_narration')),
+      findsOneWidget,
+      reason: 'Play Again must land somewhere the MC can begin the night',
+    );
+
+    await tester.tap(find.byKey(const Key('dashboard_open_narration')));
+    await tester.pumpAndSettle();
+    expect(
+      container.read(gameSessionProvider)?.phase,
+      Phase.night,
+      reason: 'the fresh match can start its first night',
+    );
   });
 
   testWidgets('leaving the result screen keeps the match for review', (

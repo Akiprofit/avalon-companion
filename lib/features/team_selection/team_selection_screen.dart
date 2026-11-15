@@ -14,6 +14,7 @@ import '../../core/widgets/player_tile.dart';
 import '../../core/widgets/primary_button.dart';
 import '../../core/widgets/section_header.dart';
 import '../../game_engine/controllers/game_session_controller.dart';
+import '../settings/settings_controller.dart';
 
 /// Screen 11 — the MC picks the quest team from the table.
 ///
@@ -50,8 +51,15 @@ class _TeamSelectionScreenState extends ConsumerState<TeamSelectionScreen> {
     final game = ref.read(gameSessionProvider);
     if (game == null) return;
     final seats = _selected.toList()..sort();
-    ref.read(gameSessionProvider.notifier).proposeTeam(seats);
-    context.goNamed(RouteNames.dashboard);
+    // House rule: with the approval vote off, the team goes straight to the
+    // quest. The engine refuses a team of the wrong size either way.
+    final skipVote = !ref.read(settingsProvider).teamVoteEnabled;
+    ref
+        .read(gameSessionProvider.notifier)
+        .proposeTeam(seats, skipVote: skipVote);
+    context.goNamed(
+      skipVote ? RouteNames.questResolution : RouteNames.dashboard,
+    );
   }
 
   @override
@@ -65,6 +73,7 @@ class _TeamSelectionScreenState extends ConsumerState<TeamSelectionScreen> {
     final chosen = _selected.length;
     final complete = chosen == required;
     final canAddMore = chosen < required;
+    final voteOff = !ref.watch(settingsProvider.select((s) => s.teamVoteEnabled));
 
     return AvalonScreen(
       padded: false,
@@ -105,6 +114,7 @@ class _TeamSelectionScreenState extends ConsumerState<TeamSelectionScreen> {
             questNumber: game.questNumber,
             requiredTeamSize: required,
             rejectionCount: game.rejectionCount,
+            showRejections: !voteOff,
             phaseLabel: game.phase.label,
             questSlots: game.questSlots,
           ),
@@ -133,6 +143,17 @@ class _TeamSelectionScreenState extends ConsumerState<TeamSelectionScreen> {
                             : 'Deselect a seat to change the team.',
                         style: AppText.caption,
                       ),
+                      if (voteOff) ...[
+                        const SizedBox(height: Space.xs),
+                        Text(
+                          'The approval vote is off: this team goes straight to '
+                          'the quest.',
+                          key: const Key('team_selection_vote_off'),
+                          style: AppText.caption.copyWith(
+                            color: AppColors.mutedGold,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),

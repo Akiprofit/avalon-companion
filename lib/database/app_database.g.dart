@@ -2907,6 +2907,21 @@ class $SettingsTable extends Settings
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _teamVoteEnabledMeta = const VerificationMeta(
+    'teamVoteEnabled',
+  );
+  @override
+  late final GeneratedColumn<bool> teamVoteEnabled = GeneratedColumn<bool>(
+    'team_vote_enabled',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("team_vote_enabled" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -2927,6 +2942,7 @@ class $SettingsTable extends Settings
     mcPinHash,
     kingSelection,
     narratorExtraDelayMs,
+    teamVoteEnabled,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -3086,6 +3102,15 @@ class $SettingsTable extends Settings
         ),
       );
     }
+    if (data.containsKey('team_vote_enabled')) {
+      context.handle(
+        _teamVoteEnabledMeta,
+        teamVoteEnabled.isAcceptableOrUnknown(
+          data['team_vote_enabled']!,
+          _teamVoteEnabledMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -3167,6 +3192,10 @@ class $SettingsTable extends Settings
         DriftSqlType.int,
         data['${effectivePrefix}narrator_extra_delay_ms'],
       )!,
+      teamVoteEnabled: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}team_vote_enabled'],
+      )!,
     );
   }
 
@@ -3205,6 +3234,10 @@ class SettingsRecord extends DataClass implements Insertable<SettingsRecord> {
 
   /// Extra silence after each spoken narration line, in milliseconds.
   final int narratorExtraDelayMs;
+
+  /// Whether the table votes on every proposed team. Off is a house rule: the
+  /// chosen team goes straight to the quest and rejections never count.
+  final bool teamVoteEnabled;
   const SettingsRecord({
     required this.id,
     required this.narrationLanguage,
@@ -3224,6 +3257,7 @@ class SettingsRecord extends DataClass implements Insertable<SettingsRecord> {
     this.mcPinHash,
     required this.kingSelection,
     required this.narratorExtraDelayMs,
+    required this.teamVoteEnabled,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -3250,6 +3284,7 @@ class SettingsRecord extends DataClass implements Insertable<SettingsRecord> {
     }
     map['king_selection'] = Variable<String>(kingSelection);
     map['narrator_extra_delay_ms'] = Variable<int>(narratorExtraDelayMs);
+    map['team_vote_enabled'] = Variable<bool>(teamVoteEnabled);
     return map;
   }
 
@@ -3277,6 +3312,7 @@ class SettingsRecord extends DataClass implements Insertable<SettingsRecord> {
           : Value(mcPinHash),
       kingSelection: Value(kingSelection),
       narratorExtraDelayMs: Value(narratorExtraDelayMs),
+      teamVoteEnabled: Value(teamVoteEnabled),
     );
   }
 
@@ -3308,6 +3344,7 @@ class SettingsRecord extends DataClass implements Insertable<SettingsRecord> {
       narratorExtraDelayMs: serializer.fromJson<int>(
         json['narratorExtraDelayMs'],
       ),
+      teamVoteEnabled: serializer.fromJson<bool>(json['teamVoteEnabled']),
     );
   }
   @override
@@ -3332,6 +3369,7 @@ class SettingsRecord extends DataClass implements Insertable<SettingsRecord> {
       'mcPinHash': serializer.toJson<String?>(mcPinHash),
       'kingSelection': serializer.toJson<String>(kingSelection),
       'narratorExtraDelayMs': serializer.toJson<int>(narratorExtraDelayMs),
+      'teamVoteEnabled': serializer.toJson<bool>(teamVoteEnabled),
     };
   }
 
@@ -3354,6 +3392,7 @@ class SettingsRecord extends DataClass implements Insertable<SettingsRecord> {
     Value<String?> mcPinHash = const Value.absent(),
     String? kingSelection,
     int? narratorExtraDelayMs,
+    bool? teamVoteEnabled,
   }) => SettingsRecord(
     id: id ?? this.id,
     narrationLanguage: narrationLanguage ?? this.narrationLanguage,
@@ -3373,6 +3412,7 @@ class SettingsRecord extends DataClass implements Insertable<SettingsRecord> {
     mcPinHash: mcPinHash.present ? mcPinHash.value : this.mcPinHash,
     kingSelection: kingSelection ?? this.kingSelection,
     narratorExtraDelayMs: narratorExtraDelayMs ?? this.narratorExtraDelayMs,
+    teamVoteEnabled: teamVoteEnabled ?? this.teamVoteEnabled,
   );
   SettingsRecord copyWithCompanion(SettingsCompanion data) {
     return SettingsRecord(
@@ -3420,6 +3460,9 @@ class SettingsRecord extends DataClass implements Insertable<SettingsRecord> {
       narratorExtraDelayMs: data.narratorExtraDelayMs.present
           ? data.narratorExtraDelayMs.value
           : this.narratorExtraDelayMs,
+      teamVoteEnabled: data.teamVoteEnabled.present
+          ? data.teamVoteEnabled.value
+          : this.teamVoteEnabled,
     );
   }
 
@@ -3443,7 +3486,8 @@ class SettingsRecord extends DataClass implements Insertable<SettingsRecord> {
           ..write('mcPinEnabled: $mcPinEnabled, ')
           ..write('mcPinHash: $mcPinHash, ')
           ..write('kingSelection: $kingSelection, ')
-          ..write('narratorExtraDelayMs: $narratorExtraDelayMs')
+          ..write('narratorExtraDelayMs: $narratorExtraDelayMs, ')
+          ..write('teamVoteEnabled: $teamVoteEnabled')
           ..write(')'))
         .toString();
   }
@@ -3468,6 +3512,7 @@ class SettingsRecord extends DataClass implements Insertable<SettingsRecord> {
     mcPinHash,
     kingSelection,
     narratorExtraDelayMs,
+    teamVoteEnabled,
   );
   @override
   bool operator ==(Object other) =>
@@ -3490,7 +3535,8 @@ class SettingsRecord extends DataClass implements Insertable<SettingsRecord> {
           other.mcPinEnabled == this.mcPinEnabled &&
           other.mcPinHash == this.mcPinHash &&
           other.kingSelection == this.kingSelection &&
-          other.narratorExtraDelayMs == this.narratorExtraDelayMs);
+          other.narratorExtraDelayMs == this.narratorExtraDelayMs &&
+          other.teamVoteEnabled == this.teamVoteEnabled);
 }
 
 class SettingsCompanion extends UpdateCompanion<SettingsRecord> {
@@ -3512,6 +3558,7 @@ class SettingsCompanion extends UpdateCompanion<SettingsRecord> {
   final Value<String?> mcPinHash;
   final Value<String> kingSelection;
   final Value<int> narratorExtraDelayMs;
+  final Value<bool> teamVoteEnabled;
   final Value<int> rowid;
   const SettingsCompanion({
     this.id = const Value.absent(),
@@ -3532,6 +3579,7 @@ class SettingsCompanion extends UpdateCompanion<SettingsRecord> {
     this.mcPinHash = const Value.absent(),
     this.kingSelection = const Value.absent(),
     this.narratorExtraDelayMs = const Value.absent(),
+    this.teamVoteEnabled = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   SettingsCompanion.insert({
@@ -3553,6 +3601,7 @@ class SettingsCompanion extends UpdateCompanion<SettingsRecord> {
     this.mcPinHash = const Value.absent(),
     this.kingSelection = const Value.absent(),
     this.narratorExtraDelayMs = const Value.absent(),
+    this.teamVoteEnabled = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id);
   static Insertable<SettingsRecord> custom({
@@ -3574,6 +3623,7 @@ class SettingsCompanion extends UpdateCompanion<SettingsRecord> {
     Expression<String>? mcPinHash,
     Expression<String>? kingSelection,
     Expression<int>? narratorExtraDelayMs,
+    Expression<bool>? teamVoteEnabled,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -3598,6 +3648,7 @@ class SettingsCompanion extends UpdateCompanion<SettingsRecord> {
       if (kingSelection != null) 'king_selection': kingSelection,
       if (narratorExtraDelayMs != null)
         'narrator_extra_delay_ms': narratorExtraDelayMs,
+      if (teamVoteEnabled != null) 'team_vote_enabled': teamVoteEnabled,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -3621,6 +3672,7 @@ class SettingsCompanion extends UpdateCompanion<SettingsRecord> {
     Value<String?>? mcPinHash,
     Value<String>? kingSelection,
     Value<int>? narratorExtraDelayMs,
+    Value<bool>? teamVoteEnabled,
     Value<int>? rowid,
   }) {
     return SettingsCompanion(
@@ -3642,6 +3694,7 @@ class SettingsCompanion extends UpdateCompanion<SettingsRecord> {
       mcPinHash: mcPinHash ?? this.mcPinHash,
       kingSelection: kingSelection ?? this.kingSelection,
       narratorExtraDelayMs: narratorExtraDelayMs ?? this.narratorExtraDelayMs,
+      teamVoteEnabled: teamVoteEnabled ?? this.teamVoteEnabled,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -3705,6 +3758,9 @@ class SettingsCompanion extends UpdateCompanion<SettingsRecord> {
         narratorExtraDelayMs.value,
       );
     }
+    if (teamVoteEnabled.present) {
+      map['team_vote_enabled'] = Variable<bool>(teamVoteEnabled.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -3732,6 +3788,7 @@ class SettingsCompanion extends UpdateCompanion<SettingsRecord> {
           ..write('mcPinHash: $mcPinHash, ')
           ..write('kingSelection: $kingSelection, ')
           ..write('narratorExtraDelayMs: $narratorExtraDelayMs, ')
+          ..write('teamVoteEnabled: $teamVoteEnabled, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -5999,6 +6056,7 @@ typedef $$SettingsTableCreateCompanionBuilder = SettingsCompanion Function({
   Value<String?> mcPinHash,
   Value<String> kingSelection,
   Value<int> narratorExtraDelayMs,
+  Value<bool> teamVoteEnabled,
   Value<int> rowid,
 });
 typedef $$SettingsTableUpdateCompanionBuilder = SettingsCompanion Function({
@@ -6020,6 +6078,7 @@ typedef $$SettingsTableUpdateCompanionBuilder = SettingsCompanion Function({
   Value<String?> mcPinHash,
   Value<String> kingSelection,
   Value<int> narratorExtraDelayMs,
+  Value<bool> teamVoteEnabled,
   Value<int> rowid,
 });
 
@@ -6119,6 +6178,11 @@ class $$SettingsTableFilterComposer
 
   ColumnFilters<int> get narratorExtraDelayMs => $composableBuilder(
     column: $table.narratorExtraDelayMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get teamVoteEnabled => $composableBuilder(
+    column: $table.teamVoteEnabled,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -6221,6 +6285,11 @@ class $$SettingsTableOrderingComposer
     column: $table.narratorExtraDelayMs,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get teamVoteEnabled => $composableBuilder(
+    column: $table.teamVoteEnabled,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$SettingsTableAnnotationComposer
@@ -6311,6 +6380,11 @@ class $$SettingsTableAnnotationComposer
     column: $table.narratorExtraDelayMs,
     builder: (column) => column,
   );
+
+  GeneratedColumn<bool> get teamVoteEnabled => $composableBuilder(
+    column: $table.teamVoteEnabled,
+    builder: (column) => column,
+  );
 }
 
 class $$SettingsTableTableManager
@@ -6362,6 +6436,7 @@ class $$SettingsTableTableManager
                 Value<String?> mcPinHash = const Value.absent(),
                 Value<String> kingSelection = const Value.absent(),
                 Value<int> narratorExtraDelayMs = const Value.absent(),
+                Value<bool> teamVoteEnabled = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SettingsCompanion(
                 id: id,
@@ -6382,6 +6457,7 @@ class $$SettingsTableTableManager
                 mcPinHash: mcPinHash,
                 kingSelection: kingSelection,
                 narratorExtraDelayMs: narratorExtraDelayMs,
+                teamVoteEnabled: teamVoteEnabled,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -6404,6 +6480,7 @@ class $$SettingsTableTableManager
                 Value<String?> mcPinHash = const Value.absent(),
                 Value<String> kingSelection = const Value.absent(),
                 Value<int> narratorExtraDelayMs = const Value.absent(),
+                Value<bool> teamVoteEnabled = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SettingsCompanion.insert(
                 id: id,
@@ -6424,6 +6501,7 @@ class $$SettingsTableTableManager
                 mcPinHash: mcPinHash,
                 kingSelection: kingSelection,
                 narratorExtraDelayMs: narratorExtraDelayMs,
+                teamVoteEnabled: teamVoteEnabled,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

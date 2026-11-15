@@ -15,6 +15,7 @@ class GameProgressHeader extends StatelessWidget {
     required this.requiredTeamSize,
     required this.rejectionCount,
     required this.phaseLabel,
+    this.showRejections = true,
     this.phaseTone = StatusTone.active,
     this.questSlots = const [
       QuestSlot.current,
@@ -30,6 +31,10 @@ class GameProgressHeader extends StatelessWidget {
   final int requiredTeamSize;
   final int rejectionCount;
   final String phaseLabel;
+
+  /// Whether the table votes on teams. When off, the rejection counter is
+  /// meaningless, so the tile says so instead of counting to five forever.
+  final bool showRejections;
 
   /// Tone of the phase chip: danger while the match is paused.
   final StatusTone phaseTone;
@@ -83,10 +88,14 @@ class GameProgressHeader extends StatelessWidget {
               ),
               const SizedBox(width: Space.xs),
               _Stat(
-                label: 'REJECTED',
-                value: '$rejectionCount/5',
-                icon: Icons.block_outlined,
-                tone: rejectionCount >= 4 ? AppColors.danger : null,
+                label: showRejections ? 'REJECTED' : 'VOTE',
+                value: showRejections ? '$rejectionCount/5' : 'Off',
+                icon: showRejections
+                    ? Icons.block_outlined
+                    : Icons.how_to_vote_outlined,
+                tone: showRejections && rejectionCount >= 4
+                    ? AppColors.danger
+                    : null,
               ),
             ],
           ),

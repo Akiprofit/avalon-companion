@@ -17,7 +17,6 @@ import '../../core/widgets/section_header.dart';
 import '../../game_engine/controllers/game_session_controller.dart';
 import '../../game_engine/models/game_state.dart';
 import '../../game_engine/models/phase.dart';
-import '../setup/setup_controller.dart';
 import '../settings/settings_controller.dart';
 
 /// Screen 12 â€” the end of the match.
@@ -72,9 +71,12 @@ class VictoryScreen extends ConsumerWidget {
           isDestructive: false,
         );
     if (!confirmed || !context.mounted) return;
-    ref.read(setupProvider.notifier).reset();
+    // The new match is already created in the preparation phase, so the table
+    // goes straight to the round table. Bouncing through the setup screens
+    // would leave the MC on a disabled "Begin the match" button, because that
+    // screen starts a match from the setup draft, not from the live one.
     ref.read(gameSessionProvider.notifier).playAgain();
-    context.goNamed(RouteNames.preparation);
+    context.goNamed(RouteNames.dashboard);
   }
 
   /// Leaving a finished match keeps its record, so the home screen can offer

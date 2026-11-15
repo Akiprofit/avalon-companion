@@ -57,6 +57,7 @@ class SettingsRepository {
       defaultPlayerCount: Value(settings.defaultPlayerCount),
       kingSelection: Value(settings.kingSelectionMode.name),
       narratorExtraDelayMs: Value(settings.narratorExtraDelay.inMilliseconds),
+      teamVoteEnabled: Value(settings.teamVoteEnabled),
     );
   }
 
@@ -83,6 +84,7 @@ class SettingsRepository {
       narratorExtraDelay: Duration(
         milliseconds: row.narratorExtraDelayMs.clamp(0, 30000),
       ),
+      teamVoteEnabled: row.teamVoteEnabled,
     );
   }
 }

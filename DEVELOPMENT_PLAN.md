@@ -19,8 +19,9 @@ Tracks progress against `MASTER_PLAN.md.txt`. Update this file at the end of eve
 | 11 | Complete QA | not started |
 | 12 | Android release | not started |
 
-Advanced game settings (King selection mode, narrator extra delay) shipped after Phase 10 and
-before the QA pass; see the section below the Phase 10 entry.
+Advanced game settings (King selection mode, narrator extra delay) and the optional team
+approval vote shipped after Phase 10 and before the QA pass; see the sections below the Phase 10
+entry.
 
 ## Phase 1 — complete
 
@@ -357,6 +358,12 @@ phases. Nothing in the game engine changed.
   package through a reboot, an in-place reinstall, a version bump and a resource rename; the
   APK was proven correct (byte-identical on device, correct under a second package id) and a
   clean install of `0.8.1+10` displayed the new icon in App info, the launcher and Recents.
+- The supplied `assets/branding/new_app_icon.png` replaced that art in 0.12.0. It is a 1254 px
+  mockup with the art on a white plate, so every density was rebuilt from the art alone: the
+  legacy and round icons are re-masked by their own plate, and the adaptive foreground sits on
+  the palette navy `#04101D` with transparent corners, so no white rim or mockup edge survives
+  the launcher's mask. A release install showed the art in App info, the app drawer and the
+  suggested-apps row without a white edge.
 
 ## Phase 9 — complete on automated gates and device
 
@@ -408,7 +415,7 @@ Gate evidence:
 | Privacy | `PRAGMA table_info('players')` contains no character/role/allegiance/team column; the log and the history list are searched for the five player names |
 | Device: full match | 5 players played from setup to GOOD VICTORY through the real SQLite database; History shows the finished row with its three quest dots |
 | Device: restore | force-stop and relaunch restored the match at PREPARATION, mid-vote (team kept, tally at zero) and at QUEST 2 / 5 |
-| Device: Play Again | confirmation, then a new match for the same five players at PREPARATION; the finished row kept its Good victory |
+| Device: Play Again | confirmation, then a new match for the same five players, the round table at PREPARATION and its night ready to open; the finished row kept its Good victory |
 | Device: History | the running match and the finished match listed newest first, "Three quests won · 28:49", no player names |
 | Device: settings | Filipino chosen, force-stop, relaunch: still Filipino and still in progress |
 | Device: abandon | Abort marked the running row `abandoned` in the pulled SQLite file; the finished row still reads `good` / `threeQuests` |
@@ -549,6 +556,74 @@ Known limits:
 - The extra delay is a silent wait: it adds time after the line, not before it, and it does not
   change the length of the script's own beat.
 
+## Optional team approval vote - complete
+
+A house-rule switch requested after Phase 10: some tables do not want to vote on every proposed
+team. Settings → Game → **Team approval vote** turns the approve/reject step off. The base game
+keeps it on, which is the default.
+
+### Behaviour with the vote on (default)
+
+Unchanged from Phase 6: confirming a team opens `Phase.teamVoting`, the MC records the hands, a
+majority approves, and a rejection counts towards the five-rejection loss.
+
+### Behaviour with the vote off
+
+- Confirming a team calls `GameEngine.proposeTeam(..., skipVote: true)`, which validates the team
+  exactly as before (size from `AvalonTables`, distinct seats, existing players) and then opens
+  `Phase.questResolution` directly. No tally is written: `approveVotes` and `rejectVotes` stay at
+  zero and `hasVotes` stays false.
+- Because no proposal is ever rejected, `rejectionCount` stays at zero for the whole match and the
+  five-rejection victory for Evil becomes unreachable. The other victory paths are untouched, and
+  the quest 4 two-fail rule still applies.
+- The leadership token still moves. `recordQuest` takes `voteSkipped:`, and when it is set the
+  round hands the token to the next player — the move a rejected or approved vote would have made
+  — so the same player does not lead every round. With the automatic King mode the wheel keeps
+  the serving King and excludes them from its own draw, exactly as it does after a vote.
+- The quest screen passes `voteSkipped: !settings.teamVoteEnabled` rather than deriving the flag
+  from the state, so a restored quest (which never stores a vote) cannot be mistaken for a
+  voteless one and rotate the token twice.
+- UI: the team selection screen says "The approval vote is off: this team goes straight to the
+  quest", and `GameProgressHeader` shows **VOTE Off** in place of the rejection tile on the
+  dashboard, team selection, quest resolution and assassination screens. The voting screen itself
+  is unchanged and is simply never reached.
+- The switch is app-wide, not per match: an MC who wants the base game back turns it on again.
+
+Gate evidence:
+
+| Check | Result |
+| --- | --- |
+| `flutter analyze` | No issues found |
+| `flutter test` | 247 tests pass (8 unit + 4 widget new; the simulation suite also runs every player count both ways) |
+| Engine rules | `test/unit/team_vote_setting_test.dart` (8): straight to the quest, the same team still votes when the switch is on, size/seat checks unchanged, the token passes on, the wheel still excludes the serving King, a whole voteless match counts no rejection, the controller carries the flag, quest 4 still needs two fail cards |
+| Simulation | `test/unit/game_simulation_test.dart` (29): 40 seeded matches per player count across vote on/off and both King modes, no rejection is ever counted without a vote, exactly one victory path fires |
+| Persistence | `test/unit/settings_store_test.dart`: `team_vote_enabled` encodes, decodes and survives a reset; drift schema v5 migrates from v4 with the column defaulting to on |
+| Settings + flow | `test/widget/team_vote_setting_test.dart` (4): the switch and its dynamic caption, off → quest resolution (never the voting screen) with `VOTE Off` in the strip, on → the vote as before, and a voteless quest returning to the day with the token on the next seat |
+
+Known limits:
+
+- The switch applies to the whole app and takes effect when a team is confirmed. Flipping it in
+  the middle of a match is allowed and simply changes the next proposal; the screen says which
+  mode is in force, and a half-played match that had rejections keeps them.
+- With the vote off, Evil's five-rejection victory cannot happen. That is the point of the house
+  rule, and How to Play says so.
+
+Device evidence (release APK `0.12.0+14`, installed over 0.11.0 on the Galaxy A36
+`RFCY30E0LRT`): the switch appeared under Settings → Game, its caption changed as it was flipped,
+and it was still off after a force-stop and relaunch, which exercises the real v4 → v5 migration
+on the installed database. The dashboard, team selection, quest resolution and assassination
+headers read **VOTE Off**; confirming a 2-player team for quest 1 and a 3-player team for quest 2
+went straight to quest resolution with no voting screen, both quests resolved, the leader token
+moved from seat 2 to 3 and then on, and the rejection tile never appeared. Play Again and a fresh
+night on the same table kept the switch off.
+
+**Play Again, fixed in the same build.** Play Again used to reset the setup draft and then open
+the setup preparation screen, whose "Begin the match" button starts a match *from that draft* —
+so the button was disabled and the new match could not be started at all. It now goes to the
+round table with the fresh match already waiting at PREPARATION. The roster, the composition and
+every setting carry over, the finished match keeps its result, and
+`test/widget/endgame_test.dart` proves the night can be opened from there.
+
 ## Cross-cutting known issues
 
 - A match that is interrupted mid-vote restores its proposed team but starts the tally again
@@ -573,10 +648,10 @@ Known limits:
   digest sits in the one `Settings` row. It is not encryption of the database, and anyone with
   the unlocked phone and developer tools can read the matches — there is nothing secret in them
   to read. Unlocking lasts the app session; closing the app locks it again.
-- The debug APK is ~1.4 GB because AGP cannot strip the Flutter engine libraries (no NDK
-  toolchain on this machine) and `keepDebugSymbols` keeps everything. Functionally fine; it
-  must be resolved before the release build in Phase 12 — either by installing the NDK
-  properly or by shipping a split-ABI release without the strip step.
+- `build/` is a junction to `%LOCALAPPDATA%\Temp\avalon_build` because this project lives in a
+  OneDrive folder and the sync client kept a handle on `build\app\intermediates`, failing the
+  Android build with "Unable to delete directory". Anything that deletes `build/` should keep the
+  junction (or recreate it with `mklink /J build %LOCALAPPDATA%\Temp\avalon_build`).
 - The bundled plates are public-domain paintings, not commissioned art: they were chosen for
   mood and composition, so a few are only loosely on-subject (the Excalibur plate is
   Waterhouse's *Magic Circle*). Replacing them with commissioned plates only requires new

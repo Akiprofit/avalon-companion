@@ -102,8 +102,12 @@ class _QuestResolutionScreenState extends ConsumerState<QuestResolutionScreen> {
     });
 
     final controller = ref.read(gameSessionProvider.notifier);
-    final drawLord = ref.read(settingsProvider).kingsDrawnAutomatically;
-    controller.recordQuest(failCards: _fail, drawLord: drawLord);
+    final settings = ref.read(settingsProvider);
+    controller.recordQuest(
+      failCards: _fail,
+      drawLord: settings.kingsDrawnAutomatically,
+      voteSkipped: !settings.teamVoteEnabled,
+    );
     final after = ref.read(gameSessionProvider);
     if (!mounted) return;
 
@@ -233,6 +237,9 @@ class _QuestResolutionScreenState extends ConsumerState<QuestResolutionScreen> {
             questNumber: game.questNumber,
             requiredTeamSize: game.requiredTeamSize,
             rejectionCount: game.rejectionCount,
+            showRejections: ref.watch(
+              settingsProvider.select((s) => s.teamVoteEnabled),
+            ),
             phaseLabel: game.phase.label,
             questSlots: game.questSlots,
           ),

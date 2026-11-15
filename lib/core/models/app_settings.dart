@@ -47,6 +47,7 @@ class AppSettings {
     this.discussionSeconds = 300,
     this.defaultPlayerCount = 5,
     this.kingSelectionMode = KingSelectionMode.manual,
+    this.teamVoteEnabled = true,
   });
 
   final NarrationLanguage defaultLanguage;
@@ -74,6 +75,13 @@ class AppSettings {
   /// Whether the wheel draws a new King at the start of every round.
   final KingSelectionMode kingSelectionMode;
 
+  /// Whether the table votes on every proposed team.
+  ///
+  /// The base game always votes. Some tables play a house rule where the leader
+  /// simply names a team, so the vote — and with it the rejection counter — can
+  /// be switched off without touching anything else in the match.
+  final bool teamVoteEnabled;
+
   bool get kingsDrawnAutomatically =>
       kingSelectionMode == KingSelectionMode.automatic;
 
@@ -94,6 +102,7 @@ class AppSettings {
     int? discussionSeconds,
     int? defaultPlayerCount,
     KingSelectionMode? kingSelectionMode,
+    bool? teamVoteEnabled,
   }) {
     return AppSettings(
       defaultLanguage: defaultLanguage ?? this.defaultLanguage,
@@ -113,6 +122,7 @@ class AppSettings {
       discussionSeconds: discussionSeconds ?? this.discussionSeconds,
       defaultPlayerCount: defaultPlayerCount ?? this.defaultPlayerCount,
       kingSelectionMode: kingSelectionMode ?? this.kingSelectionMode,
+      teamVoteEnabled: teamVoteEnabled ?? this.teamVoteEnabled,
     );
   }
 }

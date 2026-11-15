@@ -139,8 +139,17 @@ abstract final class GameEngine {
     return state.copyWith(phase: Phase.teamSelection);
   }
 
-  /// TeamSelection -> TeamVoting. Enforces team size and seat validity.
-  static GameState proposeTeam(GameState state, List<int> seats) {
+  /// TeamSelection -> TeamVoting, or straight to QuestResolution with [skipVote].
+  ///
+  /// [skipVote] is the house rule set in Settings: the leader names the team and
+  /// the quest is played without an approval vote. The proposal is validated
+  /// exactly the same way, and no vote is recorded, so the rejection counter and
+  /// the five-rejection loss never come into play.
+  static GameState proposeTeam(
+    GameState state,
+    List<int> seats, {
+    bool skipVote = false,
+  }) {
     _require(state.phase == Phase.teamSelection, state,
         'Propose a team during team selection.');
     _require(seats.length == state.requiredTeamSize, state,
@@ -154,7 +163,7 @@ abstract final class GameEngine {
     }
 
     return state.copyWith(
-      phase: Phase.teamVoting,
+      phase: skipVote ? Phase.questResolution : Phase.teamVoting,
       currentTeam: List<int>.unmodifiable(seats),
       approveVotes: 0,
       rejectVotes: 0,
@@ -233,6 +242,7 @@ abstract final class GameEngine {
     GameState state, {
     required int failCards,
     bool drawLord = false,
+    bool voteSkipped = false,
   }) {
     _require(state.phase == Phase.questResolution, state,
         'Quests are only resolved after an approved team.');
@@ -275,6 +285,10 @@ abstract final class GameEngine {
 
     return state.copyWith(
       phase: drawLord ? Phase.lordSelection : Phase.dayDiscussion,
+      // The wheel keeps the serving King so the draw can leave them out; with
+      // [voteSkipped] the token was never moved by an approval, so the round
+      // passes it on here instead.
+      leaderSeat: !drawLord && voteSkipped ? _nextLeaderSeat(state) : null,
       questResults: results,
       questNumber: state.questNumber + 1,
       rejectionCount: 0,

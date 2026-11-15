@@ -111,11 +111,13 @@ class GameSessionController extends Notifier<GameState?> {
     _apply(GameEngine.beginTeamSelection(game));
   }
 
-  /// Sends the chosen seats to the vote. The engine refuses a wrong size.
-  void proposeTeam(List<int> seats) {
+  /// Sends the chosen seats to the vote — or, with [skipVote], straight to the
+  /// quest when the approval vote is switched off in Settings. The engine
+  /// refuses a wrong size either way.
+  void proposeTeam(List<int> seats, {bool skipVote = false}) {
     final game = state;
     if (game == null) return;
-    _apply(GameEngine.proposeTeam(game, seats));
+    _apply(GameEngine.proposeTeam(game, seats, skipVote: skipVote));
   }
 
   /// Records the physical vote. The MC counts hands; the engine refuses totals
@@ -162,7 +164,14 @@ class GameSessionController extends Notifier<GameState?> {
   /// needed: the engine derives the successes from the team size, decides the
   /// quest 4 two-fail rule and moves the match on — to the next round, or to the
   /// wheel when [drawLord] is set.
-  void recordQuest({required int failCards, bool drawLord = false}) {
+  ///
+  /// [voteSkipped] comes from the approval-vote setting: with no vote there was
+  /// no approval to move the leadership token, so this is where it passes on.
+  void recordQuest({
+    required int failCards,
+    bool drawLord = false,
+    bool voteSkipped = false,
+  }) {
     final game = state;
     if (game == null || game.phase != Phase.questResolution) return;
 
@@ -172,6 +181,7 @@ class GameSessionController extends Notifier<GameState?> {
       game,
       failCards: failCards,
       drawLord: drawLord,
+      voteSkipped: voteSkipped,
     );
 
     final result = next.questResults.last;

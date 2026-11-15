@@ -1,8 +1,12 @@
+import 'dart:io';
+
 import 'package:avalon_companion/core/models/app_settings.dart';
 import 'package:avalon_companion/database/app_database.dart';
 import 'package:avalon_companion/database/repositories/settings_repository.dart';
 import 'package:avalon_companion/narration_engine/models/narration_instruction.dart';
+import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sqlite3/sqlite3.dart';
 
 /// Phase 9 gate: preferences survive a restart, and nothing secret is stored.
 void main() {
@@ -21,6 +25,7 @@ void main() {
     int players = 5,
     String kingSelection = 'manual',
     int extraDelayMs = 0,
+    bool teamVote = true,
   }) {
     return SettingsRecord(
       id: 1,
@@ -41,6 +46,7 @@ void main() {
       mcPinHash: null,
       kingSelection: kingSelection,
       narratorExtraDelayMs: extraDelayMs,
+      teamVoteEnabled: teamVote,
     );
   }
 
@@ -61,6 +67,7 @@ void main() {
       discussionSeconds: 420,
       defaultPlayerCount: 8,
       kingSelectionMode: KingSelectionMode.automatic,
+      teamVoteEnabled: false,
     );
 
     final companion = SettingsRepository.encode(saved);
@@ -80,6 +87,7 @@ void main() {
     expect(companion.defaultPlayerCount.value, 8);
     expect(companion.kingSelection.value, 'automatic');
     expect(companion.narratorExtraDelayMs.value, 7000);
+    expect(companion.teamVoteEnabled.value, false);
 
     final decoded = SettingsRepository.decode(
       record(
@@ -97,6 +105,7 @@ void main() {
         players: 8,
         kingSelection: 'automatic',
         extraDelayMs: 7000,
+        teamVote: false,
       ),
     );
 
@@ -114,6 +123,7 @@ void main() {
     expect(decoded.defaultPlayerCount, 8);
     expect(decoded.kingSelectionMode, KingSelectionMode.automatic);
     expect(decoded.narratorExtraDelay, const Duration(seconds: 7));
+    expect(decoded.teamVoteEnabled, isFalse);
   });
 
   test('an unknown King mode falls back to the manual wheel', () {
@@ -154,5 +164,54 @@ void main() {
     expect(defaults.kingSelectionMode, KingSelectionMode.manual);
     expect(defaults.narratorExtraDelay, Duration.zero);
     expect(defaults.kingsDrawnAutomatically, isFalse);
+    expect(
+      defaults.teamVoteEnabled,
+      isTrue,
+      reason: 'the base game votes unless the MC turns it off',
+    );
+  });
+
+  test('a version 4 database gains the vote switch, switched on', () async {
+    final file = File(
+      '${Directory.systemTemp.path}${Platform.pathSeparator}'
+      'avalon_vote_migration.db',
+    );
+    if (await file.exists()) await file.delete();
+
+    // Build a real database with the current schema, write a row, then wind it
+    // back to v4: drop the new column and reset the version stamp. Reopening it
+    // is what runs the migration, exactly as an upgraded install does.
+    final before = AppDatabase(NativeDatabase(file));
+    await before
+        .into(before.settings)
+        .insert(
+          SettingsRepository.encode(
+            const AppSettings(discussionSeconds: 420, teamVoteEnabled: false),
+          ),
+        );
+    await before.close();
+
+    sqlite3.open(file.path)
+      ..execute('ALTER TABLE settings DROP COLUMN team_vote_enabled')
+      ..execute('PRAGMA user_version = 4')
+      ..close();
+
+    final after = AppDatabase(NativeDatabase(file));
+    addTearDown(() async {
+      await after.close();
+      if (await file.exists()) await file.delete();
+    });
+
+    final migrated = await SettingsRepository(after).load();
+    expect(
+      migrated.teamVoteEnabled,
+      isTrue,
+      reason: 'a table that predates the switch keeps the base game rule',
+    );
+    expect(
+      migrated.discussionSeconds,
+      420,
+      reason: 'the rest of the saved row is untouched',
+    );
   });
 }

@@ -40,6 +40,11 @@ class SettingsController extends Notifier<AppSettings> {
   void setKingSelectionMode(KingSelectionMode mode) =>
       update((s) => s.copyWith(kingSelectionMode: mode));
 
+  /// Turns the approval vote on or off for future proposals. Existing matches
+  /// are untouched: the rule is read when a team is confirmed.
+  void setTeamVoteEnabled(bool enabled) =>
+      update((s) => s.copyWith(teamVoteEnabled: enabled));
+
   /// Extra silence after every narration line; capped so a slide can never
   /// stall the night for longer than half a minute.
   void setNarratorExtraDelay(Duration delay) => update(

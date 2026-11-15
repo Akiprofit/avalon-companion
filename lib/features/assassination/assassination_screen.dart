@@ -16,6 +16,7 @@ import '../../core/widgets/secondary_button.dart';
 import '../../core/widgets/section_header.dart';
 import '../../game_engine/controllers/game_session_controller.dart';
 import '../../game_engine/models/phase.dart';
+import '../settings/settings_controller.dart';
 
 /// Screen 11 — the assassination.
 ///
@@ -136,6 +137,9 @@ class _AssassinationScreenState extends ConsumerState<AssassinationScreen> {
             questNumber: game.questNumber,
             requiredTeamSize: game.requiredTeamSize,
             rejectionCount: game.rejectionCount,
+            showRejections: ref.watch(
+              settingsProvider.select((s) => s.teamVoteEnabled),
+            ),
             phaseLabel: game.phase.label,
             questSlots: game.questSlots,
           ),

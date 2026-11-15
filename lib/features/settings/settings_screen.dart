@@ -276,6 +276,18 @@ class SettingsScreen extends ConsumerWidget {
                   style: AppText.caption.copyWith(color: AppColors.mutedGold),
                 ),
                 const SizedBox(height: Space.md),
+                SettingsTile.toggle(
+                  key: const Key('settings_team_vote'),
+                  label: 'Team approval vote',
+                  description: settings.teamVoteEnabled
+                      ? 'Each proposed team is approved or rejected before the '
+                            'cards are played.'
+                      : 'The leader\'s team goes straight to the quest, and '
+                            'rejections stop being counted.',
+                  value: settings.teamVoteEnabled,
+                  onChanged: controller.setTeamVoteEnabled,
+                ),
+                const SizedBox(height: Space.md),
                 Text('Default player count', style: AppText.bodyStrong),
                 const SizedBox(height: Space.xs),
                 Wrap(

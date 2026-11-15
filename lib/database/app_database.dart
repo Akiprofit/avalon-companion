@@ -156,6 +156,11 @@ class Settings extends Table {
   /// Extra silence after each spoken narration line, in milliseconds.
   IntColumn get narratorExtraDelayMs =>
       integer().withDefault(const Constant(0))();
+
+  /// Whether the table votes on every proposed team. Off is a house rule: the
+  /// chosen team goes straight to the quest and rejections never count.
+  BoolColumn get teamVoteEnabled =>
+      boolean().withDefault(const Constant(true))();
 }
 
 @DriftDatabase(
@@ -165,7 +170,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -183,6 +188,10 @@ class AppDatabase extends _$AppDatabase {
       if (from < 4) {
         await m.addColumn(settings, settings.kingSelection);
         await m.addColumn(settings, settings.narratorExtraDelayMs);
+      }
+      // v5 added the team approval vote switch. Existing rows keep voting on.
+      if (from < 5) {
+        await m.addColumn(settings, settings.teamVoteEnabled);
       }
     },
     beforeOpen: (details) async {
