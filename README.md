@@ -164,6 +164,15 @@ database file cannot be opened — persistence is a side effect, never a depende
 - Saved matches store the roster, the public state and the outcome. There is no character,
   role or allegiance column on a player, so the history screen has nothing to leak.
 
+## License
+
+MIT — see [`LICENSE`](LICENSE). Use it, change it, ship it; keep the copyright notice.
+
+The bundled paintings are public domain and are credited above. The fonts are under the SIL
+Open Font License. The app is an unofficial fan-made companion: not affiliated with or endorsed
+by the publisher of *The Resistance: Avalon*, and the Avalon name is used only to describe what
+the app accompanies.
+
 ## Credits
 
 Typography: Cinzel by Natanael Gama and Inter by Rasmus Andersson, both under the SIL Open
