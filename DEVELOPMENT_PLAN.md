@@ -12,9 +12,9 @@ Tracks progress against `MASTER_PLAN.md.txt`. Update this file at the end of eve
 | 4 | Night narration engine (audio) | complete |
 | 5 | Day phase and team selection | complete |
 | 6 | Physical voting system | complete |
-| 7 | Quest resolution | complete (device pass pending) |
+| 7 | Quest resolution | complete |
 | 8 | Endgame and victory | complete |
-| 9 | Database and auto-save | not started |
+| 9 | Database and auto-save | complete |
 | 10 | Polish and accessibility | not started |
 | 11 | Complete QA | not started |
 | 12 | Android release | not started |
@@ -264,7 +264,7 @@ Gate evidence:
 | Device: approved vote | dialog reads "The team is approved"; the screen behind stays frozen and dimmed |
 | Device: back to the table | dashboard reads QUEST RESOLUTION, leader token moved to the next seat |
 
-## Phase 7 — complete on automated gates, device pass pending
+## Phase 7 — complete on automated gates and device
 
 Delivered:
 
@@ -288,7 +288,8 @@ Gate evidence:
 | `flutter analyze` | No issues found |
 | `flutter test` | 126 tests pass (5 new quest-resolution tests) |
 | `flutter build apk --debug` | built successfully |
-| Device: quest screen | not run — the test phone was disconnected during installation |
+| Device: quest screen | 3-card quest counted at 3/3, "This quest succeeds", confirm dialog, "Good 2 — Evil 0" |
+| Device: quest 3 of 5 | two-card team counted at 2/2, recorded after confirmation, three successes sent the match to the accusation |
 
 ## Phase 8 — complete on automated gates and device
 
@@ -354,12 +355,82 @@ phases. Nothing in the game engine changed.
   APK was proven correct (byte-identical on device, correct under a second package id) and a
   clean install of `0.8.1+10` displayed the new icon in App info, the launcher and Recents.
 
+## Phase 9 — complete on automated gates and device
+
+Delivered: a match is remembered. The app writes it as it is played, and an interrupted match
+comes back where the table left it. The uncommitted work from the previous iteration — the
+Lord wheel and Play Again — ships with this phase, and both are covered by the persistence
+tests, because a played match now has to end with the right row.
+
+- `lib/database/app_database.dart` — Drift schema at version 2 with the master plan's PART 8
+  tables: `Games`, `Players`, `Quests`, `TeamProposals`, `GameEvents` and `Settings`. Foreign
+  keys are enabled on open so a deleted match takes its seats, votes, quests and events with it.
+  Version 2 added `Games.currentTeam`, so an interrupted proposal restores with its seats; the
+  migration is an explicit `addColumn`, not a destructive rebuild.
+- There is no character, role or allegiance column anywhere in the schema. The place where a
+  role mapping would live does not exist, which is the strongest form of the privacy rule.
+- `lib/database/match_store.dart` — `MatchStore`, the interface the session controller uses:
+  `createMatch`, `saveState`, `recordProposal`, `recordQuest`, `addEvent`, `markAbandoned`,
+  `findInProgress`, `matches`. `GameRepository` implements it with transactions; the
+  controller never imports Drift.
+- Auto-save is a side effect, never a dependency. State changes first and synchronously, then
+  the same snapshot is chained onto a write queue, so two reports cannot interleave and the
+  newest state always lands last. A failed write is swallowed and the match continues; the
+  worst case is a match that cannot be restored, not a match that stops.
+- A vote or a quest appends its own row (seats, counts, verdict, fail cards) plus the snapshot,
+  so the history can be rebuilt from rows as well as from the snapshot.
+- Play Again creates a new row. The finished match keeps its result: a victory is never
+  rewritten as abandoned, which is what the "still running" check keys on.
+- `bootstrap()` is async: it opens the database, loads the `Settings` row and looks for a
+  running match before `runApp`, so the first frame already has the right language and no
+  "Continue Game" flash. Every step is wrapped: if SQLite cannot be opened the app runs fully
+  playable and simply remembers nothing.
+- Storage providers default to `null` and are overridden in bootstrap, which keeps the widget
+  tests hermetic (they pump `ProviderScope` with no database) without a single mock.
+- History is a real `FutureProvider` over `MatchStore.matches()`, with empty, loading and error
+  states, a quest-slot row per match, the outcome and a duration. Settings persist through the
+  same database; `SettingsRepository.encode`/`decode` are pure and tested on their own.
+- A restored vote starts its tally at zero on purpose: the app never stores a partial vote, and
+  re-counting hands is safer than trusting half a count.
+
+Gate evidence:
+
+| Check | Result |
+| --- | --- |
+| `flutter analyze` | No issues found |
+| `flutter test` | 171 tests pass (30 new) |
+| New tests | `test/database/game_repository_test.dart` (10, real in-memory SQLite), `test/unit/persistence_test.dart` (12, controller against a fake store), `test/unit/settings_store_test.dart` (4), `test/widget/history_test.dart` (4) |
+| Storage failure | a store where every write throws still plays a match to victory |
+| No store at all | the whole match, including Play Again, works with `matchStoreProvider` null |
+| Privacy | `PRAGMA table_info('players')` contains no character/role/allegiance/team column; the log and the history list are searched for the five player names |
+| Device: full match | 5 players played from setup to GOOD VICTORY through the real SQLite database; History shows the finished row with its three quest dots |
+| Device: restore | force-stop and relaunch restored the match at PREPARATION, mid-vote (team kept, tally at zero) and at QUEST 2 / 5 |
+| Device: Play Again | confirmation, then a new match for the same five players at PREPARATION; the finished row kept its Good victory |
+| Device: History | the running match and the finished match listed newest first, "Three quests won · 28:49", no player names |
+| Device: settings | Filipino chosen, force-stop, relaunch: still Filipino and still in progress |
+| Device: app update | `adb install -r` over the running install kept the saved match and settings |
+
+Known limits:
+
+- Votes in progress are not persisted. The team is, the tally is not (see cross-cutting issues).
+- The database is one SQLite file in the app's data directory; there is no export or backup
+  yet. Phase 10 adds the settings affordances around it, Phase 12 the release checklist.
+
 ## Cross-cutting known issues
 
-- Nothing is persisted yet: a match lives only in memory, so the Android low-memory killer
-  can end it mid-play. One run was cut short this way (`exit-info`:
-  `reason=3 (LOW_MEMORY)`, `anrInfo=timeoutMillis=14600`), and the table had to start over.
-  Phase 9 (Drift and auto-save) is the fix; until then, keep the app in the foreground.
+- A match that is interrupted mid-vote restores its proposed team but starts the tally again
+  from zero. That is deliberate: the app never stores a partial vote, and re-counting hands is
+  safer than trusting a half-written tally. Re-counting is a few seconds at the table.
+- A restored match keeps its original start time, so a match that spanned a crash reports the
+  wall-clock length, including the time the app was closed. Duration is a convenience, not a
+  rule.
+- The Android build pins `path_provider_android` below 2.3 through
+  `dependency_overrides`. From 2.3 it depends on `package:jni`, which compiles a native
+  helper with CMake and needs a complete Android NDK; the NDK folder on this machine
+  (`ndk/28.2.13676358`) holds only `source.properties`, so the build fails at
+  `:jni:configureCMakeDebug[arm64-v8a]` with `CMAKE_C_COMPILER not set`. The app only needs
+  the documents directory, so the last platform-channel implementation is enough. Remove the
+  pin once the NDK is installed properly — which the release build needs anyway.
 - The debug APK is ~1.4 GB because AGP cannot strip the Flutter engine libraries (no NDK
   toolchain on this machine) and `keepDebugSymbols` keeps everything. Functionally fine; it
   must be resolved before the release build in Phase 12 — either by installing the NDK
@@ -382,7 +453,7 @@ phases. Nothing in the game engine changed.
 
 ## Next phase
 
-Phase 9 — database and auto-save: SQLite through Drift with the plan's tables, the current
-match written after every confirmed action, match and event history, session recovery on
-launch and settings persistence. The acceptance test is that an interrupted match resumes
-without losing confirmed progress — the gap behind the low-memory kill noted above.
+Phase 10 — polish and accessibility: 360 dp layout and app-bar truncation, a voice picker for
+the installed en-GB voices, contrast and touch-target audit, reduced-motion coverage on the new
+wheel and history list, and the remainder of the design-system refresh. Phase 11 is the full QA
+pass, Phase 12 the signed release.

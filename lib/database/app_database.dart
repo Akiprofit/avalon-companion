@@ -34,6 +34,10 @@ class Games extends Table {
   IntColumn get questNumber => integer()();
   IntColumn get rejectionCount => integer()();
 
+  /// Seats on the current proposal, comma joined and ascending. Empty outside a
+  /// proposal. Keeping it lets an interrupted vote resume with the team shown.
+  TextColumn get currentTeam => text().withDefault(const Constant(''))();
+
   /// Quest outcomes in order, comma joined: `success,fail`.
   TextColumn get questResults => text()();
 
@@ -145,10 +149,16 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
+    onUpgrade: (m, from, to) async {
+      // v2 added the current proposal, so an interrupted vote can be restored.
+      if (from < 2) {
+        await m.addColumn(games, games.currentTeam);
+      }
+    },
     beforeOpen: (details) async {
       // CASCADE deletes rely on this; drift does not enable it for us.
       await customStatement('PRAGMA foreign_keys = ON');

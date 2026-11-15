@@ -1,8 +1,8 @@
 /// Static app metadata shown on the About section and the home footer.
 abstract final class AppInfo {
   static const name = 'Avalon Companion';
-  static const version = '0.8.0';
-  static const buildPhase = 'Phase 8';
+  static const version = '0.9.0';
+  static const buildPhase = 'Phase 9';
   static const disclaimer =
       'Unofficial fan-made companion for The Resistance: Avalon. '
       'Not affiliated with or endorsed by the game\'s publisher.';

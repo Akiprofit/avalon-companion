@@ -2,7 +2,7 @@ name: avalon_companion
 description: "Offline Game Master companion for physical games of The Resistance: Avalon."
 publish_to: 'none'
 
-version: 0.8.1+10
+version: 0.9.0+11
 
 environment:
   sdk: ^3.14.0
@@ -24,6 +24,15 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   drift_dev: ^2.35.3
   build_runner: ^2.17.1
+  sqlite3: ^3.9.1
+
+# `path_provider_android` 2.3 depends on `package:jni`, which builds a native
+# helper with CMake and therefore needs a complete Android NDK on the build
+# machine. This app only asks for the documents directory, so it stays on the
+# last platform-channel implementation. Remove this pin once the NDK toolchain
+# is part of the build (see DEVELOPMENT_PLAN, Phase 12).
+dependency_overrides:
+  path_provider_android: '>=2.2.5 <2.3.0'
 
 flutter:
   uses-material-design: true

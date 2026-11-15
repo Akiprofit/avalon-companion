@@ -10,17 +10,25 @@ player-to-role mapping anywhere in the app or its storage.
 
 ## Status
 
-Phase 8 of 12 is implemented: day discussion, team selection, the physical vote, quest
-resolution, the assassination and both victory screens. A match can be created for 5–10
-players, the night is spoken aloud by the phone in English or Filipino — English in a British
-narrator voice with deliberate pauses — the MC runs the discussion timer, proposes a quest
-team, records the table's vote and the success and fail cards that come back from the quest.
-The engine applies the quest 4 two-fail rule, keeps the score and decides when the match is
-over; the accusation records only whether Merlin was named, and the result screen summarises
-the match without ever naming a player. Phases 5, 6 and 8 have been verified on a Galaxy A36;
-Phase 7 passes its automated gates and is waiting for the next device pass. Saved matches,
-history and settings persistence arrive next. See `DEVELOPMENT_PLAN.md` for the phase table,
-`DESIGN_SYSTEM.md` for the visual system and `CHANGELOG.md` for what has shipped.
+Phase 9 of 12 is implemented: a full match, from setup to victory, and a record of it that
+survives the app closing. A match can be created for 5–10 players, the night is spoken aloud by
+the phone in English or Filipino — English in a British narrator voice with deliberate pauses —
+the wheel draws the first Lord, and the MC runs the discussion timer, proposes a quest team,
+records the table's vote and the success and fail cards that come back from the quest. The
+engine applies the quest 4 two-fail rule, keeps the score and decides when the match is over;
+the accusation records only whether Merlin was named, and the result screen summarises the
+match without ever naming a player. **Play Again** deals the same table a fresh match.
+
+Every confirmed action is written to an on-device SQLite database, so an interrupted match
+reopens where it stopped: the app offers **Continue Game** at launch with the phase, quest and
+roster already restored. **History** lists finished and abandoned matches with their quest
+record and outcome, and settings persist across restarts. Nothing is uploaded and no account
+is needed; the database never holds a character for a player, because the app is never told
+one.
+
+Phases 5, 6, 8 and 9 have been verified by automated gates; Phases 5, 6 and 8 also on a Galaxy
+A36. See `DEVELOPMENT_PLAN.md` for the phase table, `DESIGN_SYSTEM.md` for the visual system
+and `CHANGELOG.md` for what has shipped.
 
 ## Requirements
 
@@ -59,24 +67,33 @@ Output: `build/app/outputs/flutter-apk/app-release.apk`
 ```text
 lib/
   app/                 bootstrap, MaterialApp, router, splash
-  core/                theme tokens, constants, shared components
+  core/                theme tokens, constants, shared components, app settings model
+  database/            Drift schema, repositories, storage providers
   features/            home, setup, preparation, narration, dashboard, history, settings
   game_engine/         models, rule tables, session controller
   narration_engine/    script data, narration controller, TTS abstraction
 test/
-  unit/                rule tables, engine, privacy guards, narration sequence and playback
+  database/            the real schema, against in-memory SQLite
+  unit/                rule tables, engine, privacy guards, narration, persistence, settings
+  support/             in-memory match store and other fakes
   widget/              navigation and layout
 ```
 
 Rules live in `lib/game_engine/` as pure Dart. No Flutter import is allowed there, which
 is what makes the rule tests fast and the rules independently verifiable.
 
+Storage lives in `lib/database/`. The session controller talks to the `MatchStore` interface,
+never to Drift, so the live match is testable with a fake and still runs on a device where the
+database file cannot be opened — persistence is a side effect, never a dependency.
+
 ## Privacy
 
 - No player-to-character mapping, ever.
 - Assassination records an outcome, not a person.
 - No analytics, no network calls, no cloud sync.
-- All data stays on the device.
+- All data stays on the device, in a single SQLite file.
+- Saved matches store the roster, the public state and the outcome. There is no character,
+  role or allegiance column on a player, so the history screen has nothing to leak.
 
 ## Credits
 

@@ -9,79 +9,21 @@ import '../../game_engine/models/phase.dart';
 import '../../game_engine/models/player.dart';
 import '../../game_engine/rules/avalon_tables.dart';
 import '../app_database.dart';
+import '../match_store.dart';
 
-/// Status codes stored in `Games.status`.
-class MatchStatus {
-  const MatchStatus._();
+export '../match_store.dart';
 
-  static const inProgress = 'inProgress';
-  static const finished = 'finished';
-  static const abandoned = 'abandoned';
-}
-
-/// Reasons stored in `Games.winReason`.
-abstract final class WinReason {
-  static const threeQuests = 'threeQuests';
-  static const fiveRejections = 'fiveRejections';
-  static const assassination = 'assassination';
-}
-
-/// One row of the history list, decoded from the database.
-class MatchSummary {
-  const MatchSummary({
-    required this.id,
-    required this.startedAt,
-    required this.updatedAt,
-    required this.playerCount,
-    required this.status,
-    required this.questResults,
-    this.winner,
-    this.winReason,
-    this.durationSeconds,
-    this.assassinationOutcome,
-  });
-
-  final int id;
-  final DateTime startedAt;
-  final DateTime updatedAt;
-  final int playerCount;
-  final String status;
-  final List<QuestResult> questResults;
-  final String? winner;
-  final String? winReason;
-  final int? durationSeconds;
-  final String? assassinationOutcome;
-
-  bool get isFinished => status == MatchStatus.finished;
-  bool get isAbandoned => status == MatchStatus.abandoned;
-  bool get isInProgress => status == MatchStatus.inProgress;
-
-  int get successCount =>
-      questResults.where((r) => r == QuestResult.success).length;
-  int get failCount => questResults.where((r) => r == QuestResult.fail).length;
-
-  Duration? get duration =>
-      durationSeconds == null ? null : Duration(seconds: durationSeconds!);
-}
-
-/// A match loaded for recovery, with the row id that later saves update.
-class StoredMatch {
-  const StoredMatch({required this.id, required this.state});
-
-  final int id;
-  final GameState state;
-}
-
-/// Reads and writes matches — the only place that knows the tables.
+/// Reads and writes matches â€” the only place that knows the tables.
 ///
 /// Every method takes or returns game-engine models, never Drift rows, and a
 /// finished match is written in one transaction with its events.
-class GameRepository {
+class GameRepository implements MatchStore {
   GameRepository(this._db);
 
   final AppDatabase _db;
 
   /// Writes the first snapshot of a match: the row, its seats and its event.
+  @override
   Future<int> createMatch(GameState state) {
     return _db.transaction(() async {
       final id = await _db.into(_db.games).insert(_gamesCompanion(state));
@@ -97,6 +39,7 @@ class GameRepository {
   }
 
   /// Updates the snapshot after a confirmed action.
+  @override
   Future<void> saveState(int gameId, GameState state) {
     return _db.transaction(() async {
       await (_db.update(_db.games)..where((g) => g.id.equals(gameId))).write(
@@ -107,6 +50,7 @@ class GameRepository {
   }
 
   /// Appends a resolved team vote (master plan PART 8, `TeamProposals`).
+  @override
   Future<void> recordProposal({
     required int gameId,
     required int questNumber,
@@ -142,6 +86,7 @@ class GameRepository {
   }
 
   /// Appends a resolved quest (master plan PART 8, `Quests`).
+  @override
   Future<void> recordQuest({
     required int gameId,
     required int questNumber,
@@ -174,10 +119,12 @@ class GameRepository {
   }
 
   /// Public log lines, newest last.
+  @override
   Future<void> addEvent(int gameId, String type, String description) =>
       _insertEvent(gameId, type, description);
 
   /// The match to offer as **Continue Game**, if one is still running.
+  @override
   Future<StoredMatch?> findInProgress() async {
     final row =
         await (_db.select(_db.games)
@@ -190,6 +137,7 @@ class GameRepository {
   }
 
   /// History list, newest first, paged.
+  @override
   Future<List<MatchSummary>> matches({int limit = 50, int offset = 0}) async {
     final rows =
         await (_db.select(_db.games)
@@ -225,6 +173,7 @@ class GameRepository {
     await (_db.delete(_db.games)..where((g) => g.id.equals(gameId))).go();
   }
 
+  @override
   Future<void> markAbandoned(int gameId) async {
     await (_db.update(_db.games)..where((g) => g.id.equals(gameId))).write(
       GamesCompanion(
@@ -283,6 +232,9 @@ class GameRepository {
       questResults: Value(
         state.questResults.map((r) => r.name).join(','),
       ),
+      currentTeam: Value(
+        ([...state.currentTeam]..sort()).join(','),
+      ),
       composition: Value(_encodeComposition(state.composition)),
       winReason: Value(finished ? winReasonOf(state) : null),
       assassinationOutcome: Value(
@@ -321,7 +273,10 @@ class GameRepository {
                 ? QuestResult.success
                 : QuestResult.fail,
       ]),
-      currentTeam: const [],
+      currentTeam: List<int>.unmodifiable([
+        for (final seat in row.currentTeam.split(','))
+          if (seat.isNotEmpty) int.tryParse(seat) ?? 0,
+      ].where((seat) => seat > 0)),
       approveVotes: 0,
       rejectVotes: 0,
       pausedFrom: row.pausedFrom == null

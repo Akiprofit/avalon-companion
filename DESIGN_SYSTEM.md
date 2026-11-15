@@ -115,15 +115,24 @@ Component rules:
 3. Preparation
 4. Game dashboard
 5. Narration
-6. Team proposal
-7. Voting
-8. Mission results
-9. Assassination
-10. Game results
-11. Settings
+6. Lord selection (the wheel that draws the first Lord)
+7. Team proposal
+8. Voting
+9. Mission results
+10. Assassination
+11. Game results
+12. Game history
+13. Settings
+14. How to play
 
 Each screen: one `AvalonScreen` shell, an optional artwork plate, a Cinzel
 heading, content in `MedievalCard` panels, one primary action.
+
+Screens that are lists rather than a single decision — history, setup seats —
+use `SectionHeader` plus repeating tiles instead of a primary action, and state
+plainly what is missing when the list is empty. History never shows a player
+name or a character: it lists the date, the seat count, the five quest slots and
+how the match ended.
 
 ## 7. Artwork
 
