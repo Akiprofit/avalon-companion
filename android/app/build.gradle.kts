@@ -56,6 +56,19 @@ android {
     }
 
     buildTypes {
+        // A debug build shares the release identity when the keystore is on the
+        // machine, so `flutter test integration_test -d …` installs over the
+        // release-signed app instead of failing with a signature mismatch. The
+        // test harness still uninstalls the app when the run ends, which takes
+        // the saved matches with it; without key.properties debug keeps the
+        // debug key.
+        debug {
+            signingConfig = if (keystorePropertiesFile.exists()) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
+        }
         release {
             signingConfig = if (keystorePropertiesFile.exists()) {
                 signingConfigs.getByName("release")

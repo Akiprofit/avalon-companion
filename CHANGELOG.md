@@ -37,17 +37,22 @@ development phase, in the order the plan defines them.
 | Release APK | `flutter build apk --release` succeeds: 62.6 MB, `versionName` 1.1.0, `versionCode` 17, arm64-v8a + armeabi-v7a + x86_64 |
 | Audio inside the APK | 28 MP3s (2.57 MB) present as **stored** entries under `assets/flutter_assets/assets/audio/narration/en/` and the matching `fil/` folder, so `MediaPlayer` can open them with `AssetManager.openFd` |
 | Bundle guard | `test/unit/narration_clips_test.dart` now also fails if `pubspec.yaml` stops listing a language folder — the first build shipped only the folder's README, because Flutter asset folders are not recursive |
-| Signature | `apksigner verify` report: `CN=Android Debug` (see Known limits) |
-| Device | not run for this build: no phone was connected, and the debug-signed APK cannot replace the release-signed 1.0.0 on the test device |
+| Signature | one signer, `CN=Avalon Companion`, SHA-256 `1aa864f1…a570b808` — the same certificate as the installed 1.0.0; `zipalign -c -p 4` passes; SHA-256 of the APK `D7A4D72F…ECBBD9EC` |
+| Device: upgrade | `adb install -r` over the release-signed 1.0.0 succeeded on a Galaxy A36 (Android 17), keeping the match and settings saved by 1.0.0. The app opened on Home with **Continue Game** and "In progress: 5 players, quest 1 of 5", so the schema v6 migration ran against a real database |
+| Device: recorded narrator | `integration_test/clip_playback_test.dart` passed on `RFCY30E0LRT`: the English and Filipino `night.end` clips both decoded and finished from inside the installed APK (played at volume 0, so only decoding is asserted) |
+| Device: saved audio | the test also proves `MediaPlayer` can open the MP3s with `AssetManager.openFd`, which is what the stored (uncompressed) entries are for |
 
 ### Known limits
 
 - The seven round lines are defined but never played, so they have no recordings; enabling them
   later will need audio to avoid a change of narrator mid-match.
-- `android/key.properties` is not in this checkout, so a release build here is signed with the
-  debug key. Installing it over the 1.0.0 release build fails with a signature mismatch; either
-  restore the keystore passwords and rebuild, or uninstall the old app first (which deletes its
-  saved matches).
+- The device test run installs a debug build and Flutter uninstalls the app when the run ends, so
+  the matches the phone held before it are gone: the phone now has a fresh 1.1.0 install, not the
+  upgraded one. The upgrade itself kept its data (see the Device: upgrade row); the loss came
+  from the test harness, not the app. `android/app/build.gradle.kts` now signs debug builds with
+  the release key when `key.properties` exists, so the test can install over the release app
+  without an uninstall — it is Flutter's teardown after the run that removes the package.
+- The upgrade test could only be run once, because the test uninstalled the app afterwards.
 
 ## [1.0.0] – Phase 12 Android release
 

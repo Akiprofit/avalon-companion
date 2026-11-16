@@ -51,9 +51,9 @@ off for a house rule: the leader's team then goes straight to the quest, rejecti
 counted, and the token still passes on when the quest is resolved.
 
 Every phase has been verified by automated gates — `flutter analyze`, 274 unit and widget tests,
-two on-device integration tests — and on a Galaxy A36 (Android 16) through a signed 1.0.0 release
-build. See `DEVELOPMENT_PLAN.md` for the phase table, `DESIGN_SYSTEM.md` for the visual system and
-`CHANGELOG.md` for what has shipped.
+three on-device integration tests — and on a Galaxy A36 (Android 17) through signed 1.0.0 and
+1.1.0 release builds. See `DEVELOPMENT_PLAN.md` for the phase table, `DESIGN_SYSTEM.md` for the
+visual system and `CHANGELOG.md` for what has shipped.
 
 ## Requirements
 
@@ -74,7 +74,12 @@ flutter run
 flutter analyze
 flutter test
 flutter test integration_test -d <device-id>   # real app on a phone, real database
+flutter test integration_test/clip_playback_test.dart -d <device-id>  # narrator audio decodes
 ```
+
+The device run installs a debug build and Flutter uninstalls it afterwards, so the phone's saved
+matches do not survive it. Debug builds are signed with the release key when
+`android/key.properties` exists, which lets them install over the release app in the first place.
 
 ## Build the APK
 
@@ -86,8 +91,9 @@ flutter test
 flutter build apk --release
 ```
 
-Output: `build/app/outputs/flutter-apk/app-release.apk`, about 60 MB — the
-Flutter engine for arm64, arm and x86_64, stripped.
+Output: `build/app/outputs/flutter-apk/app-release.apk`, about 63 MB — the
+Flutter engine for arm64, arm and x86_64, stripped, plus the 28 narrator
+recordings (2.6 MB, stored uncompressed so `MediaPlayer` can open them).
 
 The release build is signed with the keystore named in `android/key.properties`
 (gitignored). That file points at a keystore outside the repository:
@@ -144,7 +150,9 @@ lib/
   database/            Drift schema, repositories, storage providers
   features/            home, setup, preparation, narration, dashboard, history, settings
   game_engine/         models, rule tables, session controller
-  narration_engine/    script data, narration controller, TTS abstraction
+  narration_engine/    script data, narration controller, recorded clips, TTS fallback
+assets/
+  audio/narration/     the narrator's recordings: en/ and fil/, one MP3 per night line
 test/
   database/            the real schema, against in-memory SQLite
   unit/                rule tables, engine, privacy guards, narration, persistence, settings

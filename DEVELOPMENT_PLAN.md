@@ -674,11 +674,14 @@ Gate evidence:
 | `flutter test` | 274 tests pass (2 engine, 1 persistence, 3 board-review widgets, 6 recorded-narrator controller, 4 clip-set and bundle gates new) |
 | `flutter build apk --release` | succeeds: 62.6 MB, `versionName` 1.1.0, `versionCode` 17, arm64-v8a + armeabi-v7a + x86_64 |
 | Audio in the APK | 28 MP3s (2.57 MB) stored uncompressed under `assets/flutter_assets/assets/audio/narration/en/` and `.../fil/`, which is what `AssetManager.openFd` needs. The first build bundled only the folder README: Flutter asset folders are not recursive, so `en/` and `fil/` are now listed in `pubspec.yaml` and a test guards it |
-| Signature | `CN=Android Debug`, because `android/key.properties` is not in this checkout. The APK cannot update the release-signed 1.0.0 on the phone until the keystore passwords are restored, so nothing was installed |
+| Signature | one signer, `CN=Avalon Companion`, SHA-256 `1aa864f1…a570b808`, the same certificate as the installed 1.0.0; `zipalign -c -p 4` passes; APK SHA-256 `D7A4D72F…ECBBD9EC`. `android/key.properties` was recovered from the previous checkout, so the build is release-signed again |
+| Device: upgrade | `adb install -r` over the release-signed 1.0.0 on the Galaxy A36 (Android 17, `RFCY30E0LRT`) succeeded and kept its data: Home offered **Continue Game** with "In progress: 5 players, quest 1 of 5", so the v6 migration ran against the database 1.0.0 wrote |
+| Device: recorded narrator | `flutter test integration_test/clip_playback_test.dart -d RFCY30E0LRT` passed: the `night.end` clip decoded and finished in both English and Filipino, read from inside the installed APK at volume 0 |
+| Device: debug signing | `android/app/build.gradle.kts` signs a debug build with the release key when `key.properties` exists, so the integration test installed over the release app instead of forcing an uninstall first |
 | Engine | `test/unit/engine_test.dart`: the team is kept with its result, each quest keeps its own team in play order, and a later quest does not overwrite an earlier one |
 | Persistence | `test/database/game_repository_test.dart`: two different teams survive a save and a reload in the right order; schema v6 migrates v5 rows |
 | Widget | `test/widget/quest_log_test.dart` (3): a played quest lists its names and seats, the section is absent before the first quest resolves, and a second quest adds its row |
-| Narration | `test/unit/narration_controller_test.dart` (6 new): clip before engine, the Filipino folder, volume and speed reach the player, a finished clip advances like speech, an unplayable clip falls back, and a recorded line needs no installed voice |
+| Narration | `test/unit/narration_controller_test.dart` (6 new): clip before engine, the Filipino folder, volume reaches the player, a finished clip advances like speech, an unplayable clip falls back, and a recorded line needs no installed voice |
 
 Known limits:
 
@@ -686,6 +689,9 @@ Known limits:
   the same treatment to avoid a change of narrator mid-match.
 - The teams are only kept from v6 onwards. Matches finished before this build show their quest
   results but not their teams, because the seats were never stored.
+- The on-device test run uninstalls the app when it ends, so it can only confirm the upgrade once
+  and it takes the phone's saved matches with it. The phone currently holds a fresh install of
+  1.1.0 rather than the upgraded one.
 
 ## Phase 11 — complete on automated gates and device
 
@@ -800,10 +806,14 @@ Known limits:
 - A match that is interrupted mid-vote restores its proposed team but starts the tally again
   from zero. That is deliberate: the app never stores a partial vote, and re-counting hands is
   safer than trusting a half-written tally. Re-counting is a few seconds at the table.
-- The 1.1.0 checkout has no `android/key.properties`, so any local release build is signed with
-  the debug key and cannot update the release-signed 1.0.0 on the phone. Restoring the keystore
-  password and alias (keystore at `C:/Users/Marc/.avalon/avalon-release.jks`, alias `avalon`)
-  makes the release build upgradeable again.
+- A device integration test run uninstalls the app it installed, so it cannot be used to check an
+  in-place upgrade twice, and it deletes the matches the phone held. `android/app/build.gradle.kts`
+  now signs debug builds with the release key whenever `android/key.properties` exists, which is
+  what lets the test install over the release app at all; the package is still removed by
+  Flutter's teardown, not by the install.
+- The 1.1.0 build is signed with the same keystore as 1.0.0 (`CN=Avalon Companion`), so updates
+  install in place. `android/key.properties` is gitignored, so a clean checkout has to recreate it
+  from the keystore at `C:/Users/Marc/.avalon/avalon-release.jks` (alias `avalon`) before building.
 - A restored match keeps its original start time, so a match that spanned a crash reports the
   wall-clock length, including the time the app was closed. Duration is a convenience, not a
   rule.
