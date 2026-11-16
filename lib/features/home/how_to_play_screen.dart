@@ -60,6 +60,8 @@ class HowToPlayScreen extends StatelessWidget {
             'played what is not.',
         'One fail card fails a quest — except quest 4 with seven or more '
             'players, which needs two.',
+        'The app keeps the public record: the board lists the players who went '
+            'on each resolved quest, so the table can look back before voting.',
       ],
     ),
     (

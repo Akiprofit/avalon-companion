@@ -5,6 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../game_engine/models/composition.dart';
 import '../models/narration_instruction.dart';
 import '../scripts/night_script.dart';
+import '../services/clip_provider.dart';
+import '../services/clip_service.dart';
+import '../services/narration_clips.dart';
 import '../services/tts_provider.dart';
 import '../services/tts_service.dart';
 
@@ -117,9 +120,12 @@ class NarrationController extends Notifier<NarrationState> {
   }
 
   TtsService get _tts => ref.read(ttsServiceProvider);
+  ClipService get _clips => ref.read(clipServiceProvider);
 
-  /// Prepares the engine. Called once when the narration screen opens.
+  /// Prepares the recorded narration and the speech engine. Called once when
+  /// the narration screen opens.
   Future<void> prepare() async {
+    await _clips.initialize();
     await _tts.initialize();
     await _refreshVoiceNotice();
   }
@@ -232,6 +238,12 @@ class NarrationController extends Notifier<NarrationState> {
   }
 
   Future<void> _refreshVoiceNotice() async {
+    // A recorded line needs no installed voice, so there is nothing to warn
+    // about while the recordings cover the night.
+    if (_hasClipFor(state.current)) {
+      state = state.copyWith(clearVoiceNotice: true);
+      return;
+    }
     if (!_tts.isAvailable) {
       state = state.copyWith(clearVoiceNotice: true);
       return;
@@ -248,9 +260,24 @@ class NarrationController extends Notifier<NarrationState> {
     _cancelTimer();
     _cancelWait();
     final generation = ++_generation;
+    await _clips.stop();
     await _tts.stop();
     final current = state.current;
     if (current == null) return;
+
+    // The recordings are the narrator. The speech engine only covers a line
+    // nobody recorded, or a clip the player could not open.
+    if (_hasClipFor(current)) {
+      final played = await _clips.play(
+        NarrationClips.assetFor(current.id, state.language),
+        volume: state.volume,
+      );
+      if (generation != _generation) return;
+      if (played) {
+        await _advanceAfter(current, generation);
+        return;
+      }
+    }
 
     if (!_tts.isAvailable) {
       // No speech engine: keep the panel usable and pace it by estimate.
@@ -281,11 +308,20 @@ class NarrationController extends Notifier<NarrationState> {
     if (generation != _generation) return;
     if (!spoken) return;
 
+    await _advanceAfter(current, generation);
+  }
+
+  /// The beat between two lines, once one has finished playing.
+  ///
+  /// Speech has finished — only now does the wait begin: the script's own beat
+  /// plus the MC's extra delay. The table gets the time it asked for to move its
+  /// physical cards before the next line appears.
+  Future<void> _advanceAfter(
+    NarrationInstruction current,
+    int generation,
+  ) async {
     if (!state.isAutoPlaying) return;
     if (state.canGoForward) {
-      // Speech has finished — only now does the wait begin: the script's own
-      // beat plus the MC's extra delay. The table gets the time it asked for to
-      // move its physical cards before the next line appears.
       final wait = current.pauseAfter + state.extraDelay;
       if (wait > Duration.zero) {
         await _waitFor(wait);
@@ -298,11 +334,16 @@ class NarrationController extends Notifier<NarrationState> {
     }
   }
 
+  /// Whether [line] plays from a recording on this device.
+  bool _hasClipFor(NarrationInstruction? line) =>
+      line != null && _clips.isAvailable && NarrationClips.has(line.id);
+
   /// Stops speech and invalidates any in-flight utterance callback.
   void _silence() {
     _generation++;
     _cancelTimer();
     _cancelWait();
+    unawaited(_clips.stop());
     unawaited(_tts.stop());
   }
 

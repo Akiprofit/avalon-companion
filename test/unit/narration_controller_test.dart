@@ -5,6 +5,8 @@ import 'package:avalon_companion/game_engine/models/composition.dart';
 import 'package:avalon_companion/game_engine/rules/avalon_tables.dart';
 import 'package:avalon_companion/narration_engine/controllers/narration_controller.dart';
 import 'package:avalon_companion/narration_engine/models/narration_instruction.dart';
+import 'package:avalon_companion/narration_engine/services/clip_provider.dart';
+import 'package:avalon_companion/narration_engine/services/clip_service.dart';
 import 'package:avalon_companion/narration_engine/services/tts_provider.dart';
 import 'package:avalon_companion/narration_engine/services/tts_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -87,6 +89,58 @@ class FakeTtsService implements TtsService {
   Future<void> dispose() async {}
 }
 
+/// A stand-in for the recorded narrator. Playback ends when the test says so,
+/// the way a real clip ends when the file reaches its last frame.
+class FakeClipService implements ClipService {
+  FakeClipService({this.available = true, this.plays = true});
+
+  final bool available;
+
+  /// False makes every play attempt fail, which is how a missing or unreadable
+  /// file behaves.
+  final bool plays;
+
+  final List<String> played = [];
+  double? lastVolume;
+  int stopCount = 0;
+
+  Completer<bool>? _pending;
+
+  @override
+  bool get isAvailable => available;
+
+  @override
+  Future<void> initialize() async {}
+
+  @override
+  Future<bool> play(String assetPath, {required double volume}) {
+    played.add(assetPath);
+    lastVolume = volume;
+    if (!plays) return Future<bool>.value(false);
+    final completion = Completer<bool>();
+    _pending = completion;
+    return completion.future;
+  }
+
+  /// Ends the clip the way the player callback would.
+  void completeClip() {
+    final pending = _pending;
+    _pending = null;
+    if (pending != null && !pending.isCompleted) pending.complete(true);
+  }
+
+  @override
+  Future<void> stop() async {
+    stopCount++;
+    final pending = _pending;
+    _pending = null;
+    if (pending != null && !pending.isCompleted) pending.complete(false);
+  }
+
+  @override
+  Future<void> dispose() async {}
+}
+
 /// Only the tags the fake needs; the production tags live in
 /// `AndroidTtsService`.
 abstract final class AndroidLocales {
@@ -113,16 +167,27 @@ Future<void> settle() async {
 
 void main() {
   late FakeTtsService tts;
+  late FakeClipService clips;
   late ProviderContainer container;
 
   NarrationController controller() =>
       container.read(narrationControllerProvider.notifier);
   NarrationState state() => container.read(narrationControllerProvider);
 
-  void setUpController({bool available = true, Set<String>? languages}) {
+  void setUpController({
+    bool available = true,
+    Set<String>? languages,
+    FakeClipService? recorded,
+  }) {
     tts = FakeTtsService(available: available, languages: languages);
+    // Recorded narration is off unless a test asks for it, so these tests keep
+    // describing the fallback path exactly as before.
+    clips = recorded ?? FakeClipService(available: false);
     container = ProviderContainer(
-      overrides: [ttsServiceProvider.overrideWithValue(tts)],
+      overrides: [
+        ttsServiceProvider.overrideWithValue(tts),
+        clipServiceProvider.overrideWithValue(clips),
+      ],
     );
     addTearDown(container.dispose);
     controller().load(compositionFor(5));
@@ -505,6 +570,131 @@ void main() {
     // there is no player argument anywhere in this API.
     expect(state().total, greaterThan(0));
     expect(state().total, fivePlayer.length);
+  });
+
+  group('recorded narrator', () {
+    test('plays the clip instead of the speech engine', () async {
+      setUpController(recorded: FakeClipService());
+      await controller().prepare();
+      await settle();
+
+      unawaited(controller().replay());
+      await settle();
+
+      expect(clips.played, ['assets/audio/narration/en/night.close_eyes.mp3']);
+      expect(tts.spoken, isEmpty, reason: 'the engine is the fallback only');
+
+      clips.completeClip();
+      await settle();
+    });
+
+    test('plays the Filipino recording for the Filipino text', () async {
+      setUpController(recorded: FakeClipService());
+      await controller().prepare();
+      await settle();
+
+      unawaited(controller().setLanguage(NarrationLanguage.filipino));
+      await settle();
+      unawaited(controller().replay());
+      await settle();
+
+      expect(state().language, NarrationLanguage.filipino);
+      expect(clips.played.single, endsWith('/fil/night.close_eyes.mp3'));
+      expect(tts.spoken, isEmpty);
+
+      clips.completeClip();
+      await settle();
+    });
+
+    test('the volume from settings reaches the player, not the pace', () async {
+      setUpController(recorded: FakeClipService());
+      await controller().prepare();
+      await settle();
+
+      controller().setVolume(0.35);
+      unawaited(controller().setRate(1.2));
+      await settle();
+      unawaited(controller().replay());
+      await settle();
+
+      expect(clips.lastVolume, 0.35);
+      expect(
+        state().rate,
+        1.2,
+        reason: 'the speech setting is kept for the fallback voice',
+      );
+      expect(
+        tts.spoken,
+        isEmpty,
+        reason: 'the recording still plays at its own pace',
+      );
+
+      clips.completeClip();
+      await settle();
+    });
+
+    test('a finished recording advances the panel like speech', () async {
+      setUpController(recorded: FakeClipService());
+      await controller().prepare();
+      await settle();
+
+      unawaited(controller().toggleAutoPlay());
+      await settle();
+      expect(state().index, 0, reason: 'the panel waits for the clip');
+      expect(clips.played, hasLength(1));
+
+      clips.completeClip();
+      await settle();
+      expect(state().index, 0, reason: 'the script beat still runs');
+
+      await Future<void>.delayed(const Duration(milliseconds: 1500));
+      await settle();
+
+      expect(state().index, 1);
+      expect(clips.played, hasLength(2));
+      expect(clips.played.last, endsWith('/en/night.evil.wake.mp3'));
+
+      unawaited(controller().pause());
+      await settle();
+    });
+
+    test('a clip that cannot play falls back to the engine', () async {
+      setUpController(recorded: FakeClipService(plays: false));
+      await controller().prepare();
+      await settle();
+
+      unawaited(controller().replay());
+      await settle();
+
+      expect(clips.played, hasLength(1), reason: 'the recording was tried');
+      expect(tts.spoken.single, state().current!.english);
+
+      tts.completeSpeech();
+      await settle();
+    });
+
+    test('a recorded line needs no installed voice', () async {
+      setUpController(languages: const {}, recorded: FakeClipService());
+      await controller().prepare();
+      await settle();
+      expect(
+        state().voiceNotice,
+        isNull,
+        reason: 'the recordings cover the line, so there is no warning',
+      );
+
+      unawaited(controller().toggleAutoPlay());
+      await settle();
+
+      expect(clips.played, hasLength(1));
+      expect(tts.spoken, isEmpty);
+      expect(state().isAutoPlaying, isTrue);
+
+      clips.completeClip();
+      await settle();
+      unawaited(controller().pause());
+      await settle();
+    });
   });
 }
 

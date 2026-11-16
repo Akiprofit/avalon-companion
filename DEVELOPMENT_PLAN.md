@@ -624,6 +624,69 @@ round table with the fresh match already waiting at PREPARATION. The roster, the
 every setting carry over, the finished match keeps its result, and
 `test/widget/endgame_test.dart` proves the night can be opened from there.
 
+## Recorded narrator and past quest teams - complete
+
+Two additions after 1.0.0: the night is now read by a narrator recorded for the app, and the
+dashboard remembers who went on every finished quest.
+
+### Recorded narrator
+
+- The 14 night lines exist as MP3s in English and Filipino under `assets/audio/narration/`.
+  They are the default narrator: `NarrationController` plays the clip for a line before it
+  considers the phone's voice, so nothing has to be configured.
+- `ClipService` (`lib/narration_engine/services/clip_service.dart`) is the playback interface;
+  `AndroidClipService` talks to `com.avalon.companion/clips`, implemented in `MainActivity.kt`
+  with a `MediaPlayer` reading the file straight out of `flutter_assets`. No download, no cache
+  copy, nothing leaves the device. The volume comes from Settings; the recording plays at the
+  pace it was made, so the MC's speech-speed setting keeps shaping the fallback voice and never
+  drags the narrator away from how it was delivered.
+- The speech engine stays as the fallback: a line with no recording, or a clip the player cannot
+  open, is spoken by the installed voice. Missing audio therefore degrades to a voice rather than
+  silence, and the existing unit tests still describe that path unchanged (the fake clip service
+  reports unavailable unless a test asks otherwise).
+- Settings says the recordings are the narrator; the voice picker is relabelled **Fallback
+  voice** and explains it is used only when a recorded line cannot play. The "no voice installed"
+  notice is suppressed while the current line has a recording, because no voice is needed.
+- `test/unit/narration_clips_test.dart` is the gate on the set: every night line must have a file
+  in both languages, every recorded id must match a scripted line, and no round line may be
+  listed while it has no audio.
+
+### Past quest teams
+
+- `GameState.questTeams` holds the seats that went on each resolved quest, index-aligned with
+  `questResults`; `GameEngine.recordQuest` appends the approved team, sorted, in the same step it
+  appends the result. `teamForQuest(n)` and `questLog` read it back.
+- This is public state, not a role: it is exactly what the table saw when it approved the team.
+  The engine never learns who holds which card, and nothing here is derived from a card.
+- Dashboard shows **Past quest teams** under Quest progress once a quest has resolved: quest
+  number, won or lost, the players' names and their seats, newest quest last. The result screen
+  closes with the same list.
+- Persistence: drift schema v6 adds `games.questTeams`, one `;`-separated group of comma-joined
+  seats per resolved quest (`1,3;2,4,5`). Rows written before v6 migrate to an empty string; a
+  quest they never stored is shown as "The team was not recorded for this quest." rather than
+  guessed.
+
+Gate evidence:
+
+| Check | Result |
+| --- | --- |
+| `flutter analyze` | No issues found |
+| `flutter test` | 274 tests pass (2 engine, 1 persistence, 3 board-review widgets, 6 recorded-narrator controller, 4 clip-set and bundle gates new) |
+| `flutter build apk --release` | succeeds: 62.6 MB, `versionName` 1.1.0, `versionCode` 17, arm64-v8a + armeabi-v7a + x86_64 |
+| Audio in the APK | 28 MP3s (2.57 MB) stored uncompressed under `assets/flutter_assets/assets/audio/narration/en/` and `.../fil/`, which is what `AssetManager.openFd` needs. The first build bundled only the folder README: Flutter asset folders are not recursive, so `en/` and `fil/` are now listed in `pubspec.yaml` and a test guards it |
+| Signature | `CN=Android Debug`, because `android/key.properties` is not in this checkout. The APK cannot update the release-signed 1.0.0 on the phone until the keystore passwords are restored, so nothing was installed |
+| Engine | `test/unit/engine_test.dart`: the team is kept with its result, each quest keeps its own team in play order, and a later quest does not overwrite an earlier one |
+| Persistence | `test/database/game_repository_test.dart`: two different teams survive a save and a reload in the right order; schema v6 migrates v5 rows |
+| Widget | `test/widget/quest_log_test.dart` (3): a played quest lists its names and seats, the section is absent before the first quest resolves, and a second quest adds its row |
+| Narration | `test/unit/narration_controller_test.dart` (6 new): clip before engine, the Filipino folder, volume and speed reach the player, a finished clip advances like speech, an unplayable clip falls back, and a recorded line needs no installed voice |
+
+Known limits:
+
+- The round lines are still unrecorded and unplayed; if they are turned on later they will need
+  the same treatment to avoid a change of narrator mid-match.
+- The teams are only kept from v6 onwards. Matches finished before this build show their quest
+  results but not their teams, because the seats were never stored.
+
 ## Phase 11 — complete on automated gates and device
 
 Delivered: the QA pass over the finished product. No rule, screen or stored value changed; the
@@ -737,6 +800,10 @@ Known limits:
 - A match that is interrupted mid-vote restores its proposed team but starts the tally again
   from zero. That is deliberate: the app never stores a partial vote, and re-counting hands is
   safer than trusting a half-written tally. Re-counting is a few seconds at the table.
+- The 1.1.0 checkout has no `android/key.properties`, so any local release build is signed with
+  the debug key and cannot update the release-signed 1.0.0 on the phone. Restoring the keystore
+  password and alias (keystore at `C:/Users/Marc/.avalon/avalon-release.jks`, alias `avalon`)
+  makes the release build upgradeable again.
 - A restored match keeps its original start time, so a match that spanned a crash reports the
   wall-clock length, including the time the app was closed. Duration is a convenience, not a
   rule.
@@ -762,10 +829,13 @@ Known limits:
   mood and composition, so a few are only loosely on-subject (the Excalibur plate is
   Waterhouse's *Magic Circle*). Replacing them with commissioned plates only requires new
   files under the same names.
-- The narrator voice is whichever installed voice the MC picks, or the best offline voice for
-  the language: the TTS API exposes no gender or timbre, so the phone decides. **Voice depth**
-  still shifts the register, and the picker lists only voices the engine reports as installed
-  and offline — a phone that hides its voice list falls back to Automatic.
+- The night is read from the recordings bundled in the APK. The phone's voice is only the
+  fallback for a line with no recording. Android's TTS API exposes no gender or timbre, so that
+  voice is the best installed one for the language, and **Voice depth** still shifts its
+  register; the picker lists only voices the engine reports as installed and offline, and a
+  phone that hides its voice list falls back to Automatic. The seven round lines (`round.proposal`,
+  the vote results, the quest result and the accusation) are defined but never played, so they
+  have no recordings and no voice of their own yet.
 - The night ambience is one generated 20-second WAV in `res/raw`, looped by the activity. It is
   a bed, not a soundtrack: there is no music, no per-phase sting and no volume separate from
   the master. A later release can replace the file without touching code.

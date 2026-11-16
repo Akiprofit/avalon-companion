@@ -22,11 +22,14 @@ void main() {
 
   /// Source with comments removed, so prose that mentions the words we guard
   /// against (the docs explain why there is no role mapping) is not a hit.
+  ///
+  /// The split accepts CRLF: with a trailing `\r` the `$` anchor never matches,
+  /// which would leave every comment in place on a Windows checkout.
   String codeOf(File file) {
     final source = file.readAsStringSync();
     final withoutBlocks = source.replaceAll(RegExp(r'/\*[\s\S]*?\*/'), '');
     return withoutBlocks
-        .split('\n')
+        .split(RegExp(r'\r?\n'))
         .map((line) => line.replaceAll(RegExp(r'//.*$'), ''))
         .join('\n');
   }

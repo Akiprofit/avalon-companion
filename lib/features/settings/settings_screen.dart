@@ -119,6 +119,13 @@ class SettingsScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Text(
+                  'The night is read by the recorded narrator that ships with '
+                  'the app. The voice settings below shape the fallback used '
+                  'only when a recorded line cannot play.',
+                  style: AppText.caption,
+                ),
+                const SizedBox(height: Space.sm),
                 Text('Language', style: AppText.bodyStrong),
                 const SizedBox(height: Space.xs),
                 SegmentedButton<NarrationLanguage>(
@@ -140,7 +147,7 @@ class SettingsScreen extends ConsumerWidget {
                 const SizedBox(height: Space.md),
                 SettingsTile.slider(
                   key: const Key('settings_rate'),
-                  label: 'Speech speed',
+                  label: 'Fallback speed',
                   valueLabel: '${settings.narrationRate.toStringAsFixed(2)}x',
                   value: settings.narrationRate,
                   min: 0.5,
@@ -523,12 +530,12 @@ String _delayPreview(Duration delay) {
       '${seconds == 1 ? 'second' : 'seconds'} before continuing.';
 }
 
-/// Picks the narrator voice from what the phone actually has installed.
+/// Picks the fallback voice from what the phone actually has installed.
 ///
-/// The list comes from the speech engine itself; an app cannot know which
-/// voices are installed, and a fixed list would be a lie on most phones.
-/// Automatic keeps the original behaviour — the engine picks the best offline
-/// voice for the language.
+/// The recordings are the narrator; this voice covers only a line the app has
+/// no recording for. The list comes from the speech engine itself; an app
+/// cannot know which voices are installed, and a fixed list would be a lie on
+/// most phones.
 class _VoiceChoice extends ConsumerStatefulWidget {
   const _VoiceChoice();
 
@@ -582,7 +589,7 @@ class _VoiceChoiceState extends ConsumerState<_VoiceChoice> {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Narrator voice'),
+          title: const Text('Fallback voice'),
           contentPadding: const EdgeInsets.symmetric(vertical: Space.md),
           content: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 420),
@@ -653,13 +660,14 @@ class _VoiceChoiceState extends ConsumerState<_VoiceChoice> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Narrator voice', style: AppText.bodyStrong),
+                  Text('Fallback voice', style: AppText.bodyStrong),
                   const SizedBox(height: 2),
                   Text(
                     _voices.isEmpty && !_loading
                         ? 'This phone exposes no selectable voices; the '
                               'engine picks one.'
-                        : 'Chosen from the voices installed on this phone.',
+                        : 'Used only when a recorded line cannot play, chosen '
+                              'from the voices installed on this phone.',
                     style: AppText.caption,
                   ),
                 ],

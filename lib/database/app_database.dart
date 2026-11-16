@@ -41,6 +41,13 @@ class Games extends Table {
   /// Quest outcomes in order, comma joined: `success,fail`.
   TextColumn get questResults => text()();
 
+  /// The seats that went on each resolved quest, in the same order as
+  /// [questResults]: quests joined by `;`, seats by `,` — `1,3;2,4,5`.
+  ///
+  /// This is public state: it is what the table saw when each team was
+  /// approved. It never says who was loyal and who was a minion.
+  TextColumn get questTeams => text().withDefault(const Constant(''))();
+
   /// Characters in play, as a JSON object of character code to count. The list
   /// is public configuration and is never attached to a player.
   TextColumn get composition => text()();
@@ -170,7 +177,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -192,6 +199,11 @@ class AppDatabase extends _$AppDatabase {
       // v5 added the team approval vote switch. Existing rows keep voting on.
       if (from < 5) {
         await m.addColumn(settings, settings.teamVoteEnabled);
+      }
+      // v6 added the team behind each resolved quest for the board review.
+      // Older rows cannot recover teams they never stored, so they stay empty.
+      if (from < 6) {
+        await m.addColumn(games, games.questTeams);
       }
     },
     beforeOpen: (details) async {

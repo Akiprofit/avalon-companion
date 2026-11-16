@@ -260,6 +260,7 @@ class GameRepository implements MatchStore {
       questResults: Value(
         state.questResults.map((r) => r.name).join(','),
       ),
+      questTeams: Value(_encodeQuestTeams(state.questTeams)),
       currentTeam: Value(
         ([...state.currentTeam]..sort()).join(','),
       ),
@@ -305,6 +306,7 @@ class GameRepository implements MatchStore {
         for (final seat in row.currentTeam.split(','))
           if (seat.isNotEmpty) int.tryParse(seat) ?? 0,
       ].where((seat) => seat > 0)),
+      questTeams: _decodeQuestTeams(row.questTeams),
       approveVotes: 0,
       rejectVotes: 0,
       pausedFrom: row.pausedFrom == null
@@ -384,6 +386,28 @@ class GameRepository implements MatchStore {
       }
     }
     return Composition(playerCount: playerCount, counts: counts);
+  }
+
+  /// `1,3;2,4,5` — one group of seats per resolved quest.
+  static String _encodeQuestTeams(List<List<int>> questTeams) {
+    return questTeams
+        .map((seats) => ([...seats]..sort()).join(','))
+        .join(';');
+  }
+
+  /// Tolerant of a missing, older or malformed value: an unreadable group is
+  /// dropped rather than failing the whole resume.
+  static List<List<int>> _decodeQuestTeams(String encoded) {
+    final teams = <List<int>>[];
+    for (final group in encoded.split(';')) {
+      final seats = <int>[];
+      for (final seat in group.split(',')) {
+        final parsed = int.tryParse(seat);
+        if (parsed != null && parsed > 0) seats.add(parsed);
+      }
+      if (seats.isNotEmpty) teams.add(List<int>.unmodifiable(seats));
+    }
+    return List<List<int>>.unmodifiable(teams);
   }
 
   static Phase _decodePhase(String code, String? pausedFrom) {

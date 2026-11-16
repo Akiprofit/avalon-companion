@@ -15,6 +15,7 @@ import '../../core/widgets/mc_pin_dialog.dart';
 import '../../core/widgets/medieval_card.dart';
 import '../../core/widgets/player_tile.dart';
 import '../../core/widgets/primary_button.dart';
+import '../../core/widgets/quest_log.dart';
 import '../../core/widgets/quest_tracker.dart';
 import '../../core/widgets/secondary_button.dart';
 import '../../core/widgets/section_header.dart';
@@ -246,6 +247,25 @@ class DashboardScreen extends ConsumerWidget {
                 MedievalCard(
                   child: QuestTracker(slots: game.questSlots),
                 ),
+                if (game.questLog.isNotEmpty) ...[
+                  const SizedBox(height: Space.lg),
+                  SectionHeader(
+                    title: 'Past quest teams',
+                    trailing: MetaPill(
+                      label: game.questLog.length == 1
+                          ? '1 quest'
+                          : '${game.questLog.length} quests',
+                    ),
+                  ),
+                  MedievalCard(child: QuestLog(game: game)),
+                  const SizedBox(height: Space.xs),
+                  Text(
+                    'Who went on each resolved quest — exactly what the table '
+                    'saw when it approved the team. It says nothing about who '
+                    'is loyal.',
+                    style: AppText.caption,
+                  ),
+                ],
                 if (isDiscussion) ...[
                   const SizedBox(height: Space.lg),
                   SectionHeader(

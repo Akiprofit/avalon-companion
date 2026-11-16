@@ -260,6 +260,13 @@ abstract final class GameEngine {
       failed ? QuestResult.fail : QuestResult.success,
     ]);
 
+    // The team that went on this quest is public state the table already saw;
+    // keeping it lets the board be read back after the quest resolves.
+    final teams = List<List<int>>.unmodifiable([
+      ...state.questTeams,
+      List<int>.unmodifiable([...state.currentTeam]..sort()),
+    ]);
+
     final successes = results.where((r) => r == QuestResult.success).length;
     final failures = results.where((r) => r == QuestResult.fail).length;
 
@@ -267,6 +274,7 @@ abstract final class GameEngine {
       return state.copyWith(
         phase: Phase.assassination,
         questResults: results,
+        questTeams: teams,
         currentTeam: const [],
         approveVotes: 0,
         rejectVotes: 0,
@@ -276,6 +284,7 @@ abstract final class GameEngine {
       return state.copyWith(
         phase: Phase.evilVictory,
         questResults: results,
+        questTeams: teams,
         currentTeam: const [],
         approveVotes: 0,
         rejectVotes: 0,
@@ -290,6 +299,7 @@ abstract final class GameEngine {
       // passes it on here instead.
       leaderSeat: !drawLord && voteSkipped ? _nextLeaderSeat(state) : null,
       questResults: results,
+      questTeams: teams,
       questNumber: state.questNumber + 1,
       rejectionCount: 0,
       currentTeam: const [],

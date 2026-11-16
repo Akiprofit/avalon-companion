@@ -133,6 +133,30 @@ void main() {
     expect(stored.state.requiredTeamSize, 2);
   });
 
+  test('the team behind each quest survives a save and a reload', () async {
+    final id = await repository.createMatch(newGame());
+    final first = resolvedQuestOne();
+    expect(first.questTeams, [
+      [1, 2],
+    ]);
+
+    // Play quest two with a different team so a mix-up would be visible.
+    var game = GameEngine.beginTeamSelection(first);
+    game = GameEngine.proposeTeam(game, [3, 4, 5]);
+    game = GameEngine.recordVotes(game, approve: 5, reject: 0);
+    game = GameEngine.resolveTeamVote(game);
+    game = GameEngine.recordQuest(game, failCards: 1);
+    await repository.saveState(id, game);
+
+    final stored = await repository.findInProgress();
+    expect(stored!.state.questTeams, [
+      [1, 2],
+      [3, 4, 5],
+    ]);
+    expect(stored.state.teamForQuest(2), [3, 4, 5]);
+    expect(stored.state.questLog.map((run) => run.succeeded), [true, false]);
+  });
+
   test('a vote and a quest are appended with their counts', () async {
     final id = await repository.createMatch(newGame());
     final resolved = resolvedQuestOne();

@@ -26,12 +26,16 @@ class MainActivity : FlutterActivity() {
     private companion object {
         const val CHANNEL = "com.avalon.companion/tts"
         const val HOST_CHANNEL = "com.avalon.companion/host"
+        const val CLIP_CHANNEL = "com.avalon.companion/clips"
 
         /** The Royal Chronicler's default: British English. */
         const val DEFAULT_LOCALE = "en-GB"
 
         /** The bed sits under a voice, so it stays well below it. */
         const val AMBIENT_VOLUME = 0.35f
+
+        /** Recorded narration lives in the Flutter asset bundle. */
+        const val CLIP_ROOT = "flutter_assets/"
     }
 
     private var channel: MethodChannel? = null
@@ -41,6 +45,9 @@ class MainActivity : FlutterActivity() {
 
     private var hostChannel: MethodChannel? = null
     private var ambient: MediaPlayer? = null
+
+    private var clipChannel: MethodChannel? = null
+    private var clipPlayer: MediaPlayer? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -64,6 +71,97 @@ class MainActivity : FlutterActivity() {
                 else -> result.notImplemented()
             }
         }
+
+        val clips = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CLIP_CHANNEL)
+        clipChannel = clips
+        clips.setMethodCallHandler { call, result ->
+            when (call.method) {
+                "isAvailable" -> result.success(true)
+                "play" -> playClip(call, result)
+                "stop" -> {
+                    stopClip()
+                    result.success(true)
+                }
+                else -> result.notImplemented()
+            }
+        }
+    }
+
+    /**
+     * Plays one recorded narration line, read straight from the APK's asset
+     * bundle. Everything is local: the recording ships with the app. The line
+     * plays at the pace it was recorded; only the volume is adjustable.
+     */
+    private fun playClip(call: MethodCall, result: MethodChannel.Result) {
+        val asset = call.argument<String>("asset")
+        val volume = (call.argument<Double>("volume") ?: 1.0).toFloat().coerceIn(0f, 1f)
+        if (asset.isNullOrBlank()) {
+            result.success(false)
+            return
+        }
+
+        runOnUiThread {
+            stopClip()
+            try {
+                val descriptor = assets.openFd(CLIP_ROOT + asset)
+                val player = MediaPlayer()
+                player.setDataSource(
+                    descriptor.fileDescriptor,
+                    descriptor.startOffset,
+                    descriptor.length,
+                )
+                descriptor.close()
+                player.setVolume(volume, volume)
+                player.setOnCompletionListener {
+                    releaseClip(player)
+                    notifyClips("onDone")
+                }
+                player.setOnErrorListener { failed, _, _ ->
+                    releaseClip(failed)
+                    notifyClips("onError")
+                    true
+                }
+                player.prepare()
+                player.start()
+                clipPlayer = player
+                result.success(true)
+            } catch (_: Exception) {
+                stopClip()
+                result.success(false)
+            }
+        }
+    }
+
+    /** Releases the playing line, if any. Main thread only. */
+    private fun stopClip() {
+        runOnUiThread {
+            val player = clipPlayer ?: return@runOnUiThread
+            clipPlayer = null
+            try {
+                if (player.isPlaying) player.stop()
+            } catch (_: Exception) {
+                // Already finished.
+            }
+            try {
+                player.release()
+            } catch (_: Exception) {
+                // Already released by the completion listener.
+            }
+        }
+    }
+
+    private fun releaseClip(player: MediaPlayer) {
+        if (clipPlayer === player) clipPlayer = null
+        try {
+            player.release()
+        } catch (_: Exception) {
+            // Already gone.
+        }
+    }
+
+    private fun notifyClips(method: String) {
+        val channel = clipChannel ?: return
+        runOnUiThread { channel.invokeMethod(method, null) }
     }
 
     /** Window flag, so the table never has to wake the phone mid-quest. */
@@ -313,6 +411,9 @@ class MainActivity : FlutterActivity() {
         ambient = null
         hostChannel?.setMethodCallHandler(null)
         hostChannel = null
+        stopClip()
+        clipChannel?.setMethodCallHandler(null)
+        clipChannel = null
         super.onDestroy()
     }
 }

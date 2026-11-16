@@ -3,7 +3,53 @@
 All notable changes to Avalon Companion are recorded here. One entry per completed
 development phase, in the order the plan defines them.
 
-## [1.0.0] — Phase 12 Android release
+## [1.1.0] - Recorded narrator and past quest teams
+
+### Added
+
+- **Recorded narrator.** The night is now read by the recordings made for the app — 14 night
+  lines in English and 14 in Filipino under `assets/audio/narration/` — instead of relying on
+  the phone's voice. `AndroidClipService` plays them over a new
+  `com.avalon.companion/clips` channel backed by `MediaPlayer` reading `flutter_assets`, so the
+  audio ships inside the APK and is never downloaded. Volume follows Settings; the recordings
+  play at the pace they were made, and the speed slider shapes only the fallback voice.
+- **Past quest teams.** The dashboard lists every resolved quest with its outcome and the
+  players who went on it, and the result screen closes with the same list. Teams are public
+  state — what the table saw when it approved them — and are stored with the match so the board
+  can be read back after a reload. `GameState.questTeams`, `teamForQuest()` and `questLog`
+  expose them; `GameEngine.recordQuest` records them alongside the result.
+
+### Changed
+
+- The speech engine is now the fallback narrator, used only for a line with no recording or a
+  clip that cannot play. Settings gains a caption saying so and the voice picker is renamed
+  **Fallback voice**; the "no voice installed" notice is hidden while the current line has a
+  recording.
+- Drift schema v6 adds `games.questTeams` (`1,3;2,4,5`), migrating older rows to an empty value.
+  A match finished before this build shows its quest results but cannot show its teams.
+
+### Verified
+
+| Check | Result |
+| --- | --- |
+| `flutter analyze` | No issues found |
+| `flutter test` | 274 tests pass |
+| Release APK | `flutter build apk --release` succeeds: 62.6 MB, `versionName` 1.1.0, `versionCode` 17, arm64-v8a + armeabi-v7a + x86_64 |
+| Audio inside the APK | 28 MP3s (2.57 MB) present as **stored** entries under `assets/flutter_assets/assets/audio/narration/en/` and the matching `fil/` folder, so `MediaPlayer` can open them with `AssetManager.openFd` |
+| Bundle guard | `test/unit/narration_clips_test.dart` now also fails if `pubspec.yaml` stops listing a language folder — the first build shipped only the folder's README, because Flutter asset folders are not recursive |
+| Signature | `apksigner verify` report: `CN=Android Debug` (see Known limits) |
+| Device | not run for this build: no phone was connected, and the debug-signed APK cannot replace the release-signed 1.0.0 on the test device |
+
+### Known limits
+
+- The seven round lines are defined but never played, so they have no recordings; enabling them
+  later will need audio to avoid a change of narrator mid-match.
+- `android/key.properties` is not in this checkout, so a release build here is signed with the
+  debug key. Installing it over the 1.0.0 release build fails with a signature mismatch; either
+  restore the keystore passwords and rebuild, or uninstall the old app first (which deletes its
+  saved matches).
+
+## [1.0.0] – Phase 12 Android release
 
 The first release build: the same app Phase 11 verified, packaged, signed and installed on a
 phone. No game rule changed.

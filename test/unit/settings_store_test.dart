@@ -179,8 +179,9 @@ void main() {
     if (await file.exists()) await file.delete();
 
     // Build a real database with the current schema, write a row, then wind it
-    // back to v4: drop the new column and reset the version stamp. Reopening it
-    // is what runs the migration, exactly as an upgraded install does.
+    // back to v4: drop the columns v5 and v6 added and reset the version stamp.
+    // Reopening it is what runs the migration, exactly as an upgraded install
+    // does.
     final before = AppDatabase(NativeDatabase(file));
     await before
         .into(before.settings)
@@ -193,6 +194,7 @@ void main() {
 
     sqlite3.open(file.path)
       ..execute('ALTER TABLE settings DROP COLUMN team_vote_enabled')
+      ..execute('ALTER TABLE games DROP COLUMN quest_teams')
       ..execute('PRAGMA user_version = 4')
       ..close();
 

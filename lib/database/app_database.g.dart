@@ -159,6 +159,18 @@ class $GamesTable extends Games with TableInfo<$GamesTable, GameRecord> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _questTeamsMeta = const VerificationMeta(
+    'questTeams',
+  );
+  @override
+  late final GeneratedColumn<String> questTeams = GeneratedColumn<String>(
+    'quest_teams',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
   static const VerificationMeta _compositionMeta = const VerificationMeta(
     'composition',
   );
@@ -208,6 +220,7 @@ class $GamesTable extends Games with TableInfo<$GamesTable, GameRecord> {
     rejectionCount,
     currentTeam,
     questResults,
+    questTeams,
     composition,
     winReason,
     assassinationOutcome,
@@ -341,6 +354,12 @@ class $GamesTable extends Games with TableInfo<$GamesTable, GameRecord> {
     } else if (isInserting) {
       context.missing(_questResultsMeta);
     }
+    if (data.containsKey('quest_teams')) {
+      context.handle(
+        _questTeamsMeta,
+        questTeams.isAcceptableOrUnknown(data['quest_teams']!, _questTeamsMeta),
+      );
+    }
     if (data.containsKey('composition')) {
       context.handle(
         _compositionMeta,
@@ -432,6 +451,10 @@ class $GamesTable extends Games with TableInfo<$GamesTable, GameRecord> {
         DriftSqlType.string,
         data['${effectivePrefix}quest_results'],
       )!,
+      questTeams: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}quest_teams'],
+      )!,
       composition: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}composition'],
@@ -484,6 +507,13 @@ class GameRecord extends DataClass implements Insertable<GameRecord> {
   /// Quest outcomes in order, comma joined: `success,fail`.
   final String questResults;
 
+  /// The seats that went on each resolved quest, in the same order as
+  /// [questResults]: quests joined by `;`, seats by `,` — `1,3;2,4,5`.
+  ///
+  /// This is public state: it is what the table saw when each team was
+  /// approved. It never says who was loyal and who was a minion.
+  final String questTeams;
+
   /// Characters in play, as a JSON object of character code to count. The list
   /// is public configuration and is never attached to a player.
   final String composition;
@@ -508,6 +538,7 @@ class GameRecord extends DataClass implements Insertable<GameRecord> {
     required this.rejectionCount,
     required this.currentTeam,
     required this.questResults,
+    required this.questTeams,
     required this.composition,
     this.winReason,
     this.assassinationOutcome,
@@ -535,6 +566,7 @@ class GameRecord extends DataClass implements Insertable<GameRecord> {
     map['rejection_count'] = Variable<int>(rejectionCount);
     map['current_team'] = Variable<String>(currentTeam);
     map['quest_results'] = Variable<String>(questResults);
+    map['quest_teams'] = Variable<String>(questTeams);
     map['composition'] = Variable<String>(composition);
     if (!nullToAbsent || winReason != null) {
       map['win_reason'] = Variable<String>(winReason);
@@ -567,6 +599,7 @@ class GameRecord extends DataClass implements Insertable<GameRecord> {
       rejectionCount: Value(rejectionCount),
       currentTeam: Value(currentTeam),
       questResults: Value(questResults),
+      questTeams: Value(questTeams),
       composition: Value(composition),
       winReason: winReason == null && nullToAbsent
           ? const Value.absent()
@@ -597,6 +630,7 @@ class GameRecord extends DataClass implements Insertable<GameRecord> {
       rejectionCount: serializer.fromJson<int>(json['rejectionCount']),
       currentTeam: serializer.fromJson<String>(json['currentTeam']),
       questResults: serializer.fromJson<String>(json['questResults']),
+      questTeams: serializer.fromJson<String>(json['questTeams']),
       composition: serializer.fromJson<String>(json['composition']),
       winReason: serializer.fromJson<String?>(json['winReason']),
       assassinationOutcome: serializer.fromJson<String?>(
@@ -622,6 +656,7 @@ class GameRecord extends DataClass implements Insertable<GameRecord> {
       'rejectionCount': serializer.toJson<int>(rejectionCount),
       'currentTeam': serializer.toJson<String>(currentTeam),
       'questResults': serializer.toJson<String>(questResults),
+      'questTeams': serializer.toJson<String>(questTeams),
       'composition': serializer.toJson<String>(composition),
       'winReason': serializer.toJson<String?>(winReason),
       'assassinationOutcome': serializer.toJson<String?>(assassinationOutcome),
@@ -643,6 +678,7 @@ class GameRecord extends DataClass implements Insertable<GameRecord> {
     int? rejectionCount,
     String? currentTeam,
     String? questResults,
+    String? questTeams,
     String? composition,
     Value<String?> winReason = const Value.absent(),
     Value<String?> assassinationOutcome = const Value.absent(),
@@ -663,6 +699,7 @@ class GameRecord extends DataClass implements Insertable<GameRecord> {
     rejectionCount: rejectionCount ?? this.rejectionCount,
     currentTeam: currentTeam ?? this.currentTeam,
     questResults: questResults ?? this.questResults,
+    questTeams: questTeams ?? this.questTeams,
     composition: composition ?? this.composition,
     winReason: winReason.present ? winReason.value : this.winReason,
     assassinationOutcome: assassinationOutcome.present
@@ -701,6 +738,9 @@ class GameRecord extends DataClass implements Insertable<GameRecord> {
       questResults: data.questResults.present
           ? data.questResults.value
           : this.questResults,
+      questTeams: data.questTeams.present
+          ? data.questTeams.value
+          : this.questTeams,
       composition: data.composition.present
           ? data.composition.value
           : this.composition,
@@ -728,6 +768,7 @@ class GameRecord extends DataClass implements Insertable<GameRecord> {
           ..write('rejectionCount: $rejectionCount, ')
           ..write('currentTeam: $currentTeam, ')
           ..write('questResults: $questResults, ')
+          ..write('questTeams: $questTeams, ')
           ..write('composition: $composition, ')
           ..write('winReason: $winReason, ')
           ..write('assassinationOutcome: $assassinationOutcome')
@@ -751,6 +792,7 @@ class GameRecord extends DataClass implements Insertable<GameRecord> {
     rejectionCount,
     currentTeam,
     questResults,
+    questTeams,
     composition,
     winReason,
     assassinationOutcome,
@@ -773,6 +815,7 @@ class GameRecord extends DataClass implements Insertable<GameRecord> {
           other.rejectionCount == this.rejectionCount &&
           other.currentTeam == this.currentTeam &&
           other.questResults == this.questResults &&
+          other.questTeams == this.questTeams &&
           other.composition == this.composition &&
           other.winReason == this.winReason &&
           other.assassinationOutcome == this.assassinationOutcome);
@@ -793,6 +836,7 @@ class GamesCompanion extends UpdateCompanion<GameRecord> {
   final Value<int> rejectionCount;
   final Value<String> currentTeam;
   final Value<String> questResults;
+  final Value<String> questTeams;
   final Value<String> composition;
   final Value<String?> winReason;
   final Value<String?> assassinationOutcome;
@@ -811,6 +855,7 @@ class GamesCompanion extends UpdateCompanion<GameRecord> {
     this.rejectionCount = const Value.absent(),
     this.currentTeam = const Value.absent(),
     this.questResults = const Value.absent(),
+    this.questTeams = const Value.absent(),
     this.composition = const Value.absent(),
     this.winReason = const Value.absent(),
     this.assassinationOutcome = const Value.absent(),
@@ -830,6 +875,7 @@ class GamesCompanion extends UpdateCompanion<GameRecord> {
     required int rejectionCount,
     this.currentTeam = const Value.absent(),
     required String questResults,
+    this.questTeams = const Value.absent(),
     required String composition,
     this.winReason = const Value.absent(),
     this.assassinationOutcome = const Value.absent(),
@@ -858,6 +904,7 @@ class GamesCompanion extends UpdateCompanion<GameRecord> {
     Expression<int>? rejectionCount,
     Expression<String>? currentTeam,
     Expression<String>? questResults,
+    Expression<String>? questTeams,
     Expression<String>? composition,
     Expression<String>? winReason,
     Expression<String>? assassinationOutcome,
@@ -877,6 +924,7 @@ class GamesCompanion extends UpdateCompanion<GameRecord> {
       if (rejectionCount != null) 'rejection_count': rejectionCount,
       if (currentTeam != null) 'current_team': currentTeam,
       if (questResults != null) 'quest_results': questResults,
+      if (questTeams != null) 'quest_teams': questTeams,
       if (composition != null) 'composition': composition,
       if (winReason != null) 'win_reason': winReason,
       if (assassinationOutcome != null)
@@ -899,6 +947,7 @@ class GamesCompanion extends UpdateCompanion<GameRecord> {
     Value<int>? rejectionCount,
     Value<String>? currentTeam,
     Value<String>? questResults,
+    Value<String>? questTeams,
     Value<String>? composition,
     Value<String?>? winReason,
     Value<String?>? assassinationOutcome,
@@ -918,6 +967,7 @@ class GamesCompanion extends UpdateCompanion<GameRecord> {
       rejectionCount: rejectionCount ?? this.rejectionCount,
       currentTeam: currentTeam ?? this.currentTeam,
       questResults: questResults ?? this.questResults,
+      questTeams: questTeams ?? this.questTeams,
       composition: composition ?? this.composition,
       winReason: winReason ?? this.winReason,
       assassinationOutcome: assassinationOutcome ?? this.assassinationOutcome,
@@ -969,6 +1019,9 @@ class GamesCompanion extends UpdateCompanion<GameRecord> {
     if (questResults.present) {
       map['quest_results'] = Variable<String>(questResults.value);
     }
+    if (questTeams.present) {
+      map['quest_teams'] = Variable<String>(questTeams.value);
+    }
     if (composition.present) {
       map['composition'] = Variable<String>(composition.value);
     }
@@ -1000,6 +1053,7 @@ class GamesCompanion extends UpdateCompanion<GameRecord> {
           ..write('rejectionCount: $rejectionCount, ')
           ..write('currentTeam: $currentTeam, ')
           ..write('questResults: $questResults, ')
+          ..write('questTeams: $questTeams, ')
           ..write('composition: $composition, ')
           ..write('winReason: $winReason, ')
           ..write('assassinationOutcome: $assassinationOutcome')
@@ -3899,6 +3953,7 @@ typedef $$GamesTableCreateCompanionBuilder = GamesCompanion Function({
   required int rejectionCount,
   Value<String> currentTeam,
   required String questResults,
+  Value<String> questTeams,
   required String composition,
   Value<String?> winReason,
   Value<String?> assassinationOutcome,
@@ -3918,6 +3973,7 @@ typedef $$GamesTableUpdateCompanionBuilder = GamesCompanion Function({
   Value<int> rejectionCount,
   Value<String> currentTeam,
   Value<String> questResults,
+  Value<String> questTeams,
   Value<String> composition,
   Value<String?> winReason,
   Value<String?> assassinationOutcome,
@@ -4076,6 +4132,11 @@ class $$GamesTableFilterComposer extends Composer<_$AppDatabase, $GamesTable> {
 
   ColumnFilters<String> get questResults => $composableBuilder(
     column: $table.questResults,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get questTeams => $composableBuilder(
+    column: $table.questTeams,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4274,6 +4335,11 @@ class $$GamesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get questTeams => $composableBuilder(
+    column: $table.questTeams,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get composition => $composableBuilder(
     column: $table.composition,
     builder: (column) => ColumnOrderings(column),
@@ -4354,6 +4420,11 @@ class $$GamesTableAnnotationComposer
 
   GeneratedColumn<String> get questResults => $composableBuilder(
     column: $table.questResults,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get questTeams => $composableBuilder(
+    column: $table.questTeams,
     builder: (column) => column,
   );
 
@@ -4518,6 +4589,7 @@ class $$GamesTableTableManager
                 Value<int> rejectionCount = const Value.absent(),
                 Value<String> currentTeam = const Value.absent(),
                 Value<String> questResults = const Value.absent(),
+                Value<String> questTeams = const Value.absent(),
                 Value<String> composition = const Value.absent(),
                 Value<String?> winReason = const Value.absent(),
                 Value<String?> assassinationOutcome = const Value.absent(),
@@ -4536,6 +4608,7 @@ class $$GamesTableTableManager
                 rejectionCount: rejectionCount,
                 currentTeam: currentTeam,
                 questResults: questResults,
+                questTeams: questTeams,
                 composition: composition,
                 winReason: winReason,
                 assassinationOutcome: assassinationOutcome,
@@ -4556,6 +4629,7 @@ class $$GamesTableTableManager
                 required int rejectionCount,
                 Value<String> currentTeam = const Value.absent(),
                 required String questResults,
+                Value<String> questTeams = const Value.absent(),
                 required String composition,
                 Value<String?> winReason = const Value.absent(),
                 Value<String?> assassinationOutcome = const Value.absent(),
@@ -4574,6 +4648,7 @@ class $$GamesTableTableManager
                 rejectionCount: rejectionCount,
                 currentTeam: currentTeam,
                 questResults: questResults,
+                questTeams: questTeams,
                 composition: composition,
                 winReason: winReason,
                 assassinationOutcome: assassinationOutcome,

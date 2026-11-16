@@ -10,15 +10,15 @@ player-to-role mapping anywhere in the app or its storage.
 
 ## Status
 
-Phase 10 of 12 is implemented, plus three settings that came after it: the finished product,
-until the QA and release passes. A match can be created for 5–10 players, the night is spoken
-aloud by the phone in English or Filipino — English in a British narrator voice with deliberate
-pauses, now chosen from the voices actually installed on the phone — the wheel draws the first
-Lord (and, with the automatic King mode, the King of every round), and the MC runs the
-discussion timer, proposes a quest team, records the table's vote — or skips it — and the
-success and fail cards that come back from the quest. The engine applies the quest 4 two-fail
-rule, keeps the score and decides when the match is over; the accusation records only whether
-Merlin was named, and the result screen summarises the match without ever naming a player.
+Phase 10 of 12 is implemented, plus the settings and features that came after it: the finished
+product, until the QA and release passes. A match can be created for 5–10 players, the night is
+read aloud by the narrator recorded into the app — every night line exists in English and in
+Filipino, so the phone's text-to-speech is only the fallback for a line no recording covers — the
+wheel draws the first Lord (and, with the automatic King mode, the King of every round), and the
+MC runs the discussion timer, proposes a quest team, records the table's vote — or skips it — and
+the success and fail cards that come back from the quest. The engine applies the quest 4
+two-fail rule, keeps the score and decides when the match is over; the accusation records only
+whether Merlin was named, and the result screen summarises the match without ever naming a role.
 **Play Again** deals the same table a fresh match and puts the round table straight back in front
 of the MC.
 
@@ -29,6 +29,12 @@ record and outcome, and can clear them — a chosen number of the oldest, or all
 match still in progress always kept. Settings persist across restarts. Nothing is uploaded and
 no account is needed; the database never holds a character for a player, because the app is never
 told one.
+
+Every resolved quest also keeps the team that went on it. **Past quest teams** on the dashboard
+lists each finished quest with its outcome and the players who were on it — exactly what the
+table saw when it approved the team — so the table can look back before the next vote. The same
+list closes the result screen. It is public state only: teams are stored with the match, roles
+never are, and the app draws no conclusion from them.
 
 At the table the phone keeps its screen on during a live match, ticks and vibrates on confirmed
 actions, and can loop a low night ambience under the narration. An optional **MC PIN** locks
@@ -44,7 +50,7 @@ table has time to move its physical cards. A third, **Team approval vote**, can 
 off for a house rule: the leader's team then goes straight to the quest, rejections are never
 counted, and the token still passes on when the quest is resolved.
 
-Every phase has been verified by automated gates — `flutter analyze`, 257 unit and widget tests,
+Every phase has been verified by automated gates — `flutter analyze`, 274 unit and widget tests,
 two on-device integration tests — and on a Galaxy A36 (Android 16) through a signed 1.0.0 release
 build. See `DEVELOPMENT_PLAN.md` for the phase table, `DESIGN_SYSTEM.md` for the visual system and
 `CHANGELOG.md` for what has shipped.
@@ -161,8 +167,9 @@ database file cannot be opened — persistence is a side effect, never a depende
 - Assassination records an outcome, not a person.
 - No analytics, no network calls, no cloud sync.
 - All data stays on the device, in a single SQLite file.
-- Saved matches store the roster, the public state and the outcome. There is no character,
-  role or allegiance column on a player, so the history screen has nothing to leak.
+- Saved matches store the roster, the public state and the outcome — including the seats that
+  went on each resolved quest, which the whole table already saw. There is no character, role or
+  allegiance column on a player, so the history screen has nothing to leak.
 
 ## License
 

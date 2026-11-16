@@ -528,6 +528,45 @@ void main() {
       );
     });
 
+    test('the team that went on a quest is kept with its result', () {
+      final ready = _toTeamSelection(_newGame());
+      final team = ready.players
+          .take(ready.requiredTeamSize)
+          .map((p) => p.seat)
+          .toList();
+
+      final resolved = GameEngine.recordQuest(
+        _vote(ready, team, approve: ready.playerCount),
+        failCards: 1,
+      );
+
+      expect(resolved.questResults, [QuestResult.fail]);
+      expect(resolved.questTeams, [team], reason: 'seats, sorted, once');
+      expect(resolved.teamForQuest(1), team);
+      expect(
+        resolved.teamForQuest(2),
+        isEmpty,
+        reason: 'quest 2 has not been played',
+      );
+    });
+
+    test('each resolved quest keeps its own team, in play order', () {
+      var game = _toTeamSelection(_newGame(players: 6));
+      game = _playQuest(game);
+
+      game = GameEngine.beginTeamSelection(game);
+      final voted = _vote(game, [5, 6, 1], approve: 6);
+      game = GameEngine.recordQuest(voted, failCards: 1);
+
+      expect(game.questTeams, [
+        [1, 2],
+        [1, 5, 6],
+      ]);
+      expect(game.questLog.map((run) => run.questNumber), [1, 2]);
+      expect(game.questLog.map((run) => run.succeeded), [true, false]);
+      expect(game.questLog.last.seats, [1, 5, 6]);
+    });
+
     test('quest slots follow the recorded results', () {
       final resolved = _playQuest(_toTeamSelection(_newGame()), failCards: 1);
 

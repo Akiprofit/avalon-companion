@@ -18,9 +18,10 @@ import '../settings/settings_controller.dart';
 
 /// Screen 05 — immersive night narration.
 ///
-/// The panel shows one instruction at a time and speaks it through the Android
-/// text-to-speech engine. Nothing about the match is confidential here: the
-/// sequence depends on the composition, never on who holds which card.
+/// The panel shows one instruction at a time and plays it from the recordings
+/// bundled with the app, falling back to the Android text-to-speech engine for
+/// a line no recording covers. Nothing about the match is confidential here:
+/// the sequence depends on the composition, never on who holds which card.
 class NarrationScreen extends ConsumerStatefulWidget {
   const NarrationScreen({super.key});
 

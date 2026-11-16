@@ -10,6 +10,22 @@ enum QuestResult { success, fail }
 /// Verdict of a team vote.
 enum TeamVerdict { approved, rejected }
 
+/// One resolved quest as the board review shows it: number, outcome and the
+/// seats that went on it. Names come from the roster, never from a role.
+class QuestRun {
+  const QuestRun({
+    required this.questNumber,
+    required this.result,
+    required this.seats,
+  });
+
+  final int questNumber;
+  final QuestResult result;
+  final List<int> seats;
+
+  bool get succeeded => result == QuestResult.success;
+}
+
 /// The complete, immutable state of one match.
 ///
 /// Nothing in here associates a character with a player: [composition] is a
@@ -29,6 +45,7 @@ class GameState {
     required this.questResults,
     required this.currentTeam,
     required this.startedAt,
+    this.questTeams = const [],
     this.approveVotes = 0,
     this.rejectVotes = 0,
     this.pausedFrom,
@@ -54,6 +71,14 @@ class GameState {
 
   /// Seats proposed for the current quest. Empty outside a proposal.
   final List<int> currentTeam;
+
+  /// The team that went on each resolved quest, in the same order as
+  /// [questResults].
+  ///
+  /// Public state only — it is exactly what the table saw when the team was
+  /// approved, kept so the board can be read back later. It says nothing about
+  /// who was loyal and who was a minion.
+  final List<List<int>> questTeams;
 
   final int approveVotes;
   final int rejectVotes;
@@ -106,6 +131,27 @@ class GameState {
     return null;
   }
 
+  /// The seats that went on Quest [questNumber], 1-based like the rest of the
+  /// engine. Empty when that quest has not been resolved yet.
+  List<int> teamForQuest(int questNumber) {
+    final index = questNumber - 1;
+    if (index < 0 || index >= questTeams.length) return const [];
+    return questTeams[index];
+  }
+
+  /// Each resolved quest with its number, result and team, in play order — what
+  /// the board review lists.
+  List<QuestRun> get questLog {
+    return [
+      for (var i = 0; i < questResults.length; i++)
+        QuestRun(
+          questNumber: i + 1,
+          result: questResults[i],
+          seats: i < questTeams.length ? questTeams[i] : const [],
+        ),
+    ];
+  }
+
   /// Visual state of the five quest slots, derived from [questResults].
   List<QuestSlot> get questSlots {
     return List<QuestSlot>.generate(AvalonTables.questCount, (index) {
@@ -130,6 +176,7 @@ class GameState {
     int? rejectionCount,
     List<QuestResult>? questResults,
     List<int>? currentTeam,
+    List<List<int>>? questTeams,
     int? approveVotes,
     int? rejectVotes,
     Phase? pausedFrom,
@@ -146,6 +193,7 @@ class GameState {
       rejectionCount: rejectionCount ?? this.rejectionCount,
       questResults: questResults ?? this.questResults,
       currentTeam: currentTeam ?? this.currentTeam,
+      questTeams: questTeams ?? this.questTeams,
       approveVotes: approveVotes ?? this.approveVotes,
       rejectVotes: rejectVotes ?? this.rejectVotes,
       pausedFrom: clearPausedFrom ? null : (pausedFrom ?? this.pausedFrom),

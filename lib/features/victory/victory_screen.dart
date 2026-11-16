@@ -11,6 +11,7 @@ import '../../core/widgets/avalon_screen.dart';
 import '../../core/widgets/confirmation_dialog.dart';
 import '../../core/widgets/medieval_card.dart';
 import '../../core/widgets/primary_button.dart';
+import '../../core/widgets/quest_log.dart';
 import '../../core/widgets/quest_tracker.dart';
 import '../../core/widgets/secondary_button.dart';
 import '../../core/widgets/section_header.dart';
@@ -192,6 +193,11 @@ class VictoryScreen extends ConsumerWidget {
             trailing: MetaPill(label: '${game.questResults.length} played'),
           ),
           MedievalCard(child: QuestTracker(slots: game.questSlots)),
+          if (game.questLog.isNotEmpty) ...[
+            const SizedBox(height: Space.lg),
+            const SectionHeader(title: 'The board, quest by quest'),
+            MedievalCard(child: QuestLog(game: game)),
+          ],
           const SizedBox(height: Space.lg),
           const SectionHeader(title: 'Final summary'),
           MedievalCard(
@@ -224,10 +230,10 @@ class VictoryScreen extends ConsumerWidget {
           MedievalCard(
             child: Text(
               good
-                  ? 'Good held the realm. The record above counts quests alone '
-                        'and names no player.'
-                  : 'Evil took the realm. The record above counts quests alone '
-                        'and names no player.',
+                  ? 'Good held the realm. The record above lists the teams that '
+                        'played and the quests they won or lost, never a role.'
+                  : 'Evil took the realm. The record above lists the teams that '
+                        'played and the quests they won or lost, never a role.',
               style: AppText.caption,
             ),
           ),
