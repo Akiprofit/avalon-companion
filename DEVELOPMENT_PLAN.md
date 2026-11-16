@@ -804,7 +804,7 @@ Known limits:
 ## Tablet layout — complete on automated gates
 
 Delivered: the same layout, readable on any Android tablet. No rule, screen or stored value
-changed, and no version bump yet.
+changed, and this entry documents it. Version 1.2.0+18; no rule, screen or stored value changed.
 
 - **One bounded column.** `AvalonScreen` measures the window and, above 600 dp, centres the body
   in a `ConstrainedBox` at `kMaxContentWidth` (600 dp, `lib/core/theme/app_metrics.dart`).

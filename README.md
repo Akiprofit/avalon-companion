@@ -1,70 +1,175 @@
-# Avalon Companion
+<p align="center">
+  <img src="docs/icon.png" alt="Avalon Companion app icon" width="140" />
+</p>
 
-An offline Android companion app that acts as the Game Master for physical games of
-**The Resistance: Avalon**.
+<h1 align="center">Avalon Companion</h1>
 
-One person — the MC — holds the phone. Everyone else plays with the physical Avalon cards.
-The app narrates the night, tracks the public state of the match, and does the arithmetic.
-It never learns who holds which character, because it never asks: there is no
-player-to-role mapping anywhere in the app or its storage.
+<p align="center">
+  <em>The Game Master, in your pocket.</em>
+</p>
 
-## Status
+<p align="center">
+  <a href="https://github.com/Akiprofit/avalon-companion/releases/latest">
+    <img alt="Download the Android APK" src="https://img.shields.io/badge/Download-Android%20APK-C5A15B?style=for-the-badge&logo=android&logoColor=0B0E14" />
+  </a>
+  <img alt="Version 1.2.0" src="https://img.shields.io/badge/version-1.2.0-0B0E14?style=for-the-badge" />
+  <img alt="Offline first" src="https://img.shields.io/badge/offline-first-3D9B72?style=for-the-badge" />
+</p>
 
-Phase 10 of 12 is implemented, plus the settings and features that came after it: the finished
-product, until the QA and release passes. A match can be created for 5–10 players, the night is
-read aloud by the narrator recorded into the app — every night line exists in English and in
-Filipino, so the phone's text-to-speech is only the fallback for a line no recording covers — the
-wheel draws the first Lord (and, with the automatic King mode, the King of every round), and the
-MC runs the discussion timer, proposes a quest team, records the table's vote — or skips it — and
-the success and fail cards that come back from the quest. The engine applies the quest 4
-two-fail rule, keeps the score and decides when the match is over; the accusation records only
-whether Merlin was named, and the result screen summarises the match without ever naming a role.
-**Play Again** deals the same table a fresh match and puts the round table straight back in front
-of the MC.
+**Avalon Companion** is an offline Android app that acts as the Game Master for
+physical games of **The Resistance: Avalon**. One person — the MC — holds the
+phone; everyone else plays with the physical cards. The app narrates the night
+in **English and Filipino**, tracks the public state of the match, and does the
+arithmetic.
 
-Every confirmed action is written to an on-device SQLite database, so an interrupted match
-reopens where it stopped: the app offers **Continue Game** at launch with the phase, quest and
-roster already restored. **History** lists finished and abandoned matches with their quest
-record and outcome, and can clear them — a chosen number of the oldest, or all of them, with a
-match still in progress always kept. Settings persist across restarts. Nothing is uploaded and
-no account is needed; the database never holds a character for a player, because the app is never
-told one.
+It never asks who holds which character, so it cannot leak one. There is no
+player-to-role mapping anywhere in the app or its storage — not on screen, not
+in the database, not in a saved match.
 
-Every resolved quest also keeps the team that went on it. **Past quest teams** on the dashboard
-lists each finished quest with its outcome and the players who were on it — exactly what the
-table saw when it approved the team — so the table can look back before the next vote. The same
-list closes the result screen. It is public state only: teams are stored with the match, roles
-never are, and the app draws no conclusion from them.
+No account. No ads. No network calls. Matches, history and settings stay in one
+SQLite file on the device.
 
-At the table the phone keeps its screen on during a live match, ticks and vibrates on confirmed
-actions, and can loop a low night ambience under the narration. An optional **MC PIN** locks
-Settings and Abort behind a salted digest — a lock on the table, not encryption — while the
-match itself stays playable without it. The UI survives a 200% text scale, honours Android's
-reduced-motion setting, and keeps every control at least 48 dp. On a tablet the same layout is
-centred in a 600 dp column rather than stretched across the screen, so the phone experience is
-the tablet experience with wider margins.
+---
 
-Two further settings shape the flow. **King selection mode** chooses whether the wheel spins by
-itself at the start of every round (a new King each quest, never the same player twice in a row
-while others can lead) or only when the MC asks for it. **Narrator extra delay** adds 0–20
-seconds of silence after every spoken line, counted from the moment the voice stops, so the
-table has time to move its physical cards. A third, **Team approval vote**, can be switched
-off for a house rule: the leader's team then goes straight to the quest, rejections are never
-counted, and the token still passes on when the quest is resolved.
+## Download
 
-Every phase has been verified by automated gates — `flutter analyze`, 280 unit and widget tests,
-three on-device integration tests — and on a Galaxy A36 (Android 17) through signed 1.0.0 and
-1.1.0 release builds. Tablet sizes are covered by widget tests only; no physical tablet was
-available. See `DEVELOPMENT_PLAN.md` for the phase table, `DESIGN_SYSTEM.md` for the
-visual system and `CHANGELOG.md` for what has shipped.
+The latest signed Android APK is on the
+[**Releases page**](https://github.com/Akiprofit/avalon-companion/releases/latest).
 
-## Requirements
+- Android **7.0 and newer**
+- Works completely offline
+- Release build signed for installation outside the Play Store
+- One APK for arm64, arm and x86_64
 
-- Flutter stable (developed against Flutter 3.50 / Dart 3.14)
-- Android SDK with JDK 17 or newer
+### Install on Android
+
+1. Download `Avalon-Companion-1.2.0.apk` from the latest release.
+2. Open the downloaded APK.
+3. Allow **Install unknown apps** for the browser or file manager you used.
+4. Tap **Install**.
+5. If Play Protect shows a warning, choose **Install anyway** — only do this if
+   you trust the source.
+
+> **Updating:** install a newer APK over the old one. Keep the same package and
+> signing key. Updating keeps every saved match, the history and the settings.
+> Uninstalling the app deletes them.
+
+### Install over USB (optional)
+
+1. Enable **Developer options → USB debugging** and connect the phone.
+2. `adb devices` must list it.
+3. Install or update without losing anything:
+
+   ```bash
+   adb install -r build/app/outputs/flutter-apk/app-release.apk
+   ```
+
+---
+
+## Features
+
+### The night, read aloud
+
+- **28 recorded lines** — every night line exists in **English** and in
+  **Filipino**, bundled inside the APK (2.6 MB, stored uncompressed so
+  `MediaPlayer` can open them)
+- The phone's text-to-speech is the **fallback narrator**, used only for a line
+  with no recording or a clip that cannot play
+- **Play / pause, next, previous, replay**, plus speed, depth and volume for
+  the fallback voice
+- **Narrator extra delay:** 0–20 seconds of silence after every line, counted
+  from the moment the voice stops, so the table has time to move its cards
+- A low night ambience can loop under the narration
+- The screen stays on during a live match; confirmed actions tick and vibrate
+
+### The match
+
+- Create a match for **5–10 players** with physical cards at the table
+- The **wheel** draws the first Lord; with the automatic King mode it draws the
+  King of every round — never the same player twice in a row while others can
+  lead, or only when the MC asks
+- Discussion timer, team proposal, and the table's vote — or skip the vote for a
+  house rule, where the leader's team goes straight to the quest
+- Record the success and fail cards that come back; the engine applies the
+  **quest 4 two-fail rule**, keeps the score and decides when the match is over
+- The accusation records **whether Merlin was named**, never a person
+- The result screen summarises the match without naming a role, and **Play
+  Again** deals the same table a fresh match
+- Every confirmed action is written to SQLite, so an interrupted match reopens
+  with **Continue Game** at the phase, quest and roster it stopped on
+- **History** lists finished and abandoned matches with their quest record and
+  outcome, and can clear them — a chosen number of the oldest, or all — always
+  keeping a match still in progress
+- **Past quest teams** keeps the team that went on every resolved quest, with
+  the outcome, exactly as the table saw it. The same list closes the result
+  screen
+
+### Settings and table tools
+
+- **MC PIN** locks Settings and Abort behind a salted digest — a lock on the
+  table, not encryption — while the match stays playable without it
+- **Language:** English or Filipino, switchable at any time; changing it never
+  restarts a match
+- **Fallback voice:** speed, depth and volume for the text-to-speech narrator
+- **Extra delay after each line:** 0–20 seconds, also settable during a match
+- **Automatic narration** and **ambient audio** beneath it
+- **King selection mode:** automatic every round, or only when the MC asks
+- **Team approval vote** on or off
+- **Default player count** and **discussion timer** length
+- **Keep screen awake**, **confirmation dialogs**, **haptic feedback** and
+  **sound effects**
+- A match in progress and every setting survive a restart
+
+### Designed for Android
+
+- **Tablet support:** the same layout everywhere, centred in a 600 dp reading
+  column on a wide screen — no stretched cards, no second layout to learn
+- Survives a **200% text scale**; honours Android's **reduced-motion** setting
+- Every control is at least **48 dp** tall
+- Safe areas, keyboard-aware setup form, and the system Back button are handled
+- Adaptive launcher icon that fits circular, rounded and squircle masks
+
+### Private by default
+
+- No player-to-character mapping, ever
+- Assassination records an outcome, not a person
+- No account, no analytics, no ads, no cloud sync, no server calls
+- All data stays on the device, in a single SQLite file
+- Saved matches store the roster, the public state and the outcome — including
+  the seats that went on each resolved quest, which the whole table already saw.
+  There is no character, role or allegiance column on a player, so the history
+  screen has nothing to leak
+
+---
+
+## Tech stack
+
+- **Flutter** stable (developed against Flutter 3.50 / Dart 3.14)
+- **Riverpod** for state
+- **Drift + SQLite** for matches, history and settings (schema v6)
+- **go_router** for navigation
+- **Kotlin MethodChannel + `MediaPlayer`** for the recorded narrator
+  (`com.avalon.companion/clips`); **flutter_tts** as the fallback voice
 - No network access needed at runtime
 
-## Run
+Rules live in `lib/game_engine/` as pure Dart. No Flutter import is allowed
+there, which is what makes the rule tests fast and the rules independently
+verifiable.
+
+Storage lives in `lib/database/`. The session controller talks to the
+`MatchStore` interface, never to Drift, so the live match is testable with a
+fake and still runs on a device where the database file cannot be opened —
+persistence is a side effect, never a dependency.
+
+---
+
+## Run locally
+
+Requirements:
+
+- Flutter stable
+- Android SDK with JDK 17 or newer
+- A connected Android device or emulator
 
 ```bash
 flutter pub get
@@ -80,11 +185,14 @@ flutter test integration_test -d <device-id>   # real app on a phone, real datab
 flutter test integration_test/clip_playback_test.dart -d <device-id>  # narrator audio decodes
 ```
 
-The device run installs a debug build and Flutter uninstalls it afterwards, so the phone's saved
-matches do not survive it. Debug builds are signed with the release key when
-`android/key.properties` exists, which lets them install over the release app in the first place.
+The device run installs a debug build and Flutter uninstalls it afterwards, so
+the phone's saved matches do not survive it. Debug builds are signed with the
+release key when `android/key.properties` exists, which lets them install over
+the release app in the first place.
 
-## Build the APK
+---
+
+## Build the Android app
 
 ```bash
 flutter clean
@@ -94,12 +202,25 @@ flutter test
 flutter build apk --release
 ```
 
-Output: `build/app/outputs/flutter-apk/app-release.apk`, about 63 MB — the
-Flutter engine for arm64, arm and x86_64, stripped, plus the 28 narrator
-recordings (2.6 MB, stored uncompressed so `MediaPlayer` can open them).
+The signed APK is written to:
 
-The release build is signed with the keystore named in `android/key.properties`
-(gitignored). That file points at a keystore outside the repository:
+```text
+build/app/outputs/flutter-apk/app-release.apk
+```
+
+About 63 MB — the Flutter engine for arm64, arm and x86_64, stripped, plus the
+28 narrator recordings. The build strips the engine libraries with the NDK
+pinned in `android/app/build.gradle.kts` (`ndkVersion`); without that NDK the
+strip step fails the build. On a machine that has no NDK, set
+`AVALON_KEEP_SYMBOLS=1` to skip stripping instead — the APK grows to about
+500 MB and is only for local testing. Stop the Gradle daemon after changing the
+variable (`android\gradlew.bat --stop`), or it keeps the old environment.
+
+### Release build
+
+Release signing is configured through `android/key.properties`, which is
+intentionally excluded from Git along with the keystore. The file points at a
+keystore outside the repository:
 
 ```properties
 storePassword=…
@@ -110,8 +231,9 @@ storeFile=C:/Users/<you>/.avalon/avalon-release.jks
 
 Without it Gradle falls back to the debug key, which still installs for testing
 but cannot be published or updated over an install signed with the real key.
-Keep the keystore and its passwords somewhere safe: Android refuses an update
-signed with a different key, so losing them means a new package identity.
+
+> Keep the keystore and its passwords backed up. Android refuses an update
+> signed with a different key, so losing them means a new package identity.
 
 ### Check the signature and alignment
 
@@ -122,29 +244,11 @@ $bt = "$env:LOCALAPPDATA\Android\Sdk\build-tools\36.0.0"
 ```
 
 `zipalign -c` is silent and exits 0 when the APK is aligned; `apksigner verify`
-prints the signer. The build strips Flutter's engine libraries with the NDK
-pinned in `android/app/build.gradle.kts` (`ndkVersion`); without that NDK the
-strip step fails the build. On a machine that has no NDK, set
-`AVALON_KEEP_SYMBOLS=1` to skip stripping instead — the APK grows to about
-500 MB and is only for local testing. Stop the Gradle daemon after changing the
-variable (`android\gradlew.bat --stop`), or it keeps the old environment.
+prints the signer.
 
-## Install on a phone
+---
 
-1. Enable **Developer options → USB debugging** and connect the phone.
-2. `adb devices` must list it.
-3. Install or update without losing the saved match and settings:
-
-   ```bash
-   adb install -r build/app/outputs/flutter-apk/app-release.apk
-   ```
-
-4. First install from a file also works: copy the APK to the phone and open it,
-   allowing "install unknown apps" for the file manager.
-5. `adb install -r` keeps the database; uninstalling removes every saved match,
-   the history and the settings.
-
-## Project layout
+## Project structure
 
 ```text
 lib/
@@ -156,45 +260,64 @@ lib/
   narration_engine/    script data, narration controller, recorded clips, TTS fallback
 assets/
   audio/narration/     the narrator's recordings: en/ and fil/, one MP3 per night line
+  images/              the seven public-domain environment plates
 test/
   database/            the real schema, against in-memory SQLite
   unit/                rule tables, engine, privacy guards, narration, persistence, settings
   support/             in-memory match store and other fakes
-  widget/              navigation and layout
+  widget/              navigation, layout, tablet sizes and flow gates
 integration_test/      on-device run of the real app against the real database
 tool/                  make_icons.ps1, which regenerates every launcher and splash PNG
+docs/icon.png          the app icon used by this README
 ```
 
-Rules live in `lib/game_engine/` as pure Dart. No Flutter import is allowed there, which
-is what makes the rule tests fast and the rules independently verifiable.
+---
 
-Storage lives in `lib/database/`. The session controller talks to the `MatchStore` interface,
-never to Drift, so the live match is testable with a fake and still runs on a device where the
-database file cannot be opened — persistence is a side effect, never a dependency.
+## Status
 
-## Privacy
+**v1.2.0** — Tablet layout. The `AvalonScreen` shell bounds the body to a
+600 dp column and centres it, and bottom action bars keep the same width, so a
+tablet shows the phone UI in the middle of the glass instead of stretching every
+card and line of text. Covered at 800×1280 and 1280×800 in widget tests. No
+physical tablet was available.
 
-- No player-to-character mapping, ever.
-- Assassination records an outcome, not a person.
-- No analytics, no network calls, no cloud sync.
-- All data stays on the device, in a single SQLite file.
-- Saved matches store the roster, the public state and the outcome — including the seats that
-  went on each resolved quest, which the whole table already saw. There is no character, role or
-  allegiance column on a player, so the history screen has nothing to leak.
+**v1.1.0** — Recorded narrator and past quest teams. The night is read by the
+recordings made for the app — 14 lines in English, 14 in Filipino — instead of
+the phone's voice, and every resolved quest keeps the team that went on it.
+Drift schema v6 adds `games.questTeams`; a match finished before this build
+shows its quest results but not its teams.
+
+**v1.0.0** — The first signed release: 5–10 players, the narrated night, the
+wheel and King selection, the discussion timer, team proposal and vote, quest
+resolution and the 4th-quest two-fail rule, assassination outcome, results,
+history, resume, settings and the MC PIN.
+
+Every phase is verified by `flutter analyze`, **280 unit and widget tests**, and
+three on-device integration tests on a Galaxy A36 (Android 17) through signed
+1.0.0, 1.1.0 and 1.2.0 builds. Tablet sizes are covered by widget tests only.
+See [`DEVELOPMENT_PLAN.md`](DEVELOPMENT_PLAN.md) for the phase table,
+[`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md) for the visual system and
+[`CHANGELOG.md`](CHANGELOG.md) for what has shipped.
+
+---
 
 ## License
 
-MIT — see [`LICENSE`](LICENSE). Use it, change it, ship it; keep the copyright notice.
+MIT — see [`LICENSE`](LICENSE). Use it, change it, ship it; keep the copyright
+notice.
 
-The bundled paintings are public domain and are credited above. The fonts are under the SIL
-Open Font License. The app is an unofficial fan-made companion: not affiliated with or endorsed
-by the publisher of *The Resistance: Avalon*, and the Avalon name is used only to describe what
-the app accompanies.
+The bundled paintings are public domain (their artists died more than 70 years
+ago) and were sourced from Wikimedia Commons; `DESIGN_SYSTEM.md` §7 credits
+them. The fonts are under the SIL Open Font License.
 
 ## Credits
 
-Typography: Cinzel by Natanael Gama and Inter by Rasmus Andersson, both under the SIL Open
-Font License. See `assets/fonts/OFL-Cinzel.txt` and `assets/fonts/OFL-Inter.txt`.
+Typography: **Cinzel** by Natanael Gama and **Inter** by Rasmus Andersson, both
+under the SIL Open Font License. See `assets/fonts/OFL-Cinzel.txt` and
+`assets/fonts/OFL-Inter.txt`.
 
-Unofficial fan-made companion. Not affiliated with or endorsed by the publisher of
-The Resistance: Avalon.
+The app is an unofficial fan-made companion: not affiliated with or endorsed by
+the publisher of *The Resistance: Avalon*, and the Avalon name is used only to
+describe what the app accompanies.
+
+Built for tables that would rather argue about the quest than do the bookkeeping.

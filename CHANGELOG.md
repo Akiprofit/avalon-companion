@@ -3,7 +3,7 @@
 All notable changes to Avalon Companion are recorded here. One entry per completed
 development phase, in the order the plan defines them.
 
-## [Unreleased] – Tablet layout
+## [1.2.0] – Tablet layout (2026-11-17)
 
 ### Changed
 
