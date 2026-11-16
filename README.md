@@ -40,7 +40,9 @@ At the table the phone keeps its screen on during a live match, ticks and vibrat
 actions, and can loop a low night ambience under the narration. An optional **MC PIN** locks
 Settings and Abort behind a salted digest — a lock on the table, not encryption — while the
 match itself stays playable without it. The UI survives a 200% text scale, honours Android's
-reduced-motion setting, and keeps every control at least 48 dp.
+reduced-motion setting, and keeps every control at least 48 dp. On a tablet the same layout is
+centred in a 600 dp column rather than stretched across the screen, so the phone experience is
+the tablet experience with wider margins.
 
 Two further settings shape the flow. **King selection mode** chooses whether the wheel spins by
 itself at the start of every round (a new King each quest, never the same player twice in a row
@@ -50,9 +52,10 @@ table has time to move its physical cards. A third, **Team approval vote**, can 
 off for a house rule: the leader's team then goes straight to the quest, rejections are never
 counted, and the token still passes on when the quest is resolved.
 
-Every phase has been verified by automated gates — `flutter analyze`, 274 unit and widget tests,
+Every phase has been verified by automated gates — `flutter analyze`, 280 unit and widget tests,
 three on-device integration tests — and on a Galaxy A36 (Android 17) through signed 1.0.0 and
-1.1.0 release builds. See `DEVELOPMENT_PLAN.md` for the phase table, `DESIGN_SYSTEM.md` for the
+1.1.0 release builds. Tablet sizes are covered by widget tests only; no physical tablet was
+available. See `DEVELOPMENT_PLAN.md` for the phase table, `DESIGN_SYSTEM.md` for the
 visual system and `CHANGELOG.md` for what has shipped.
 
 ## Requirements

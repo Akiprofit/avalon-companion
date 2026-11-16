@@ -23,7 +23,15 @@ class AvalonScreen extends StatelessWidget {
     this.onBack,
     this.backgroundDecoration = true,
     this.backgroundImage,
+    this.capBottom = true,
   });
+
+  /// The reading measure on a wide screen, from `app_metrics.dart`.
+  static const double maxContentWidth = kMaxContentWidth;
+
+  /// The bounded body, so a layout test can prove the column never grows past
+  /// [maxContentWidth] no matter how wide the window is.
+  static const Key contentKey = ValueKey('screen_content');
 
   final Widget child;
   final PreferredSizeWidget? appBar;
@@ -35,6 +43,11 @@ class AvalonScreen extends StatelessWidget {
 
   /// Bundled artwork plate drawn behind the screen. See `Artwork`.
   final String? backgroundImage;
+
+  /// Whether the bottom bar keeps the content width. Action bars do, so a gold
+  /// button stops being a full-width band; the navigation bar does not, because
+  /// it is a band edge to edge and only its items are centred.
+  final bool capBottom;
 
   PreferredSizeWidget? _resolveAppBar(BuildContext context) {
     final Widget? back = showBackButton
@@ -74,18 +87,61 @@ class AvalonScreen extends StatelessWidget {
           appBar: _resolveAppBar(context),
           body: SafeArea(
             bottom: bottom == null,
-            child: padded
-                ? Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: Space.screenPadding,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final content = padded
+                    ? Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: Space.screenPadding,
+                        ),
+                        child: child,
+                      )
+                    : child;
+                if (constraints.maxWidth <= maxContentWidth) {
+                  return KeyedSubtree(key: contentKey, child: content);
+                }
+                return Align(
+                  alignment: Alignment.topCenter,
+                  child: ConstrainedBox(
+                    key: contentKey,
+                    constraints: const BoxConstraints(
+                      maxWidth: maxContentWidth,
                     ),
-                    child: child,
-                  )
-                : child,
+                    child: content,
+                  ),
+                );
+              },
+            ),
           ),
           bottomNavigationBar: bottom == null
               ? null
-              : SafeArea(top: false, child: bottom!),
+              : SafeArea(
+                  top: false,
+                  child: !capBottom
+                      ? bottom!
+                      : LayoutBuilder(
+                          builder: (context, constraints) {
+                            if (constraints.maxWidth <= maxContentWidth) {
+                              return bottom!;
+                            }
+                            // The action bar keeps the same width as the
+                            // content, so a gold button stops being a
+                            // full-width band on a tablet.
+                            return Align(
+                              alignment: Alignment.topCenter,
+                              // Height follows the bar, not the Scaffold's
+                              // loose maximum; see `avalon_bottom_navigation`.
+                              heightFactor: 1,
+                              child: ConstrainedBox(
+                                constraints: const BoxConstraints(
+                                  maxWidth: maxContentWidth,
+                                ),
+                                child: bottom!,
+                              ),
+                            );
+                          },
+                        ),
+                ),
         ),
       ],
     );

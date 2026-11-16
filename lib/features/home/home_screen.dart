@@ -29,6 +29,7 @@ class HomeScreen extends ConsumerWidget {
     return AvalonScreen(
       padded: false,
       backgroundImage: Artwork.home,
+      capBottom: false,
       bottom: AvalonBottomNavigation(
         currentRouteName: RouteNames.home,
         onSelected: (name) {

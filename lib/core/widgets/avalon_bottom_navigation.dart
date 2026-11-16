@@ -31,9 +31,21 @@ class AvalonBottomNavigation extends StatelessWidget {
   final List<NavDestination> destinations;
 
   static const defaultDestinations = <NavDestination>[
-    NavDestination(label: 'Home', icon: Icons.castle_outlined, routeName: 'home'),
-    NavDestination(label: 'History', icon: Icons.history_edu_outlined, routeName: 'history'),
-    NavDestination(label: 'Settings', icon: Icons.tune_outlined, routeName: 'settings'),
+    NavDestination(
+      label: 'Home',
+      icon: Icons.castle_outlined,
+      routeName: 'home',
+    ),
+    NavDestination(
+      label: 'History',
+      icon: Icons.history_edu_outlined,
+      routeName: 'history',
+    ),
+    NavDestination(
+      label: 'Settings',
+      icon: Icons.tune_outlined,
+      routeName: 'settings',
+    ),
   ];
 
   @override
@@ -49,17 +61,30 @@ class AvalonBottomNavigation extends StatelessWidget {
           // A minimum rather than a fixed height: at large text sizes the
           // labels grow and the bar grows with them instead of clipping.
           constraints: const BoxConstraints(minHeight: 62),
-          child: Row(
-            children: [
-              for (final destination in destinations)
-                Expanded(
-                  child: _NavItem(
-                    destination: destination,
-                    isSelected: destination.routeName == currentRouteName,
-                    onTap: () => onSelected(destination.routeName),
-                  ),
-                ),
-            ],
+          // On a tablet the band still runs edge to edge, but three items
+          // stretched across 1200 dp would read as three islands; they stay in
+          // the same 600 dp column as the screen above them.
+          child: Align(
+            alignment: Alignment.center,
+            // `heightFactor: 1` keeps the band as tall as its items. Without
+            // it the Align fills the loose height the Scaffold offers and the
+            // bar turns into a full-screen overlay that swallows taps.
+            heightFactor: 1,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: kMaxContentWidth),
+              child: Row(
+                children: [
+                  for (final destination in destinations)
+                    Expanded(
+                      child: _NavItem(
+                        destination: destination,
+                        isSelected: destination.routeName == currentRouteName,
+                        onTap: () => onSelected(destination.routeName),
+                      ),
+                    ),
+                ],
+              ),
+            ),
           ),
         ),
       ),

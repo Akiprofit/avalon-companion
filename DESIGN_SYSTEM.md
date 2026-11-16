@@ -240,5 +240,8 @@ both supported; changing language never restarts a match.
 
 - `flutter analyze` clean, full test suite green.
 - Layouts checked at 360, 411 and 480 dp width, plus the Galaxy A36.
+- Tablet sizes checked in `test/widget/tablet_layout_test.dart`: 800×1280 and 1280×800 dp. The
+  layout is not redesigned for them — the same phone column is centred and capped at 600 dp, and
+  the bottom bars keep that same width. No physical tablet has been tested.
 - Reduced motion on: no drift, no scale, transitions instant.
 - APK builds and installs on device.

@@ -54,6 +54,7 @@ class SettingsScreen extends ConsumerWidget {
       appBar: AppBar(title: const Text('SETTINGS')),
       backgroundImage: Artwork.settings,
       padded: false,
+      capBottom: false,
       bottom: AvalonBottomNavigation(
         currentRouteName: RouteNames.settings,
         onSelected: (name) {
@@ -724,6 +725,7 @@ class _LockedSettings extends StatelessWidget {
     return AvalonScreen(
       appBar: AppBar(title: const Text('SETTINGS')),
       backgroundImage: Artwork.settings,
+      capBottom: false,
       bottom: AvalonBottomNavigation(
         currentRouteName: RouteNames.settings,
         onSelected: (name) {

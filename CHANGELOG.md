@@ -3,6 +3,31 @@
 All notable changes to Avalon Companion are recorded here. One entry per completed
 development phase, in the order the plan defines them.
 
+## [Unreleased] – Tablet layout
+
+### Changed
+
+- **One layout for every screen size.** The `AvalonScreen` shell now bounds the body to a
+  600 dp column and centres it, so the same layout that fills a phone fills the middle of a
+  tablet instead of stretching every card and line of text across the glass. The bottom
+  action bars keep the same width as the content — a gold button stays a button, not a band —
+  while the navigation bar still runs edge to edge and centres only its three items.
+- Nothing else changed: no breakpoints, no second layout, no new screens. A tablet gets the
+  phone UI, readable and centred.
+
+### Verified
+
+| Check | Result |
+| --- | --- |
+| `flutter analyze` | No issues found |
+| `flutter test` | 280 tests pass |
+| New tablet gate | `test/widget/tablet_layout_test.dart`: 360×780 phone keeps the full-width layout; home, settings, history, setup and how-to-play centre a 600 dp column at 800×1280; a ten-player dashboard at 1280×800 keeps its action column; the night panel fits 1280×800 at 1.3× and 2.0× text; the navigation band stays a bar and its taps still land |
+
+### Known limits
+
+- No physical tablet was available. Tablet support is proven in widget tests at 800×1280 and
+  1280×800 logical pixels, not on a bought device.
+
 ## [1.1.0] - Recorded narrator and past quest teams
 
 ### Added

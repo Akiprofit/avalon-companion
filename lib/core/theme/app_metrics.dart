@@ -28,3 +28,11 @@ abstract final class Motion {
 
 /// Minimum touch target required by `avalon-ui-system`.
 const double kMinTapTarget = 48;
+
+/// The reading measure on a wide screen.
+///
+/// The layout is the phone layout, unchanged: a tablet simply centres it in a
+/// column this wide instead of stretching every card and every line of text
+/// across the glass. 600 dp leaves 560 dp of text after the screen padding —
+/// roughly 70 characters, which is still comfortable to read aloud from.
+const double kMaxContentWidth = 600;

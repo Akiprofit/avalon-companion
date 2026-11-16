@@ -46,6 +46,7 @@ class HistoryScreen extends ConsumerWidget {
       appBar: AppBar(title: const Text('GAME HISTORY')),
       backgroundImage: Artwork.history,
       padded: false,
+      capBottom: false,
       bottom: AvalonBottomNavigation(
         currentRouteName: RouteNames.history,
         onSelected: (name) {

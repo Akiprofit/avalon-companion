@@ -801,7 +801,40 @@ Known limits:
 - The keystore is the app's only identity. There is no upload key and no Play Store listing, so
   losing the keystore means a new package on Android rather than an update.
 
-## Cross-cutting known issues
+## Tablet layout — complete on automated gates
+
+Delivered: the same layout, readable on any Android tablet. No rule, screen or stored value
+changed, and no version bump yet.
+
+- **One bounded column.** `AvalonScreen` measures the window and, above 600 dp, centres the body
+  in a `ConstrainedBox` at `kMaxContentWidth` (600 dp, `lib/core/theme/app_metrics.dart`).
+  Below that width the body is returned untouched, so a phone renders exactly as before.
+- **Action bars follow the content.** A bottom action bar is capped to the same 600 dp, so a
+  confirmation button is no longer a full-width band on a landscape tablet. The navigation bar
+  opts out with `capBottom: false`: its band is still edge to edge, but its three items sit in the
+  600 dp column. Both use `Align(heightFactor: 1)` so the bar keeps its own height instead of
+  filling the Scaffold's loose constraint.
+- **No second layout.** There are no breakpoints and no two-pane screens; the requirement was
+  that a tablet shows the same UI/UX as the phone, only centred.
+
+Gate evidence:
+
+| Check | Result |
+| --- | --- |
+| `flutter analyze` | No issues found |
+| `flutter test` | 280 tests pass (274 + 6 tablet tests) |
+| Phone unchanged | 360×780: content column is the full 360 dp with no gutter |
+| Portrait tablet | 800×1280: home, settings, history, setup and how-to-play each centre a column ≤ 600 dp with equal gutters and a body taller than 300 dp |
+| Landscape tablet | 1280×800: ten-player dashboard column ≤ 600 dp; the primary button is ≤ 600 dp wide |
+| Large text | night narration panel at 1280×800 with 1.3× and 2.0× text scale: no exception |
+| Navigation | the band is under 140 dp tall on a tablet and tapping History still opens GAME HISTORY |
+
+Known limits:
+
+- No physical tablet was available for this pass; the sizes above are widget-test viewports.
+  `DESIGN_SYSTEM.md` §9 now lists them alongside the phone widths.
+
+
 
 - A match that is interrupted mid-vote restores its proposed team but starts the tally again
   from zero. That is deliberate: the app never stores a partial vote, and re-counting hands is
