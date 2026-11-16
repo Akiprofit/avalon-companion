@@ -22,6 +22,9 @@ development phase, in the order the plan defines them.
 | `flutter analyze` | No issues found |
 | `flutter test` | 280 tests pass |
 | New tablet gate | `test/widget/tablet_layout_test.dart`: 360×780 phone keeps the full-width layout; home, settings, history, setup and how-to-play centre a 600 dp column at 800×1280; a ten-player dashboard at 1280×800 keeps its action column; the night panel fits 1280×800 at 1.3× and 2.0× text; the navigation band stays a bar and its taps still land |
+| Release APK | `flutter build apk --release` succeeds: 62.6 MB (65,655,374 bytes), `versionName` 1.2.0, `versionCode` 18, arm64-v8a + armeabi-v7a + x86_64 |
+| Signature | one signer, `CN=Avalon Companion`, SHA-256 `1aa864f1…a570b808` — the same key as 1.0.0 and 1.1.0; `zipalign -c -p 4` passes; APK SHA-256 `9F0E06CD…D02AA78` |
+| GitHub release | `v1.2.0` published with `Avalon-Companion-1.2.0.apk`; its digest matches the local build |
 
 ### Known limits
 

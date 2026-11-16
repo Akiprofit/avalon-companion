@@ -828,6 +828,9 @@ Gate evidence:
 | Landscape tablet | 1280×800: ten-player dashboard column ≤ 600 dp; the primary button is ≤ 600 dp wide |
 | Large text | night narration panel at 1280×800 with 1.3× and 2.0× text scale: no exception |
 | Navigation | the band is under 140 dp tall on a tablet and tapping History still opens GAME HISTORY |
+| Release APK | 62.6 MB (65,655,374 bytes), `versionName` 1.2.0, `versionCode` 18, three ABIs |
+| Signature | one signer, `CN=Avalon Companion`, SHA-256 `1aa864f1…a570b808`; `zipalign -c -p 4` passes |
+| GitHub release | `v1.2.0` published with `Avalon-Companion-1.2.0.apk`; digest matches the local build |
 
 Known limits:
 
