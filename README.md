@@ -12,7 +12,7 @@
   <a href="https://github.com/Akiprofit/avalon-companion/releases/latest">
     <img alt="Download the Android APK" src="https://img.shields.io/badge/Download-Android%20APK-C5A15B?style=for-the-badge&logo=android&logoColor=0B0E14" />
   </a>
-  <img alt="Version 1.3.1" src="https://img.shields.io/badge/version-1.3.1-0B0E14?style=for-the-badge" />
+  <img alt="Version 1.4.0" src="https://img.shields.io/badge/version-1.4.0-0B0E14?style=for-the-badge" />
   <img alt="Offline first" src="https://img.shields.io/badge/offline-first-3D9B72?style=for-the-badge" />
 </p>
 
@@ -43,7 +43,7 @@ The latest signed Android APK is on the
 
 ### Install on Android
 
-1. Download `Avalon-Companion-1.3.1.apk` from the latest release.
+1. Download `Avalon-Companion-1.4.0.apk` from the latest release.
 2. Open the downloaded APK.
 3. Allow **Install unknown apps** for the browser or file manager you used.
 4. Tap **Install**.
@@ -112,8 +112,13 @@ The latest signed Android APK is on the
   screen
 - **History** lists finished and abandoned matches, and a tap opens the record:
   result, quest tally, rejected proposals and the team on each quest. Seats
-  only — no names, no roles — and it can clear history while always keeping a
-  match still in progress
+  only — no names, no roles. **Long-press a match to select it**, long-press or
+  tap more to build a selection, then delete just those; **Select all** skips
+  the match in progress, which is always kept. The list-wide clear dialog can
+  still remove the oldest N or everything
+- **Selection feels physical:** a long press buzzes, the card dips and lifts
+  with a gold border and a springing check, the header counts the selection, and
+  deleted cards collapse out of the list
 - **Use the last table** on setup restores the player count and every name from
   the most recent match, still editable — names only, no roles
 
@@ -288,6 +293,11 @@ docs/icon.png          the app icon used by this README
 
 ## Status
 
+**v1.4.0** — History selection. Long-press a finished or abandoned match to
+buzz, select it and delete it with others; select-all never includes the match
+in progress. Selection, deletion and the list's arrival are animated, and the
+About panel now reports the real version.
+
 **v1.3.1** — Device-pass fixes. The night title fits beside **End night**, and
 an unfinished match's record no longer says the match ended.
 
@@ -313,10 +323,10 @@ wheel and King selection, the discussion timer, team proposal and vote, quest
 resolution and the 4th-quest two-fail rule, assassination outcome, results,
 history, resume, settings and the MC PIN.
 
-Every phase is verified by `flutter analyze`, **291 unit and widget tests**, and
+Every phase is verified by `flutter analyze`, **300 unit and widget tests**, and
 three on-device integration tests on a Galaxy A36 (Android 17) through signed
-1.0.0, 1.1.0 and 1.2.0 builds; 1.3.0 and 1.3.1 were installed and driven by
-hand on the same phone. Tablet sizes are covered by widget tests only.
+1.0.0, 1.1.0 and 1.2.0 builds; 1.3.0, 1.3.1 and 1.4.0 were installed and driven
+by hand on the same phone. Tablet sizes are covered by widget tests only.
 See [`DEVELOPMENT_PLAN.md`](DEVELOPMENT_PLAN.md) for the phase table,
 [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md) for the visual system and
 [`CHANGELOG.md`](CHANGELOG.md) for what has shipped.

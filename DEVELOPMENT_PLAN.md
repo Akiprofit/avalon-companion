@@ -979,10 +979,56 @@ showed **Quest 1 · won, Seats 1, 2** after the quest resolved.
 | Install | `adb install -r` over 1.1.0 succeeded and kept stored data |
 | Re-check | title and record wording confirmed on the phone after the fix |
 
+## History selection — 1.4.0
+
+Requested after 1.3.1: long-press a stored match to delete it, and build a multi-select so several
+matches can go at once.
+
+### What changed
+
+- **`HistoryScreen`** is now a `ConsumerStatefulWidget` with a `Set<int>` of selected ids. Empty
+  means normal mode; non-empty means selection mode, so there is no second boolean to drift.
+  `PopScope` turns system back into "leave selection" while the set is non-empty.
+- **`MedievalCard`** gained `onLongPress`, `isSelected` and a press dip. Selection is drawn with the
+  same gold border and raised surface as a chosen seat on `PlayerTile`, so the app has one selected
+  style rather than two.
+- **`Feedback.select()`** is the long-press acknowledgement: a medium haptic plus the click tone
+  when sound is on. `SilentFeedback` implements it as a no-op, so widget tests stay hermetic.
+- **`MatchStore.deleteMatches(Iterable<int> ids)`** deletes exact ids in one transaction and keeps
+  the in-progress guard in SQL (`status != 'inProgress'`), not only in the UI. `deleteHistory` is
+  unchanged, so the old clear dialog and its tests keep working.
+- **`AppInfo.version`** was still `1.1.0`; it now follows the release at `1.4.0`.
+
+### Interaction
+
+| Gesture | Result |
+| --- | --- |
+| Long-press a finished or abandoned match | Medium haptic, card dips and lifts, gold border and springing check, app bar becomes **N selected** |
+| Long-press another, or tap cards while selecting | Adds or removes that card; the count and the app bar animate |
+| Select all | Takes every finished and abandoned match; never the running one |
+| Lock on the in-progress card | That card is not selectable; warning haptic and a snackbar explain it is kept |
+| Delete | Count-aware confirmation; cancel keeps the selection, confirm collapses the cards and deletes exactly those ids |
+| Back or the close button | Leaves selection mode without deleting |
+| Reduced motion | All of the above still works with animations set to zero and no stagger |
+
+### Gate evidence
+
+| Check | Result |
+| --- | --- |
+| `flutter analyze` | No issues found |
+| `flutter test` | 300 tests pass (291 + 9) |
+| Store coverage | `game_repository_test.dart`: chosen ids only, in-progress id refused even when passed, empty/unknown selection deletes nothing |
+| Screen coverage | `history_test.dart`: long-press and tap counts, in-progress refusal, select-all, cancel keeps selection, confirm reaches the empty state, system back leaves selection |
+| Existing clear path | the six clear-history tests still pass unchanged |
+| Device pass | Galaxy A36 (Android 17), installed over 1.3.1: long-pressed the abandoned match, saw **1 SELECTED**, the in-progress card locked, the count-aware dialog, **Deleted 1 match.**, the in-progress record kept, and Settings → About at **1.4.0** |
+| Release APK | 63.0 MB (66,048,666 bytes), `versionName` 1.4.0, `versionCode` 21, arm64-v8a + armeabi-v7a + x86_64 |
+| Signature | `CN=Avalon Companion`, SHA-256 `1aa864f1…a570b808` — the same key as 1.0.0–1.3.1; APK SHA-256 `B84CF79D…4D5178F0` |
+| GitHub release | `v1.4.0` published with `Avalon-Companion-1.4.0.apk`; its digest matches the local build |
+
 ## Next phase
 
-No phase is scheduled: **1.3.0** is the released build, signed and published, with 1.0.0–1.2.0
-verified on the phone. Work after 1.3.0 would be maintenance rather than plan phases — lifting the
+No phase is scheduled: **1.4.0** is the released build, signed and published, with 1.0.0–1.3.1
+verified on the phone. Work after 1.4.0 would be maintenance rather than plan phases — lifting the
 `path_provider_android` pin now that the NDK is installed, split-per-abi APKs if download size
 matters, commissioned artwork to replace the public-domain plates, or a Play Store listing with
 its own upload key.

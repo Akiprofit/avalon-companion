@@ -127,4 +127,14 @@ abstract interface class MatchStore {
   ///
   /// Returns how many matches were deleted.
   Future<int> deleteHistory({int? count});
+
+  /// Deletes exactly the matches in [ids], ignoring any that is still in
+  /// progress and any id that is not stored.
+  ///
+  /// This is the history screen's multi-select path. The in-progress guard is
+  /// here as well as in the UI, so a stale selection can never remove the match
+  /// the home screen is offering to continue.
+  ///
+  /// Returns how many matches were deleted.
+  Future<int> deleteMatches(Iterable<int> ids);
 }

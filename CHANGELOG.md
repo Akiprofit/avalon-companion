@@ -3,6 +3,43 @@
 All notable changes to Avalon Companion are recorded here. One entry per completed
 development phase, in the order the plan defines them.
 
+## [1.4.0] – History selection (2026-11-17)
+
+### Added
+
+- **Long-press a match to select it.** A finished or abandoned match buzzes, dips and lifts with
+  a gold border and a springing check. The app bar becomes **“N selected”** with **Select all**
+  and **Delete** actions.
+- **Multi-select.** Tap cards to add or remove them while selecting, long-press to add another,
+  or use **Select all**. The running match is never selectable and is marked with a lock; trying
+  to select it explains that it must be finished or abandoned first.
+- **Delete only what is selected.** The confirmation names the count, the delete is by exact id,
+  and the store refuses an in-progress id even if a stale selection sent one. Cancelling keeps the
+  selection so a second look costs nothing.
+- **Motion and haptics.** The app bar title and count cross-fade, checks spring in, the card
+  pulses under the finger, cards fade and rise in with a small stagger, and deleted cards collapse
+  out of the list. A medium haptic fires on selection; the existing Haptics setting still turns it
+  off. Every animation honours the system's reduced-motion flag.
+
+### Fixed
+
+- **Settings → About showed version 1.1.0.** `AppInfo.version` was hard-coded and had not followed
+  the releases. It now reads 1.4.0.
+
+### Verified
+
+| Check | Result |
+| --- | --- |
+| `flutter analyze` | No issues found |
+| `flutter test` | 300 tests pass (291 + 9) |
+| New store coverage | `game_repository_test.dart`: exact ids go, the running match is refused even when passed, and an empty or unknown selection deletes nothing |
+| New screen coverage | `history_test.dart`: long-press and tap counts, in-progress refusal, select-all, cancel keeps selection, confirm deletes and reaches the empty state, and system back leaves selection mode |
+| Clear history | the existing oldest-N/all dialog and its six tests are unchanged and still pass |
+| Device pass | Galaxy A36 (Android 17), installed over 1.3.1: selected the abandoned match, saw the in-progress lock, confirmed the dialog, got **Deleted 1 match.**, the in-progress record stayed, and Settings → About read 1.4.0 |
+| Release APK | 63.0 MB (66,048,666 bytes), `versionName` 1.4.0, `versionCode` 21, arm64-v8a + armeabi-v7a + x86_64 |
+| Signature | one signer, `CN=Avalon Companion`, SHA-256 `1aa864f1…a570b808` — the same key as 1.0.0–1.3.1; APK SHA-256 `B84CF79D…4D5178F0` |
+| GitHub release | `v1.4.0` published with `Avalon-Companion-1.4.0.apk`; its digest matches the local build |
+
 ## [1.3.1] – Device-pass fixes (2026-11-17)
 
 ### Fixed

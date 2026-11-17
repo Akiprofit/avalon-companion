@@ -299,4 +299,194 @@ void main() {
       expect(find.textContaining('Deleted'), findsNothing);
     });
   });
+
+  group('selecting and deleting matches', () {
+    testWidgets('long-press selects, tap toggles, and the count follows', (
+      tester,
+    ) async {
+      final store = FakeMatchStore()
+        ..summaries = [
+          summaryOf(id: 3, startedAt: DateTime(2026, 11, 15, 21)),
+          summaryOf(id: 2, startedAt: DateTime(2026, 11, 15, 20)),
+          summaryOf(id: 1, startedAt: DateTime(2026, 11, 15, 19)),
+        ];
+      await pumpHistory(tester, store);
+
+      await tester.longPress(find.byKey(const Key('history_match_3')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('1 selected'), findsOneWidget);
+      expect(find.byKey(const Key('history_selection_close')), findsOneWidget);
+      expect(find.byKey(const Key('history_delete_selected')), findsOneWidget);
+      expect(
+        find.byKey(const Key('history_clear')),
+        findsNothing,
+        reason: 'the list-wide clear action steps aside while selecting',
+      );
+
+      await tester.longPress(find.byKey(const Key('history_match_2')));
+      await tester.pumpAndSettle();
+      expect(find.text('2 selected'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('history_match_2')));
+      await tester.pumpAndSettle();
+      expect(find.text('1 selected'), findsOneWidget);
+      expect(
+        find.byKey(const Key('history_detail_sheet')),
+        findsNothing,
+        reason: 'a tap selects instead of opening the record',
+      );
+
+      await tester.tap(find.byKey(const Key('history_match_3')));
+      await tester.pumpAndSettle();
+      expect(find.text('GAME HISTORY'), findsOneWidget);
+      expect(find.text('3 stored'), findsOneWidget);
+      expect(find.byKey(const Key('history_clear')), findsOneWidget);
+    });
+
+    testWidgets('a match in progress cannot be selected', (tester) async {
+      final store = FakeMatchStore()
+        ..summaries = [
+          summaryOf(
+            id: 9,
+            status: MatchStatus.inProgress,
+            winner: null,
+            winReason: null,
+            questResults: const [QuestResult.success],
+            durationSeconds: null,
+          ),
+        ];
+      await pumpHistory(tester, store);
+
+      await tester.longPress(find.byKey(const Key('history_match_9')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('1 selected'), findsNothing);
+      expect(find.byKey(const Key('history_delete_selected')), findsNothing);
+      expect(find.textContaining('cannot be deleted'), findsOneWidget);
+      expect(store.summaries, hasLength(1));
+
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('select all skips the running match, then deletes the rest', (
+      tester,
+    ) async {
+      final store = FakeMatchStore()
+        ..summaries = [
+          summaryOf(id: 3, startedAt: DateTime(2026, 11, 15, 21)),
+          summaryOf(
+            id: 2,
+            status: MatchStatus.abandoned,
+            winner: null,
+            winReason: null,
+            questResults: const [QuestResult.success],
+            startedAt: DateTime(2026, 11, 15, 20),
+          ),
+          summaryOf(
+            id: 1,
+            status: MatchStatus.inProgress,
+            winner: null,
+            winReason: null,
+            questResults: const [],
+            durationSeconds: null,
+            startedAt: DateTime(2026, 11, 15, 19),
+          ),
+        ];
+      await pumpHistory(tester, store);
+
+      await tester.longPress(find.byKey(const Key('history_match_3')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('history_select_all')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('2 selected'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('history_delete_selected')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Delete 2 matches?'), findsOneWidget);
+      expect(
+        find.textContaining('The match in progress is kept.'),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.text('Delete 2 matches'));
+      await tester.pumpAndSettle();
+
+      expect(store.summaries.map((summary) => summary.id), [1]);
+      expect(find.text('Deleted 2 matches.'), findsOneWidget);
+      expect(find.text('1 stored'), findsOneWidget);
+      expect(find.text('In progress'), findsOneWidget);
+      expect(find.text('GAME HISTORY'), findsOneWidget);
+
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('backing out of the confirmation keeps the selection', (
+      tester,
+    ) async {
+      final store = FakeMatchStore()..summaries = [summaryOf(id: 5)];
+      await pumpHistory(tester, store);
+
+      await tester.longPress(find.byKey(const Key('history_match_5')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('history_delete_selected')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Delete this match?'), findsOneWidget);
+
+      await tester.tap(find.text('Keep it'));
+      await tester.pumpAndSettle();
+
+      expect(store.summaries, hasLength(1));
+      expect(find.text('1 selected'), findsOneWidget);
+      expect(find.textContaining('Deleted'), findsNothing);
+    });
+
+    testWidgets('confirming deletes the match and leaves the empty state', (
+      tester,
+    ) async {
+      final store = FakeMatchStore()..summaries = [summaryOf(id: 6)];
+      await pumpHistory(tester, store);
+
+      await tester.longPress(find.byKey(const Key('history_match_6')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('history_delete_selected')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Delete the match'));
+      await tester.pumpAndSettle();
+
+      expect(store.summaries, isEmpty);
+      expect(find.text('No matches yet'), findsOneWidget);
+      expect(find.text('Deleted 1 match.'), findsOneWidget);
+      expect(find.text('GAME HISTORY'), findsOneWidget);
+
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('back leaves selection mode without deleting', (tester) async {
+      final store = FakeMatchStore()
+        ..summaries = [
+          summaryOf(id: 2, startedAt: DateTime(2026, 11, 15, 20)),
+          summaryOf(id: 1, startedAt: DateTime(2026, 11, 15, 19)),
+        ];
+      await pumpHistory(tester, store);
+
+      await tester.longPress(find.byKey(const Key('history_match_2')));
+      await tester.pumpAndSettle();
+      expect(find.text('1 selected'), findsOneWidget);
+
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+
+      expect(find.text('GAME HISTORY'), findsOneWidget);
+      expect(find.text('1 selected'), findsNothing);
+      expect(store.summaries, hasLength(2));
+      expect(find.text('2 stored'), findsOneWidget);
+    });
+  });
 }

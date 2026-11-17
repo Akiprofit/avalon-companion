@@ -13,7 +13,6 @@ import 'package:avalon_companion/narration_engine/models/narration_instruction.d
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-
 /// Phase 9 gate: the real schema stores and returns a match, with no role column
 /// and no way for a cascade delete to leave orphans behind.
 void main() {
@@ -96,10 +95,7 @@ void main() {
 
   test('saving updates the row instead of adding another', () async {
     final id = await repository.createMatch(newGame());
-    await repository.saveState(
-      id,
-      GameEngine.startNight(newGame()),
-    );
+    await repository.saveState(id, GameEngine.startNight(newGame()));
 
     final summaries = await repository.matches();
     expect(summaries.length, 1, reason: 'one row per match');
@@ -281,11 +277,10 @@ void main() {
 
       expect(await repository.deleteHistory(count: 1), 1);
 
-      expect(
-        (await repository.matches()).map((summary) => summary.id),
-        [running, middle],
-        reason: 'the match at the bottom of the list is the oldest',
-      );
+      expect((await repository.matches()).map((summary) => summary.id), [
+        running,
+        middle,
+      ], reason: 'the match at the bottom of the list is the oldest');
       expect(
         await repository.proposals(oldest),
         isEmpty,
@@ -343,6 +338,58 @@ void main() {
       expect(await repository.deleteHistory(count: 0), 0);
       expect(await repository.matches(), hasLength(1));
     });
+
+    test('deleting chosen ids removes exactly those matches', () async {
+      final oldest = await repository.createMatch(newGame());
+      await repository.markAbandoned(oldest);
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      final kept = await repository.createMatch(newGame());
+      await repository.saveState(kept, goodVictory());
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      final newest = await repository.createMatch(newGame());
+      await repository.markAbandoned(newest);
+
+      expect(await repository.deleteMatches([oldest, newest]), 2);
+
+      expect((await repository.matches()).map((summary) => summary.id), [
+        kept,
+      ], reason: 'only the chosen matches went');
+      expect(
+        await repository.events(oldest),
+        isEmpty,
+        reason: 'the events of a deleted match go with it',
+      );
+      expect(
+        (await db.select(db.players).get()).where(
+          (seat) => seat.gameId == oldest,
+        ),
+        isEmpty,
+        reason: 'the seats of a deleted match go with it',
+      );
+    });
+
+    test('a single delete never removes the match in progress', () async {
+      final running = await repository.createMatch(newGame());
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      final finished = await repository.createMatch(newGame());
+      await repository.saveState(finished, goodVictory());
+
+      expect(await repository.deleteMatches([running, finished]), 1);
+
+      expect((await repository.findInProgress())?.id, running);
+      expect((await repository.matches()).map((summary) => summary.id), [
+        running,
+      ]);
+    });
+
+    test('an empty or unknown selection deletes nothing', () async {
+      final id = await repository.createMatch(newGame());
+      await repository.markAbandoned(id);
+
+      expect(await repository.deleteMatches(const []), 0);
+      expect(await repository.deleteMatches(const [999]), 0);
+      expect(await repository.matches(), hasLength(1));
+    });
   });
 
   test('settings are upserted, not appended', () async {
@@ -374,9 +421,7 @@ void main() {
   });
 
   test('the schema has no place to store a role for a player', () async {
-    final columns = await db
-        .customSelect("PRAGMA table_info('players')")
-        .get();
+    final columns = await db.customSelect("PRAGMA table_info('players')").get();
     final names = columns.map((row) => row.read<String>('name')).toList();
     expect(names, containsAll(['game_id', 'display_name', 'seat_number']));
     for (final forbidden in ['character', 'role', 'allegiance', 'team']) {
@@ -399,7 +444,9 @@ void main() {
       'game_events',
       'settings',
     ]) {
-      final columns = await db.customSelect("PRAGMA table_info('$table')").get();
+      final columns = await db
+          .customSelect("PRAGMA table_info('$table')")
+          .get();
       expect(columns, isNotEmpty, reason: '$table exists');
 
       for (final row in columns) {
@@ -414,7 +461,9 @@ void main() {
           'percival',
         ]) {
           expect(
-            tokens.any((token) => token == forbidden || token == '${forbidden}s'),
+            tokens.any(
+              (token) => token == forbidden || token == '${forbidden}s',
+            ),
             isFalse,
             reason: '$table.$name would record which player is which character',
           );

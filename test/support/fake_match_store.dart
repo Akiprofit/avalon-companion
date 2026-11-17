@@ -168,6 +168,20 @@ class FakeMatchStore implements MatchStore {
     return doomed.length;
   }
 
+  /// Deletes exactly [ids] from the same list, keeping the match in progress
+  /// and ignoring ids that are not stored.
+  @override
+  Future<int> deleteMatches(Iterable<int> ids) async {
+    _check();
+    final targets = ids.toSet();
+    final before = summaries.length;
+    summaries = [
+      for (final match in summaries)
+        if (match.isInProgress || !targets.contains(match.id)) match,
+    ];
+    return before - summaries.length;
+  }
+
   void _check() {
     if (broken) throw StateError('the disk is full');
   }

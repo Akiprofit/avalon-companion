@@ -14,6 +14,10 @@ abstract interface class Feedback {
   /// A confirmed action: a dialog accepted, a count recorded.
   void tap();
 
+  /// A card picked up for selection: firmer than [tap], so a long press that
+  /// the MC could not watch still feels acknowledged.
+  void select();
+
   /// The match moved to another phase.
   void phaseChange();
 
@@ -34,6 +38,12 @@ class PlatformFeedback implements Feedback {
   @override
   void tap() {
     unawaited(HapticFeedback.selectionClick());
+    if (withSound) unawaited(SystemSound.play(SystemSoundType.click));
+  }
+
+  @override
+  void select() {
+    unawaited(HapticFeedback.mediumImpact());
     if (withSound) unawaited(SystemSound.play(SystemSoundType.click));
   }
 
@@ -64,6 +74,9 @@ class SilentFeedback implements Feedback {
 
   @override
   void tap() {}
+
+  @override
+  void select() {}
 
   @override
   void phaseChange() {}

@@ -218,6 +218,22 @@ class GameRepository implements MatchStore {
     });
   }
 
+  /// Deletes exactly the selected finished or abandoned matches.
+  @override
+  Future<int> deleteMatches(Iterable<int> ids) {
+    final targets = ids.toSet().toList();
+    if (targets.isEmpty) return Future.value(0);
+
+    return _db.transaction(() async {
+      return (_db.delete(_db.games)..where(
+            (g) =>
+                g.id.isIn(targets) &
+                g.status.equals(MatchStatus.inProgress).not(),
+          ))
+          .go();
+    });
+  }
+
   @override
   Future<void> markAbandoned(int gameId) async {
     await (_db.update(_db.games)..where((g) => g.id.equals(gameId))).write(
