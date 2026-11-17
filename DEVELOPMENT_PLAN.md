@@ -891,6 +891,37 @@ Known limits:
   pick a JRE from a VS Code extension that has no `jlink`, which fails the
   `androidJdkImage` transform. Restoring that file will reintroduce the failure.
 
+## UI/UX pass — tier 1 complete on automated gates
+
+Delivered: three changes at the table. No rule, engine or stored value changed; each is
+covered by widget tests that drive the real screens.
+
+- **Vote by seat.** `VotingScreen` marks each seat approve or reject once, instead of two
+  steppers the MC taps until they add up. Tapping the same side clears the seat; tapping the
+  row cycles approve → reject → uncounted, so a misheard vote is corrected on the seat it
+  belongs to. *Resolve* stays disabled and reads "Count N more votes" until every seat is
+  marked, and the engine still receives the two totals and decides the outcome.
+- **Discussion ring.** The Day discussion timer is a 76 dp ring showing the remaining share of
+  the round, gold until the last 10 seconds and danger red after that. The ring itself starts,
+  pauses and restarts the clock; pause and reset stay beside it as icon buttons.
+  `Feedback.alarm()` adds a double heavy tap at zero, and the clock clicks once at 10 seconds,
+  so the end of the discussion is audible with the phone face down.
+- **Night controls.** *End night* moved out of the narration transport into the app bar as a
+  labelled action behind a confirmation. The transport is now previous, replay, play/pause and
+  next only, so the control that skips the script cannot be hit while reaching for next. The
+  English/Filipino switch moved to the top of the panel, out of the thumb row.
+
+Gate evidence:
+
+| Check | Result |
+| --- | --- |
+| `flutter analyze` | No issues found |
+| `flutter test` | 284 tests pass (280 + 4) |
+| Vote by seat | `test/widget/voting_test.dart`: every seat counted before resolving, a seat cleared and recast, a miscount corrected, and the approve/reject outcomes |
+| Discussion ring | `test/widget/team_selection_test.dart`: the ring starts at 1.0, follows the clock and pauses on tap |
+| Night controls | `test/widget/narration_controls_test.dart`: no stop in the transport, the language row sits above it, End night cancels and then confirms into the draw |
+| Phone and tablet | no layout rule changed: the same screens, still in the 600 dp column on a tablet |
+
 ## Next phase
 
 No phase is scheduled: **1.0.0** is the released build, signed, installed and verified on the

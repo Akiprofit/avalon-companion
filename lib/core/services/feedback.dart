@@ -19,6 +19,9 @@ abstract interface class Feedback {
 
   /// Something was refused, or a count is out of range.
   void warning();
+
+  /// A countdown reached zero: two short heavy taps, distinct from [warning].
+  void alarm();
 }
 
 /// Real haptics and system tones.
@@ -42,6 +45,17 @@ class PlatformFeedback implements Feedback {
 
   @override
   void warning() => unawaited(HapticFeedback.heavyImpact());
+
+  @override
+  void alarm() {
+    unawaited(HapticFeedback.heavyImpact());
+    unawaited(
+      Future<void>.delayed(
+        const Duration(milliseconds: 180),
+        HapticFeedback.heavyImpact,
+      ),
+    );
+  }
 }
 
 /// Haptics and tones off.
@@ -56,6 +70,9 @@ class SilentFeedback implements Feedback {
 
   @override
   void warning() {}
+
+  @override
+  void alarm() {}
 }
 
 /// Feedback for the current preferences.
@@ -64,9 +81,7 @@ class SilentFeedback implements Feedback {
 /// switch. Either one alone keeps the other working.
 final feedbackProvider = Provider<Feedback>((ref) {
   final prefs = ref.watch(
-    settingsProvider.select(
-      (s) => (haptics: s.haptics, sound: s.soundEffects),
-    ),
+    settingsProvider.select((s) => (haptics: s.haptics, sound: s.soundEffects)),
   );
   if (!prefs.haptics) return const SilentFeedback();
   return PlatformFeedback(withSound: prefs.sound);

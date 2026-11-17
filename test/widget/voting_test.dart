@@ -37,9 +37,9 @@ void main() {
 
     await tester.tap(find.byKey(const Key('dashboard_open_narration')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('narration_stop')));
+    await tester.tap(find.byKey(const Key('narration_end')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('narration_next')));
+    await tester.tap(find.text('End the night'));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('lord_spin')));
     await tester.pumpAndSettle();
@@ -71,17 +71,12 @@ void main() {
     return semantics.properties.enabled ?? false;
   }
 
-  Future<void> addVotes(
-    WidgetTester tester, {
-    required int approve,
-    required int reject,
-  }) async {
-    for (var i = 0; i < approve; i++) {
-      await tester.tap(find.byKey(const Key('vote_approve_increment')));
-      await tester.pump();
-    }
-    for (var i = 0; i < reject; i++) {
-      await tester.tap(find.byKey(const Key('vote_reject_increment')));
+  /// Marks seats in the voting list. Keying by seat keeps the test close to
+  /// what the MC sees at the table.
+  Future<void> mark(WidgetTester tester, Map<int, bool> votes) async {
+    for (final entry in votes.entries) {
+      final side = entry.value ? 'approve' : 'reject';
+      await tester.tap(find.byKey(Key('vote_seat_${entry.key}_$side')));
       await tester.pump();
     }
   }
@@ -96,42 +91,55 @@ void main() {
     expect(enabled(tester, const Key('voting_resolve')), isFalse);
     expect(find.text('Waiting for 5 votes.'), findsOneWidget);
 
-    await addVotes(tester, approve: 2, reject: 1);
+    await mark(tester, {1: true, 2: true, 3: false});
     expect(find.text('Waiting for 2 votes.'), findsOneWidget);
     expect(enabled(tester, const Key('voting_resolve')), isFalse);
 
-    await addVotes(tester, approve: 0, reject: 2);
+    await mark(tester, {4: false, 5: false});
     expect(enabled(tester, const Key('voting_resolve')), isTrue);
     expect(find.text('This vote rejects the team.'), findsOneWidget);
+  });
+
+  testWidgets('a vote can be cleared and recast on the same seat', (
+    tester,
+  ) async {
+    await openVote(tester);
+
+    await mark(tester, {1: true});
+    expect(find.text('Waiting for 4 votes.'), findsOneWidget);
+
+    // Tapping the same side again clears the seat instead of double-counting.
+    await mark(tester, {1: true});
+    expect(find.text('Waiting for 5 votes.'), findsOneWidget);
+
+    // The row itself cycles approve -> reject -> uncounted.
+    await tester.tap(find.byKey(const Key('vote_seat_2')));
+    await tester.pump();
+    expect(find.text('Approve 1'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('vote_seat_2')));
+    await tester.pump();
+    expect(find.text('Reject 1'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('vote_seat_2')));
+    await tester.pump();
+    expect(find.text('Waiting for 5 votes.'), findsOneWidget);
   });
 
   testWidgets('a miscount can be corrected before resolving', (tester) async {
     await openVote(tester);
 
     // Five rejections, then one corrected to an approval.
-    await addVotes(tester, approve: 0, reject: 5);
+    await mark(tester, {1: false, 2: false, 3: false, 4: false, 5: false});
     expect(find.text('This vote rejects the team.'), findsOneWidget);
 
-    await tester.tap(find.byKey(const Key('vote_reject_decrement')));
-    await tester.pump();
-    await tester.tap(find.byKey(const Key('vote_approve_increment')));
-    await tester.pump();
-
-    expect(
-      tester.widget<Text>(find.byKey(const Key('vote_approve_value'))).data,
-      '1',
-    );
-    expect(
-      tester.widget<Text>(find.byKey(const Key('vote_reject_value'))).data,
-      '4',
-    );
+    await mark(tester, {1: true});
+    expect(find.text('Approve 1'), findsOneWidget);
+    expect(find.text('Reject 4'), findsOneWidget);
     expect(find.text('This vote rejects the team.'), findsOneWidget);
 
     // Two approvals against three rejections still loses; the total stays five.
-    await tester.tap(find.byKey(const Key('vote_reject_decrement')));
-    await tester.pump();
-    await tester.tap(find.byKey(const Key('vote_approve_increment')));
-    await tester.pump();
+    await mark(tester, {2: true});
+    expect(find.text('Approve 2'), findsOneWidget);
+    expect(find.text('Reject 3'), findsOneWidget);
     expect(find.text('This vote rejects the team.'), findsOneWidget);
     expect(enabled(tester, const Key('voting_resolve')), isTrue);
   });
@@ -140,7 +148,7 @@ void main() {
     tester,
   ) async {
     await openVote(tester);
-    await addVotes(tester, approve: 4, reject: 1);
+    await mark(tester, {1: true, 2: true, 3: true, 4: true, 5: false});
     expect(find.text('This vote approves the team.'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('voting_resolve')));
@@ -159,7 +167,7 @@ void main() {
 
     // Player 1 leads the first quest; the token must move on rejection.
     expect(find.text('Player 1'), findsWidgets);
-    await addVotes(tester, approve: 2, reject: 3);
+    await mark(tester, {1: true, 2: true, 3: false, 4: false, 5: false});
 
     await tester.tap(find.byKey(const Key('voting_resolve')));
     await tester.pumpAndSettle();

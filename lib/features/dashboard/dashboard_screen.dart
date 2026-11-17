@@ -40,6 +40,8 @@ class DashboardScreen extends ConsumerWidget {
       return const AvalonScreen(child: SizedBox.shrink());
     }
     final timer = ref.watch(discussionTimerProvider);
+    // The last ten seconds are the ones the table needs to see from a distance.
+    final timerUrgent = timer.remainingSeconds <= 10;
 
     final requiredSize = AvalonTables.teamSize(
       game.playerCount,
@@ -57,9 +59,7 @@ class DashboardScreen extends ConsumerWidget {
     final kingsManual = ref.watch(
       settingsProvider.select((s) => !s.kingsDrawnAutomatically),
     );
-    final voteOn = ref.watch(
-      settingsProvider.select((s) => s.teamVoteEnabled),
-    );
+    final voteOn = ref.watch(settingsProvider.select((s) => s.teamVoteEnabled));
     final canDrawKing =
         kingsManual &&
         (game.phase == Phase.dayDiscussion ||
@@ -75,7 +75,8 @@ class DashboardScreen extends ConsumerWidget {
           icon: const Icon(Icons.home_outlined),
           tooltip: 'Home',
           onPressed: () async {
-            final leave = !ref.read(settingsConfirmProvider) ||
+            final leave =
+                !ref.read(settingsConfirmProvider) ||
                 await confirmAction(
                   context,
                   ref,
@@ -176,9 +177,8 @@ class DashboardScreen extends ConsumerWidget {
                           ? Icons.play_arrow_rounded
                           : Icons.pause_rounded,
                       label: isPaused ? 'Resume' : 'Pause',
-                      onPressed: () => ref
-                          .read(gameSessionProvider.notifier)
-                        .togglePause(),
+                      onPressed: () =>
+                          ref.read(gameSessionProvider.notifier).togglePause(),
                     ),
                   ),
                   const SizedBox(width: Space.xs),
@@ -244,9 +244,7 @@ class DashboardScreen extends ConsumerWidget {
               ),
               children: [
                 const SectionHeader(title: 'Quest progress'),
-                MedievalCard(
-                  child: QuestTracker(slots: game.questSlots),
-                ),
+                MedievalCard(child: QuestTracker(slots: game.questSlots)),
                 if (game.questLog.isNotEmpty) ...[
                   const SizedBox(height: Space.lg),
                   SectionHeader(
@@ -281,12 +279,86 @@ class DashboardScreen extends ConsumerWidget {
                   MedievalCard(
                     child: Row(
                       children: [
-                        Text(
-                          timer.label,
-                          key: const Key('discussion_time'),
-                          style: AppText.numeral.copyWith(fontSize: 32),
+                        Semantics(
+                          button: true,
+                          label: timer.isFinished
+                              ? 'The discussion is over. Tap to restart.'
+                              : timer.isRunning
+                              ? 'Pause the discussion timer'
+                              : 'Start the discussion timer',
+                          child: InkResponse(
+                            key: const Key('discussion_ring'),
+                            onTap: timer.isFinished
+                                ? () => ref
+                                      .read(discussionTimerProvider.notifier)
+                                      .reset()
+                                : () => ref
+                                      .read(discussionTimerProvider.notifier)
+                                      .toggle(),
+                            containedInkWell: true,
+                            highlightShape: BoxShape.circle,
+                            radius: 40,
+                            child: SizedBox(
+                              width: 76,
+                              height: 76,
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  SizedBox(
+                                    width: 76,
+                                    height: 76,
+                                    child: CircularProgressIndicator(
+                                      value: timer.totalSeconds == 0
+                                          ? 0
+                                          : timer.remainingSeconds /
+                                                timer.totalSeconds,
+                                      strokeWidth: 6,
+                                      backgroundColor: AppColors.surfaceRaised,
+                                      color: timerUrgent
+                                          ? AppColors.danger
+                                          : AppColors.gold,
+                                    ),
+                                  ),
+                                  Text(
+                                    timer.label,
+                                    key: const Key('discussion_time'),
+                                    style: AppText.numeral.copyWith(
+                                      fontSize: 20,
+                                      color: timerUrgent
+                                          ? AppColors.danger
+                                          : null,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                         ),
-                        const Spacer(),
+                        const SizedBox(width: Space.md),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                timer.isFinished
+                                    ? "Time's up"
+                                    : timer.isRunning
+                                    ? 'Discussion running'
+                                    : 'Discussion paused',
+                                style: AppText.bodyStrong,
+                              ),
+                              const SizedBox(height: Space.xxs),
+                              Text(
+                                timer.isFinished
+                                    ? 'Tap the ring to start the next round.'
+                                    : timer.isRunning
+                                    ? 'Tap the ring to pause.'
+                                    : 'Tap the ring to start.',
+                                style: AppText.caption,
+                              ),
+                            ],
+                          ),
+                        ),
                         AvalonIconButton(
                           key: const Key('discussion_toggle'),
                           icon: timer.isRunning
@@ -343,10 +415,7 @@ class DashboardScreen extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        game.compositionSummary,
-                        style: AppText.body,
-                      ),
+                      Text(game.compositionSummary, style: AppText.body),
                       const SizedBox(height: Space.xs),
                       Text(
                         'Characters in play for this match. The app does not '
@@ -437,7 +506,10 @@ class _SmallAction extends StatelessWidget {
             children: [
               Icon(icon, size: 18, color: tone),
               const SizedBox(width: Space.xxs),
-              Text(label, style: AppText.button.copyWith(color: tone, fontSize: 13)),
+              Text(
+                label,
+                style: AppText.button.copyWith(color: tone, fontSize: 13),
+              ),
             ],
           ),
         ),

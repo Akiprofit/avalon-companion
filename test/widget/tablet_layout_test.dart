@@ -183,7 +183,6 @@ void main() {
                 onNext: () {},
                 onReplay: () {},
                 onToggleAutoPlay: () {},
-                onStop: () {},
                 onLanguageChanged: (_) {},
               ),
             ),

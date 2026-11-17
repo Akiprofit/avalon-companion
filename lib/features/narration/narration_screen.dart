@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/constants/routes.dart';
 import '../../core/services/host_services.dart';
+import '../../core/theme/app_metrics.dart';
 import '../../core/theme/artwork.dart';
 import '../../core/widgets/avalon_screen.dart';
 import '../../core/widgets/confirmation_dialog.dart';
@@ -94,6 +95,24 @@ class _NarrationScreenState extends ConsumerState<NarrationScreen>
     if (mounted) context.goNamed(RouteNames.lordSelection);
   }
 
+  /// The one control that ends the night early. It is deliberately away from
+  /// **Next**, in the app bar, and always asks first: a stray thumb between
+  /// lines must not skip the rest of the script.
+  Future<void> _confirmEndNight() async {
+    final end = await confirmAction(
+      context,
+      ref,
+      title: 'End the night?',
+      message:
+          'The narration stops here and the match moves on to drawing the '
+          'first King. Lines you have not reached will not be read.',
+      confirmLabel: 'End the night',
+      isDestructive: false,
+    );
+    if (!end || !mounted) return;
+    await _finishNight();
+  }
+
   Future<void> _confirmExit() async {
     final leave = await confirmAction(
       context,
@@ -122,9 +141,7 @@ class _NarrationScreenState extends ConsumerState<NarrationScreen>
     );
 
     if (state.isEmpty) {
-      return AvalonScreen(
-        child: LoadingState(label: 'Preparing the night…'),
-      );
+      return AvalonScreen(child: LoadingState(label: 'Preparing the night…'));
     }
 
     final current = state.current!;
@@ -140,6 +157,17 @@ class _NarrationScreenState extends ConsumerState<NarrationScreen>
           icon: const Icon(Icons.arrow_back),
           onPressed: _confirmExit,
         ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: Space.xs),
+            child: TextButton.icon(
+              key: const Key('narration_end'),
+              icon: const Icon(Icons.stop_circle_outlined, size: 18),
+              label: const Text('End night'),
+              onPressed: _confirmEndNight,
+            ),
+          ),
+        ],
       ),
       child: NarrationPanel(
         heading: current.heading,
@@ -159,15 +187,9 @@ class _NarrationScreenState extends ConsumerState<NarrationScreen>
             : () => unawaited(controller.next()),
         onReplay: () => unawaited(controller.replay()),
         onToggleAutoPlay: () => unawaited(controller.toggleAutoPlay()),
-        onStop: () {
-          unawaited(controller.pause());
-          unawaited(controller.skipToEnd());
-        },
         onLanguageChanged: (isFilipino) => unawaited(
           controller.setLanguage(
-            isFilipino
-                ? NarrationLanguage.filipino
-                : NarrationLanguage.english,
+            isFilipino ? NarrationLanguage.filipino : NarrationLanguage.english,
           ),
         ),
         notice: state.voiceNotice,

@@ -61,9 +61,9 @@ void main() {
 
     await tester.tap(find.byKey(const Key('dashboard_open_narration')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('narration_stop')));
+    await tester.tap(find.byKey(const Key('narration_end')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('narration_next')));
+    await tester.tap(find.text('End the night'));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('lord_spin')));
     await tester.pumpAndSettle();
@@ -81,11 +81,11 @@ void main() {
 
     await tester.tap(find.byKey(const Key('dashboard_open_vote')));
     await tester.pumpAndSettle();
-    for (var i = 0; i < 4; i++) {
-      await tester.tap(find.byKey(const Key('vote_approve_increment')));
+    for (var seat = 1; seat <= 4; seat++) {
+      await tester.tap(find.byKey(Key('vote_seat_${seat}_approve')));
       await tester.pump();
     }
-    await tester.tap(find.byKey(const Key('vote_reject_increment')));
+    await tester.tap(find.byKey(const Key('vote_seat_5_reject')));
     await tester.pump();
     await tester.tap(find.byKey(const Key('voting_resolve')));
     await tester.pumpAndSettle();

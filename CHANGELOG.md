@@ -3,6 +3,32 @@
 All notable changes to Avalon Companion are recorded here. One entry per completed
 development phase, in the order the plan defines them.
 
+## [Unreleased] – UI/UX pass
+
+### Changed
+
+- **The vote is counted by seat.** The voting screen marks each player approve or reject once
+  instead of asking the MC to tap two steppers until they add up. Tapping the same side again
+  clears the seat, and tapping the row cycles approve → reject → uncounted, so a misheard vote
+  is corrected on the seat it belongs to. *Resolve* stays disabled and reads "Count N more
+  votes" until every seat is marked; the rule engine still receives the two totals.
+- **The discussion timer is a ring.** A 76 dp ring shows the remaining share of the round, gold
+  until the last 10 seconds and danger red after that. The ring starts, pauses and restarts the
+  clock, with pause and reset beside it. The clock clicks once at 10 seconds and
+  `Feedback.alarm()` double-taps at zero, so the end is audible from across the table.
+- **Night controls are separated.** *End night* moved to the app bar as a labelled action behind
+  a confirmation, and the narration transport is now previous, replay, play/pause and next.
+  The English/Filipino switch moved to the top of the panel instead of sitting under the
+  transport, where it crowded the thumb row.
+
+### Verified
+
+| Check | Result |
+| --- | --- |
+| `flutter analyze` | No issues found |
+| `flutter test` | 284 tests pass (280 + 4) |
+| New coverage | `voting_test.dart` rewritten for seat marking, clearing and correction; a ring test in `team_selection_test.dart`; `narration_controls_test.dart` for the night layout and the End night confirmation |
+
 ## [1.2.0] – Tablet layout (2026-11-17)
 
 ### Changed

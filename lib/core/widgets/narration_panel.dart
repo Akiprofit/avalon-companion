@@ -27,7 +27,6 @@ class NarrationPanel extends StatelessWidget {
     required this.onNext,
     required this.onReplay,
     required this.onToggleAutoPlay,
-    required this.onStop,
     required this.onLanguageChanged,
     this.notice,
   });
@@ -47,7 +46,6 @@ class NarrationPanel extends StatelessWidget {
   final VoidCallback onNext;
   final VoidCallback onReplay;
   final VoidCallback onToggleAutoPlay;
-  final VoidCallback onStop;
   final ValueChanged<bool> onLanguageChanged;
   final String? notice;
 
@@ -56,6 +54,38 @@ class NarrationPanel extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        // Language sits at the top, away from the transport: it is a setting
+        // the MC changes once, not a control used between lines.
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            Space.lg,
+            Space.sm,
+            Space.lg,
+            Space.xs,
+          ),
+          child: Semantics(
+            label: 'Narration language',
+            child: SegmentedButton<bool>(
+              key: const Key('narration_language'),
+              showSelectedIcon: false,
+              expandedInsets: EdgeInsets.zero,
+              style: ButtonStyle(
+                visualDensity: VisualDensity.compact,
+                side: const WidgetStatePropertyAll(
+                  BorderSide(color: AppColors.divider),
+                ),
+                textStyle: WidgetStatePropertyAll(AppText.caption),
+              ),
+              segments: [
+                ButtonSegment(value: false, label: Text(englishLabel)),
+                ButtonSegment(value: true, label: Text(filipinoLabel)),
+              ],
+              selected: {languageIsFilipino},
+              onSelectionChanged: (selection) =>
+                  onLanguageChanged(selection.first),
+            ),
+          ),
+        ),
         Expanded(
           child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(
@@ -127,9 +157,7 @@ class NarrationPanel extends StatelessWidget {
                         color: AppColors.mutedGold,
                       ),
                       const SizedBox(width: Space.xs),
-                      Expanded(
-                        child: Text(notice!, style: AppText.caption),
-                      ),
+                      Expanded(child: Text(notice!, style: AppText.caption)),
                     ],
                   ),
                 ],
@@ -138,81 +166,42 @@ class NarrationPanel extends StatelessWidget {
           ),
         ),
         Container(
-          padding: const EdgeInsets.only(top: Space.xs),
+          padding: const EdgeInsets.only(top: Space.xs, bottom: Space.xxs),
           decoration: const BoxDecoration(
             border: Border(top: BorderSide(color: AppColors.divider)),
           ),
-          child: Column(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  AvalonIconButton(
-                    key: const Key('narration_previous'),
-                    icon: Icons.skip_previous_rounded,
-                    semanticLabel: 'Previous instruction',
-                    onPressed: canGoBack ? onPrevious : null,
-                  ),
-                  AvalonIconButton(
-                    key: const Key('narration_replay'),
-                    icon: Icons.replay_rounded,
-                    semanticLabel: 'Replay instruction',
-                    onPressed: onReplay,
-                  ),
-                  AvalonIconButton(
-                    key: const Key('narration_play_pause'),
-                    icon: isAutoPlaying
-                        ? Icons.pause_circle_filled_rounded
-                        : Icons.play_circle_fill_rounded,
-                    semanticLabel: isAutoPlaying
-                        ? 'Pause narration'
-                        : 'Play narration',
-                    isActive: true,
-                    size: 64,
-                    onPressed: onToggleAutoPlay,
-                  ),
-                  AvalonIconButton(
-                    key: const Key('narration_next'),
-                    icon: Icons.skip_next_rounded,
-                    semanticLabel: 'Next instruction',
-                    onPressed: canGoForward ? onNext : null,
-                  ),
-                  AvalonIconButton(
-                    key: const Key('narration_stop'),
-                    icon: Icons.stop_circle_outlined,
-                    semanticLabel: 'Emergency stop',
-                    onPressed: onStop,
-                  ),
-                ],
+              AvalonIconButton(
+                key: const Key('narration_previous'),
+                icon: Icons.skip_previous_rounded,
+                semanticLabel: 'Previous instruction',
+                onPressed: canGoBack ? onPrevious : null,
               ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(Space.md, Space.xs, Space.md, Space.md),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: SegmentedButton<bool>(
-                        showSelectedIcon: false,
-                        style: ButtonStyle(
-                          visualDensity: VisualDensity.compact,
-                          side: const WidgetStatePropertyAll(
-                            BorderSide(color: AppColors.divider),
-                          ),
-                          textStyle: WidgetStatePropertyAll(AppText.caption),
-                        ),
-                        segments: [
-                          ButtonSegment(value: false, label: Text(englishLabel)),
-                          ButtonSegment(
-                            value: true,
-                            label: Text(filipinoLabel),
-                          ),
-                        ],
-                        selected: {languageIsFilipino},
-                        onSelectionChanged: (selection) =>
-                            onLanguageChanged(selection.first),
-                      ),
-                    ),
-                  ],
-                ),
+              AvalonIconButton(
+                key: const Key('narration_replay'),
+                icon: Icons.replay_rounded,
+                semanticLabel: 'Replay instruction',
+                onPressed: onReplay,
+              ),
+              AvalonIconButton(
+                key: const Key('narration_play_pause'),
+                icon: isAutoPlaying
+                    ? Icons.pause_circle_filled_rounded
+                    : Icons.play_circle_fill_rounded,
+                semanticLabel: isAutoPlaying
+                    ? 'Pause narration'
+                    : 'Play narration',
+                isActive: true,
+                size: 64,
+                onPressed: onToggleAutoPlay,
+              ),
+              AvalonIconButton(
+                key: const Key('narration_next'),
+                icon: Icons.skip_next_rounded,
+                semanticLabel: 'Next instruction',
+                onPressed: canGoForward ? onNext : null,
               ),
             ],
           ),

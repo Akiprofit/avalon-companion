@@ -41,9 +41,9 @@ void main() {
   Future<void> reachDay(WidgetTester tester) async {
     await tester.tap(find.byKey(const Key('dashboard_open_narration')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('narration_stop')));
+    await tester.tap(find.byKey(const Key('narration_end')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('narration_next')));
+    await tester.tap(find.text('End the night'));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('lord_spin')));
     await tester.pumpAndSettle();
@@ -54,10 +54,7 @@ void main() {
   bool enabled(WidgetTester tester, Key key) {
     final semantics = tester.widget<Semantics>(
       find
-          .descendant(
-            of: find.byKey(key),
-            matching: find.byType(Semantics),
-          )
+          .descendant(of: find.byKey(key), matching: find.byType(Semantics))
           .first,
     );
     return semantics.properties.enabled ?? false;
@@ -94,6 +91,33 @@ void main() {
     expect(find.text('5:00'), findsOneWidget);
   });
 
+  testWidgets(
+    'the discussion ring shows the remaining share and starts on tap',
+    (tester) async {
+      await startMatch(tester);
+      await reachDay(tester);
+
+      CircularProgressIndicator ring() => tester.widget(
+        find.descendant(
+          of: find.byKey(const Key('discussion_ring')),
+          matching: find.byType(CircularProgressIndicator),
+        ),
+      );
+
+      expect(ring().value, 1.0);
+
+      await tester.tap(find.byKey(const Key('discussion_ring')));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+      expect(find.text('4:59'), findsOneWidget);
+      expect(ring().value, lessThan(1.0));
+
+      await tester.tap(find.byKey(const Key('discussion_ring')));
+      await tester.pump();
+      expect(find.text('Discussion paused'), findsOneWidget);
+    },
+  );
+
   testWidgets('a team can only be confirmed at the exact quest size', (
     tester,
   ) async {
@@ -119,8 +143,11 @@ void main() {
 
     await tester.tap(find.byKey(const Key('team_selection_seat_3')));
     await tester.pumpAndSettle();
-    expect(find.text('2 / 2'), findsOneWidget,
-        reason: 'the team cannot grow past the quest size');
+    expect(
+      find.text('2 / 2'),
+      findsOneWidget,
+      reason: 'the team cannot grow past the quest size',
+    );
 
     // Deselecting frees a slot again.
     await tester.tap(find.byKey(const Key('team_selection_seat_1')));

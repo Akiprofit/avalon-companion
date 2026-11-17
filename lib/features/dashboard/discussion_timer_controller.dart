@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/services/feedback.dart';
 import '../settings/settings_controller.dart';
 
 /// The MC's discussion clock. It is a UI convenience, not a rule: nothing in
@@ -82,9 +83,15 @@ class DiscussionTimerController extends Notifier<DiscussionTimerState> {
     if (remaining <= 0) {
       _stopTicker();
       state = state.copyWith(remainingSeconds: 0, isRunning: false);
+      // The table can see the ring, but a phone lying flat needs to say this
+      // out loud: two heavy taps mean the discussion is over.
+      ref.read(feedbackProvider).alarm();
       return;
     }
     state = state.copyWith(remainingSeconds: remaining);
+    // One quiet tick with ten seconds left, so the MC can start closing the
+    // discussion without watching the screen.
+    if (remaining == 10) ref.read(feedbackProvider).tap();
   }
 
   void _stopTicker() {

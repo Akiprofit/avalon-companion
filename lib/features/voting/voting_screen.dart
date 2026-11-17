@@ -8,9 +8,9 @@ import '../../core/theme/app_metrics.dart';
 import '../../core/theme/app_text.dart';
 import '../../core/theme/artwork.dart';
 import '../../core/widgets/avalon_screen.dart';
-import '../../core/widgets/counter_stepper.dart';
 import '../../core/widgets/game_progress_header.dart';
 import '../../core/widgets/medieval_card.dart';
+import '../../core/widgets/player_tile.dart';
 import '../../core/widgets/primary_button.dart';
 import '../../core/widgets/section_header.dart';
 import '../../game_engine/controllers/game_session_controller.dart';
@@ -21,9 +21,10 @@ import '../settings/settings_controller.dart';
 
 /// Screen 07 — the MC records the physical vote.
 ///
-/// The table votes with hands or cards; the phone only counts. The tallies live
-/// in this screen until the vote resolves, because the engine deliberately
-/// refuses a partial total: a vote is recorded once, for the whole table.
+/// The table votes with hands or cards; the phone only counts. Each seat is
+/// marked once, approve or reject, so the tally cannot drift from the number of
+/// players at the table: every seat is a vote, and every vote is a seat. The
+/// engine still refuses a partial total and decides the outcome from the counts.
 class VotingScreen extends ConsumerStatefulWidget {
   const VotingScreen({super.key});
 
@@ -32,33 +33,42 @@ class VotingScreen extends ConsumerStatefulWidget {
 }
 
 class _VotingScreenState extends ConsumerState<VotingScreen> {
-  int _approve = 0;
-  int _reject = 0;
+  /// Seat → approval. A missing seat is still uncounted.
+  final Map<int, bool> _votes = {};
   bool _resolving = false;
 
   /// The vote as it stood when it resolved. It keeps the screen intact behind
   /// the outcome dialog after the phase has already moved on.
   GameState? _frozen;
 
-  void _add({required bool approve}) {
-    final game = ref.read(gameSessionProvider);
-    if (game == null) return;
-    if (_approve + _reject >= game.playerCount) return;
+  int get _approve => _votes.values.where((approve) => approve).length;
+  int get _reject => _votes.values.where((approve) => !approve).length;
+
+  /// Sets a seat's vote, or clears it when the same side is tapped again, so a
+  /// miscount is corrected by touching the seat that was misheard.
+  void _setVote(int seat, bool approve) {
+    if (_frozen != null) return;
     setState(() {
-      if (approve) {
-        _approve++;
+      if (_votes[seat] == approve) {
+        _votes.remove(seat);
       } else {
-        _reject++;
+        _votes[seat] = approve;
       }
     });
   }
 
-  void _remove({required bool approve}) {
+  /// Tapping the row cycles approve → reject → uncounted. The two chips are the
+  /// direct way; this is the one-handed way.
+  void _cycleVote(int seat) {
+    if (_frozen != null) return;
     setState(() {
-      if (approve) {
-        if (_approve > 0) _approve--;
+      final current = _votes[seat];
+      if (current == null) {
+        _votes[seat] = true;
+      } else if (current) {
+        _votes[seat] = false;
       } else {
-        if (_reject > 0) _reject--;
+        _votes.remove(seat);
       }
     });
   }
@@ -66,17 +76,20 @@ class _VotingScreenState extends ConsumerState<VotingScreen> {
   Future<void> _resolve() async {
     final game = ref.read(gameSessionProvider);
     if (game == null || _resolving) return;
-    if (_approve + _reject != game.playerCount) return;
+    if (_votes.length != game.playerCount) return;
+
+    final approve = _approve;
+    final reject = _reject;
 
     setState(() {
       _resolving = true;
       _frozen = game;
     });
 
-    final approved = AvalonTables.isApproved(_approve, _reject);
+    final approved = AvalonTables.isApproved(approve, reject);
     final drawLord = ref.read(settingsProvider).kingsDrawnAutomatically;
     final controller = ref.read(gameSessionProvider.notifier);
-    controller.recordVotes(approve: _approve, reject: _reject);
+    controller.recordVotes(approve: approve, reject: reject);
     controller.resolveTeamVote(drawLord: drawLord);
 
     final after = ref.read(gameSessionProvider);
@@ -163,7 +176,8 @@ class _VotingScreenState extends ConsumerState<VotingScreen> {
       for (final player in game.players)
         if (game.currentTeam.contains(player.seat)) player,
     ];
-    final remaining = game.playerCount - _approve - _reject;
+    final counted = _votes.length;
+    final remaining = game.playerCount - counted;
     final complete = remaining == 0;
     final currentlyApproved = AvalonTables.isApproved(_approve, _reject);
 
@@ -248,50 +262,57 @@ class _VotingScreenState extends ConsumerState<VotingScreen> {
                 const SizedBox(height: Space.lg),
                 SectionHeader(
                   title: 'The vote',
-                  trailing: MetaPill(label: '$_approve / ${game.playerCount}'),
+                  trailing: MetaPill(label: '$counted / ${game.playerCount}'),
                 ),
                 Text(
-                  'Count the hands. Approvals and rejections must add up to '
-                  '${game.playerCount}.',
+                  'Mark each player once. A tie rejects the team; five '
+                  'rejections in a row end the match for Evil.',
                   style: AppText.caption,
                 ),
                 const SizedBox(height: Space.sm),
-                Row(
-                  children: [
-                    Expanded(
-                      child: CounterStepper(
-                        key: const Key('vote_approve'),
-                        keyPrefix: 'vote_approve',
-                        label: 'APPROVE',
-                        icon: Icons.thumb_up_alt_outlined,
-                        tone: AppColors.success,
-                        value: _approve,
-                        max: game.playerCount,
-                        onIncrement: complete || locked ? null : () => _add(approve: true),
-                        onDecrement: _approve == 0 || locked
-                            ? null
-                            : () => _remove(approve: true),
-                      ),
-                    ),
-                    const SizedBox(width: Space.sm),
-                    Expanded(
-                      child: CounterStepper(
-                        key: const Key('vote_reject'),
-                        keyPrefix: 'vote_reject',
-                        label: 'REJECT',
-                        icon: Icons.thumb_down_alt_outlined,
-                        tone: AppColors.danger,
-                        value: _reject,
-                        max: game.playerCount,
-                        onIncrement: complete || locked
-                            ? null
-                            : () => _add(approve: false),
-                        onDecrement: _reject == 0 || locked
-                            ? null
-                            : () => _remove(approve: false),
-                      ),
-                    ),
-                  ],
+                MedievalCard(
+                  padding: const EdgeInsets.all(Space.xs),
+                  child: Column(
+                    children: [
+                      for (final player in game.players) ...[
+                        if (player.seat > 1) const SizedBox(height: Space.xxs),
+                        PlayerTile(
+                          key: Key('vote_seat_${player.seat}'),
+                          name: player.name,
+                          seat: player.seat,
+                          isLeader: player.seat == game.leaderSeat,
+                          isSelected: _votes.containsKey(player.seat),
+                          onTap: locked ? null : () => _cycleVote(player.seat),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              _VoteChip(
+                                key: Key('vote_seat_${player.seat}_approve'),
+                                icon: Icons.check_rounded,
+                                label: 'Approve ${player.name}',
+                                tone: AppColors.success,
+                                isSelected: _votes[player.seat] == true,
+                                onTap: locked
+                                    ? null
+                                    : () => _setVote(player.seat, true),
+                              ),
+                              const SizedBox(width: Space.xxs),
+                              _VoteChip(
+                                key: Key('vote_seat_${player.seat}_reject'),
+                                icon: Icons.close_rounded,
+                                label: 'Reject ${player.name}',
+                                tone: AppColors.danger,
+                                isSelected: _votes[player.seat] == false,
+                                onTap: locked
+                                    ? null
+                                    : () => _setVote(player.seat, false),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
                 const SizedBox(height: Space.md),
                 MedievalCard(
@@ -328,11 +349,21 @@ class _VotingScreenState extends ConsumerState<VotingScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: Space.xs),
-                      Text(
-                        'A tie rejects the team. Five rejections in a row end '
-                        'the match for Evil.',
-                        style: AppText.caption,
+                      const SizedBox(height: Space.sm),
+                      Row(
+                        children: [
+                          _Tally(
+                            label: 'Approve',
+                            value: _approve,
+                            tone: AppColors.success,
+                          ),
+                          const SizedBox(width: Space.lg),
+                          _Tally(
+                            label: 'Reject',
+                            value: _reject,
+                            tone: AppColors.danger,
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -342,6 +373,88 @@ class _VotingScreenState extends ConsumerState<VotingScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// A 48 dp approve/reject target on one seat's row.
+class _VoteChip extends StatelessWidget {
+  const _VoteChip({
+    super.key,
+    required this.icon,
+    required this.label,
+    required this.tone,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color tone;
+  final bool isSelected;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      selected: isSelected,
+      enabled: onTap != null,
+      label: label,
+      child: Tooltip(
+        message: label,
+        child: Material(
+          color: isSelected ? tone.withValues(alpha: 0.16) : Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(Radii.chip),
+            side: BorderSide(color: isSelected ? tone : AppColors.divider),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: onTap,
+            child: SizedBox(
+              width: kMinTapTarget,
+              height: kMinTapTarget,
+              child: Icon(
+                icon,
+                size: 20,
+                color: isSelected ? tone : AppColors.mutedText,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The running approve / reject count under the status line.
+class _Tally extends StatelessWidget {
+  const _Tally({required this.label, required this.value, required this.tone});
+
+  final String label;
+  final int value;
+  final Color tone;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: tone, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: Space.xs),
+        Text(
+          '$label $value',
+          style: AppText.caption.copyWith(
+            color: AppColors.textSecondary,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
     );
   }
 }
