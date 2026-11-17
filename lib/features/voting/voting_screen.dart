@@ -8,6 +8,7 @@ import '../../core/theme/app_metrics.dart';
 import '../../core/theme/app_text.dart';
 import '../../core/theme/artwork.dart';
 import '../../core/widgets/avalon_screen.dart';
+import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/game_progress_header.dart';
 import '../../core/widgets/medieval_card.dart';
 import '../../core/widgets/player_tile.dart';
@@ -143,30 +144,26 @@ class _VotingScreenState extends ConsumerState<VotingScreen> {
 
     if (game == null) {
       return AvalonScreen(
-        appBar: AppBar(title: const Text('THE VOTE')),
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'No vote is in progress.',
-                style: AppText.body,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: Space.xs),
-              Text(
-                'Propose a team from the dashboard first.',
-                style: AppText.caption,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: Space.lg),
-              PrimaryButton(
-                key: const Key('voting_none_back'),
-                label: 'Back to the table',
-                icon: Icons.arrow_back,
-                onPressed: () => context.goNamed(RouteNames.dashboard),
-              ),
-            ],
+        appBar: AppBar(
+          title: const Text('THE VOTE'),
+          leading: IconButton(
+            key: const Key('voting_back'),
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => context.goNamed(RouteNames.dashboard),
+          ),
+        ),
+        child: EmptyState(
+          key: const Key('voting_none'),
+          title: 'No vote in progress',
+          message:
+              'The table counts the vote after a team is proposed. Choose a '
+              'quest team from the dashboard first.',
+          icon: Icons.how_to_vote_outlined,
+          action: PrimaryButton(
+            key: const Key('voting_none_back'),
+            label: 'Back to the table',
+            icon: Icons.arrow_back,
+            onPressed: () => context.goNamed(RouteNames.dashboard),
           ),
         ),
       );

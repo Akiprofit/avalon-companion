@@ -53,6 +53,19 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
     }
   }
 
+  /// Restores the seats from the most recent match: the count, then the names,
+  /// still editable. No role data is involved.
+  void _useLastTable(List<String> names) {
+    if (!AvalonTables.isValidPlayerCount(names.length)) return;
+    final notifier = ref.read(setupProvider.notifier);
+    notifier.setPlayerCount(names.length);
+    _syncControllers(names.length);
+    for (var seat = 0; seat < names.length; seat++) {
+      notifier.setName(seat, names[seat]);
+      _nameControllers[seat].text = names[seat];
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final draft = ref.watch(setupProvider);
@@ -62,6 +75,9 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
     final evil = draft.composition.evilTotal;
     final requiredGood = AvalonTables.goodCount(draft.playerCount);
     final requiredEvil = AvalonTables.evilCount(draft.playerCount);
+    final lastRoster =
+        ref.watch(lastRosterProvider).asData?.value ?? const <String>[];
+    final canReuseTable = AvalonTables.isValidPlayerCount(lastRoster.length);
 
     return AvalonScreen(
       showBackButton: true,
@@ -98,18 +114,17 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'How many are at the table?',
-                  style: AppText.body,
-                ),
+                Text('How many are at the table?', style: AppText.body),
                 const SizedBox(height: Space.sm),
                 Wrap(
                   spacing: Space.xs,
                   runSpacing: Space.xs,
                   children: [
-                    for (var count = AvalonTables.minPlayers;
-                        count <= AvalonTables.maxPlayers;
-                        count++)
+                    for (
+                      var count = AvalonTables.minPlayers;
+                      count <= AvalonTables.maxPlayers;
+                      count++
+                    )
                       _CountChip(
                         key: Key('setup_count_$count'),
                         label: '$count',
@@ -119,8 +134,9 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
                           _syncControllers(count);
                           for (var i = 0; i < _nameControllers.length; i++) {
                             if (_nameControllers[i].text.isEmpty) {
-                              _nameControllers[i].text =
-                                  ref.read(setupProvider).names[i];
+                              _nameControllers[i].text = ref
+                                  .read(setupProvider)
+                                  .names[i];
                             }
                           }
                         },
@@ -128,6 +144,50 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
                   ],
                 ),
                 const SizedBox(height: Space.sm),
+                if (canReuseTable) ...[
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Material(
+                      color: AppColors.surfaceRaised,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(Radii.chip),
+                        side: const BorderSide(color: AppColors.divider),
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        key: const Key('setup_use_last_table'),
+                        onTap: () => _useLastTable(lastRoster),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: Space.sm,
+                            vertical: Space.xs,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.groups_rounded,
+                                size: 16,
+                                color: AppColors.gold,
+                              ),
+                              const SizedBox(width: Space.xs),
+                              Flexible(
+                                child: Text(
+                                  'Use the last table · '
+                                  '${lastRoster.length} players',
+                                  style: AppText.caption.copyWith(
+                                    color: AppColors.parchment,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: Space.sm),
+                ],
                 Text(
                   '$playerLabel — $requiredGood good, $requiredEvil evil.',
                   style: AppText.caption,
@@ -254,7 +314,11 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
               children: [
                 Row(
                   children: [
-                    for (var quest = 1; quest <= AvalonTables.questCount; quest++)
+                    for (
+                      var quest = 1;
+                      quest <= AvalonTables.questCount;
+                      quest++
+                    )
                       Expanded(
                         child: Column(
                           children: [
@@ -350,7 +414,9 @@ class _CountChip extends StatelessWidget {
       selected: selected,
       label: '$label players',
       child: Material(
-        color: selected ? AppColors.surfaceRaised : AppColors.backgroundSecondary,
+        color: selected
+            ? AppColors.surfaceRaised
+            : AppColors.backgroundSecondary,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(Radii.chip),
           side: BorderSide(
@@ -399,16 +465,12 @@ class _CharacterRow extends StatelessWidget {
       child: Row(
         children: [
           Icon(
-            character.isGood
-                ? Icons.shield_outlined
-                : Icons.dark_mode_outlined,
+            character.isGood ? Icons.shield_outlined : Icons.dark_mode_outlined,
             size: 16,
             color: character.isGood ? AppColors.success : AppColors.danger,
           ),
           const SizedBox(width: Space.xs),
-          Expanded(
-            child: Text(character.label, style: AppText.body),
-          ),
+          Expanded(child: Text(character.label, style: AppText.body)),
           _StepperButton(
             key: Key('setup_dec_${character.name}'),
             icon: Icons.remove,
@@ -470,7 +532,9 @@ class _StepperButton extends StatelessWidget {
             child: Icon(
               icon,
               size: 17,
-              color: enabled ? AppColors.gold : AppColors.mutedText.withValues(alpha: 0.4),
+              color: enabled
+                  ? AppColors.gold
+                  : AppColors.mutedText.withValues(alpha: 0.4),
             ),
           ),
         ),

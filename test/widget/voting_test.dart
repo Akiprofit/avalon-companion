@@ -1,7 +1,9 @@
 import 'package:avalon_companion/app/app.dart';
+import 'package:avalon_companion/core/constants/routes.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 
 /// Phase 6 gate: physical votes are recorded accurately and the engine decides
 /// the outcome from them, never from the UI.
@@ -142,6 +144,25 @@ void main() {
     expect(find.text('Reject 3'), findsOneWidget);
     expect(find.text('This vote rejects the team.'), findsOneWidget);
     expect(enabled(tester, const Key('voting_resolve')), isTrue);
+  });
+
+  testWidgets('with no vote under way the screen offers the way back', (
+    tester,
+  ) async {
+    await reachDay(tester);
+
+    final router =
+        tester.widget<MaterialApp>(find.byType(MaterialApp)).routerConfig!
+            as GoRouter;
+    router.goNamed(RouteNames.voting);
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('voting_none')), findsOneWidget);
+    expect(find.text('No vote in progress'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('voting_none_back')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('dashboard_choose_team')), findsOneWidget);
   });
 
   testWidgets('an approved vote sends the match to quest resolution', (

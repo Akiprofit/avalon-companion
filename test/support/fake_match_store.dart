@@ -63,6 +63,9 @@ class FakeMatchStore implements MatchStore {
   /// What [matches] returns.
   List<MatchSummary> summaries = const [];
 
+  /// What [lastRoster] returns.
+  List<String> lastRosterNames = const [];
+
   /// When set, every write throws, to prove a broken disk cannot stop a match.
   bool broken = false;
 
@@ -145,6 +148,9 @@ class FakeMatchStore implements MatchStore {
   Future<List<MatchSummary>> matches({int limit = 50, int offset = 0}) async =>
       summaries;
 
+  @override
+  Future<List<String>> lastRoster() async => lastRosterNames;
+
   /// Deletes from the same list [matches] hands out, oldest first, so a widget
   /// test can watch the screen update.
   @override
@@ -182,6 +188,8 @@ MatchSummary summaryOf({
   ],
   String? assassinationOutcome,
   int? durationSeconds = 900,
+  List<List<int>> questTeams = const [],
+  int rejectionCount = 0,
 }) {
   final now = startedAt ?? DateTime(2026, 11, 15, 20, 30);
   return MatchSummary(
@@ -195,5 +203,7 @@ MatchSummary summaryOf({
     winReason: winReason,
     durationSeconds: durationSeconds,
     assassinationOutcome: assassinationOutcome,
+    questTeams: questTeams,
+    rejectionCount: rejectionCount,
   );
 }

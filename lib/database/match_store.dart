@@ -26,6 +26,8 @@ class MatchSummary {
     required this.playerCount,
     required this.status,
     required this.questResults,
+    this.questTeams = const [],
+    this.rejectionCount = 0,
     this.winner,
     this.winReason,
     this.durationSeconds,
@@ -38,6 +40,13 @@ class MatchSummary {
   final int playerCount;
   final String status;
   final List<QuestResult> questResults;
+
+  /// Seats on each resolved quest, in quest order. Empty for a match stored
+  /// before the teams were kept.
+  final List<List<int>> questTeams;
+
+  /// Proposals rejected in the last round of the match.
+  final int rejectionCount;
   final String? winner;
   final String? winReason;
   final int? durationSeconds;
@@ -106,6 +115,11 @@ abstract interface class MatchStore {
 
   /// History list, newest first.
   Future<List<MatchSummary>> matches({int limit, int offset});
+
+  /// The names at the most recent match, in seat order — what **Use the last
+  /// table** restores on the setup screen. Names only: no role or character is
+  /// stored with a player.
+  Future<List<String>> lastRoster();
 
   /// Deletes stored history: the [count] oldest finished or abandoned matches,
   /// or every one of them when [count] is null. A match still in progress is

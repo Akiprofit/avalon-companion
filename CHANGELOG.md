@@ -32,15 +32,24 @@ development phase, in the order the plan defines them.
   showing the table size, quest number, phase and resolved quests, with **Continue Game** as the
   gold action and **New Game** demoted beneath it. The duplicate History and Settings cards are
   gone — the bottom navigation already reaches both — leaving How to Play as the only card.
+- **History opens a record.** A stored match is now tappable and opens a sheet with the result,
+  the quests and the team that went on each one. It reads only what was stored — the summary
+  gained `questTeams` and `rejectionCount` — so the sheet has no player names and no roles.
+- **The last table is reusable.** Setup offers **Use the last table** when it has a stored table:
+  one tap restores the player count and every name from the most recent match (`lastRoster()`),
+  still editable. Names only — there is no role to restore.
+- **Empty states explain themselves.** A dashboard with no match and a vote under way for no team
+  now show the standard `EmptyState` with a way back, instead of a blank body or two lines of
+  text.
 
 ### Verified
 
 | Check | Result |
 | --- | --- |
 | `flutter analyze` | No issues found |
-| `flutter test` | 286 tests pass (280 + 6) |
-| New coverage | `voting_test.dart` rewritten for seat marking, clearing and correction; a ring test in `team_selection_test.dart`; `narration_controls_test.dart` for the night layout and the End night confirmation; `home_dashboard_test.dart` for the live-match hero, the removed duplicate cards and the two-column seat grid |
-| Updated coverage | `quest_log_test.dart` now reads the merged board; `history_test.dart` reaches history through the bottom navigation; `match_setup_test.dart` checks the hero copy |
+| `flutter test` | 290 tests pass (286 + 4) |
+| New coverage | `voting_test.dart` rewritten for seat marking, clearing and correction; a ring test in `team_selection_test.dart`; `narration_controls_test.dart` for the night layout and the End night confirmation; `home_dashboard_test.dart` for the live-match hero, the removed duplicate cards and the two-column seat grid; `history_test.dart` for the detail sheet; `last_table_test.dart` for the restored table |
+| Updated coverage | `quest_log_test.dart` now reads the merged board; `history_test.dart` reaches history through the bottom navigation; `match_setup_test.dart` checks the hero copy; `voting_test.dart` covers the no-vote empty state |
 
 ## [1.2.0] – Tablet layout (2026-11-17)
 

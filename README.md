@@ -75,8 +75,10 @@ The latest signed Android APK is on the
   `MediaPlayer` can open them)
 - The phone's text-to-speech is the **fallback narrator**, used only for a line
   with no recording or a clip that cannot play
-- **Play / pause, next, previous, replay**, plus speed, depth and volume for
-  the fallback voice
+- **Play / pause, next, previous, replay**, in a transport row that keeps the
+  line-by-line controls together, plus speed, depth and volume for the fallback
+  voice; **End night** is a separate labelled action in the app bar behind a
+  confirmation, so it cannot be hit while reaching for next
 - **Narrator extra delay:** 0–20 seconds of silence after every line, counted
   from the moment the voice stops, so the table has time to move its cards
 - A low night ambience can loop under the narration
@@ -88,21 +90,32 @@ The latest signed Android APK is on the
 - The **wheel** draws the first Lord; with the automatic King mode it draws the
   King of every round — never the same player twice in a row while others can
   lead, or only when the MC asks
-- Discussion timer, team proposal, and the table's vote — or skip the vote for a
-  house rule, where the leader's team goes straight to the quest
+- Discussion timer as a **ring** that starts, pauses and restarts on tap, turns
+  red and clicks at 10 seconds, and double-taps at zero — no counting down with
+  the phone face down
+- Team proposal, then the table's vote **by seat**: tap each seat approve or
+  reject once, tap again to clear it; *Resolve* waits until every seat is
+  counted. Skip the vote for a house rule, where the leader's team goes straight
+  to the quest
 - Record the success and fail cards that come back; the engine applies the
   **quest 4 two-fail rule**, keeps the score and decides when the match is over
 - The accusation records **whether Merlin was named**, never a person
 - The result screen summarises the match without naming a role, and **Play
   Again** deals the same table a fresh match
 - Every confirmed action is written to SQLite, so an interrupted match reopens
-  with **Continue Game** at the phase, quest and roster it stopped on
-- **History** lists finished and abandoned matches with their quest record and
-  outcome, and can clear them — a chosen number of the oldest, or all — always
-  keeping a match still in progress
-- **Past quest teams** keeps the team that went on every resolved quest, with
-  the outcome, exactly as the table saw it. The same list closes the result
+  with **Continue Game** at the phase, quest and roster it stopped on; home
+  leads with a live-match card and keeps **New Game** as the secondary action
+- The dashboard roster is a **two-column grid of seats** — number, name, leader
+  crown and the current quest team — and the whole table reads at once
+- **The quests** is one board: the five markers, then the team that went on each
+  resolved quest, exactly as the table saw it. The same board closes the result
   screen
+- **History** lists finished and abandoned matches, and a tap opens the record:
+  result, quest tally, rejected proposals and the team on each quest. Seats
+  only — no names, no roles — and it can clear history while always keeping a
+  match still in progress
+- **Use the last table** on setup restores the player count and every name from
+  the most recent match, still editable — names only, no roles
 
 ### Settings and table tools
 
@@ -275,6 +288,11 @@ docs/icon.png          the app icon used by this README
 
 ## Status
 
+**Unreleased — UI/UX pass.** Nine table-side changes: vote by seat,
+the discussion ring, separated night controls, one quest board, a two-column
+roster grid, a live-match home hero, a history detail sheet, **Use the last
+table**, and real empty states. No rule, engine or stored value changed.
+
 **v1.2.0** — Tablet layout. The `AvalonScreen` shell bounds the body to a
 600 dp column and centres it, and bottom action bars keep the same width, so a
 tablet shows the phone UI in the middle of the glass instead of stretching every
@@ -292,7 +310,7 @@ wheel and King selection, the discussion timer, team proposal and vote, quest
 resolution and the 4th-quest two-fail rule, assassination outcome, results,
 history, resume, settings and the MC PIN.
 
-Every phase is verified by `flutter analyze`, **280 unit and widget tests**, and
+Every phase is verified by `flutter analyze`, **290 unit and widget tests**, and
 three on-device integration tests on a Galaxy A36 (Android 17) through signed
 1.0.0, 1.1.0 and 1.2.0 builds. Tablet sizes are covered by widget tests only.
 See [`DEVELOPMENT_PLAN.md`](DEVELOPMENT_PLAN.md) for the phase table,

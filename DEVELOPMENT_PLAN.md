@@ -891,9 +891,9 @@ Known limits:
   pick a JRE from a VS Code extension that has no `jlink`, which fails the
   `androidJdkImage` transform. Restoring that file will reintroduce the failure.
 
-## UI/UX pass — tiers 1 and 2 complete on automated gates
+## UI/UX pass — tiers 1–3 complete on automated gates
 
-Delivered: six changes at the table. No rule, engine or stored value changed; each is covered
+Delivered: nine changes at the table. No rule, engine or stored value changed; each is covered
 by widget tests that drive the real screens.
 
 - **Vote by seat.** `VotingScreen` marks each seat approve or reject once, instead of two
@@ -921,18 +921,29 @@ by widget tests that drive the real screens.
   phase, quests resolved — and **Continue Game** is the gold action, with **New Game** demoted
   to the secondary button. The History and Settings cards are removed because the bottom
   navigation already reaches both; How to Play stays.
+- **History detail.** A history tile opens `MatchDetailSheet`
+  (`lib/features/history/match_detail_sheet.dart`): result, win reason, quest tally, rejected
+  proposals and the team that went on each quest, drawn from `MatchSummary.questTeams` and
+  `rejectionCount`. Seats only — no names, no roles — because that is all the store keeps.
+- **Last table.** `MatchStore.lastRoster()` returns the names of the most recent match in seat
+  order, and `lastRosterProvider` feeds a **Use the last table** chip on setup. It restores the
+  count and the names, and every field stays editable.
+- **Empty states.** A dashboard with no match and a vote screen with no proposal under way use
+  `EmptyState` with a way back, so a blank body is never the answer.
 
 Gate evidence:
 
 | Check | Result |
 | --- | --- |
 | `flutter analyze` | No issues found |
-| `flutter test` | 286 tests pass (280 + 6) |
-| Vote by seat | `test/widget/voting_test.dart`: every seat counted before resolving, a seat cleared and recast, a miscount corrected, and the approve/reject outcomes |
+| `flutter test` | 290 tests pass (280 + 10) |
+| Vote by seat | `test/widget/voting_test.dart`: every seat counted before resolving, a seat cleared and recast, a miscount corrected, the approve/reject outcomes, and the no-vote empty state |
 | Discussion ring | `test/widget/team_selection_test.dart`: the ring starts at 1.0, follows the clock and pauses on tap |
 | Night controls | `test/widget/narration_controls_test.dart`: no stop in the transport, the language row sits above it, End night cancels and then confirms into the draw |
 | Merged board | `quest_log_test.dart`: the board appears once, names the team that went, and shows its hint line before the first quest resolves |
 | Home and grid | `home_dashboard_test.dart`: the live match is the hero with a PrimaryButton, New Game is not, the duplicate cards are gone, and seats lay out two per row at 56 dp |
+| History detail | `history_test.dart`: a stored match opens its quest-by-quest record, shows its seats and rejected count, and closes back to the list |
+| Last table | `last_table_test.dart`: the chip restores seven seats and their names, stays editable, and is absent with nothing stored |
 | Navigation | `history_test.dart` reaches history through the bottom navigation, the only path now |
 | Phone and tablet | no layout rule changed: the same screens, still in the 600 dp column on a tablet |
 

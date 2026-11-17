@@ -10,6 +10,7 @@ import '../../core/theme/artwork.dart';
 import '../../core/widgets/avalon_icon_button.dart';
 import '../../core/widgets/avalon_screen.dart';
 import '../../core/widgets/confirmation_dialog.dart';
+import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/game_progress_header.dart';
 import '../../core/widgets/mc_pin_dialog.dart';
 import '../../core/widgets/medieval_card.dart';
@@ -36,7 +37,22 @@ class DashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final game = ref.watch(gameSessionProvider);
     if (game == null) {
-      return const AvalonScreen(child: SizedBox.shrink());
+      return AvalonScreen(
+        appBar: AppBar(title: const Text('THE ROUND TABLE')),
+        child: EmptyState(
+          key: const Key('dashboard_no_match'),
+          title: 'No match in progress',
+          message:
+              'Start a new match or continue the last one from the home '
+              'screen.',
+          icon: Icons.castle_outlined,
+          action: PrimaryButton(
+            label: 'Back to Home',
+            icon: Icons.home_outlined,
+            onPressed: () => context.goNamed(RouteNames.home),
+          ),
+        ),
+      );
     }
     final timer = ref.watch(discussionTimerProvider);
     // The last ten seconds are the ones the table needs to see from a distance.

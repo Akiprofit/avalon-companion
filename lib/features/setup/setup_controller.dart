@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../database/database_provider.dart';
 import '../../game_engine/models/character.dart';
 import '../../game_engine/models/composition.dart';
 import '../../game_engine/rules/avalon_tables.dart';
@@ -106,3 +107,12 @@ class SetupController extends Notifier<SetupDraft> {
 final setupProvider = NotifierProvider<SetupController, SetupDraft>(
   SetupController.new,
 );
+
+/// The names at the most recent match, for **Use the last table**.
+///
+/// Names only, in seat order: the store has no role per player to restore.
+final lastRosterProvider = FutureProvider<List<String>>((ref) async {
+  final store = ref.watch(matchStoreProvider);
+  if (store == null) return const [];
+  return store.lastRoster();
+});

@@ -20,15 +20,17 @@ import '../../database/database_provider.dart';
 import '../../database/match_store.dart';
 import '../../game_engine/models/game_state.dart';
 import 'clear_history_dialog.dart';
+import 'match_detail_sheet.dart';
 
 /// Stored matches, newest first. Read fresh each time the screen opens, so a
 /// match that just ended is already in the list.
-final matchHistoryProvider =
-    FutureProvider.autoDispose<List<MatchSummary>>((ref) async {
-      final store = ref.watch(matchStoreProvider);
-      if (store == null) return const [];
-      return store.matches();
-    });
+final matchHistoryProvider = FutureProvider.autoDispose<List<MatchSummary>>((
+  ref,
+) async {
+  final store = ref.watch(matchStoreProvider);
+  if (store == null) return const [];
+  return store.matches();
+});
 
 /// Screen 13 — the public record of past matches.
 ///
@@ -123,7 +125,10 @@ class HistoryScreen extends ConsumerWidget {
                   ),
                 );
               }
-              return _MatchTile(summary: matches[index - 1]);
+              return _MatchTile(
+                summary: matches[index - 1],
+                onTap: () => showMatchDetail(context, matches[index - 1]),
+              );
             },
           );
         },
@@ -179,9 +184,10 @@ class HistoryScreen extends ConsumerWidget {
 }
 
 class _MatchTile extends StatelessWidget {
-  const _MatchTile({required this.summary});
+  const _MatchTile({required this.summary, required this.onTap});
 
   final MatchSummary summary;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -193,6 +199,8 @@ class _MatchTile extends StatelessWidget {
     };
 
     return MedievalCard(
+      key: Key('history_match_${summary.id}'),
+      onTap: onTap,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -233,7 +241,16 @@ class _MatchTile extends StatelessWidget {
             ],
           ),
           const SizedBox(height: Space.xxs),
-          Text(_detail(summary), style: AppText.caption),
+          Row(
+            children: [
+              Expanded(child: Text(_detail(summary), style: AppText.caption)),
+              const Icon(
+                Icons.chevron_right,
+                size: 18,
+                color: AppColors.mutedText,
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -254,9 +271,10 @@ class _MatchTile extends StatelessWidget {
       switch (summary.winReason) {
         WinReason.threeQuests => 'Three quests won',
         WinReason.fiveRejections => 'Five proposals rejected',
-        WinReason.assassination => summary.assassinationOutcome == 'identified'
-            ? 'Merlin was identified'
-            : 'Merlin survived the accusation',
+        WinReason.assassination =>
+          summary.assassinationOutcome == 'identified'
+              ? 'Merlin was identified'
+              : 'Merlin survived the accusation',
         _ => 'Match complete',
       },
       // "Three quests won · 3 of 5 quests won" would say the same thing twice.

@@ -32,7 +32,7 @@ class GameRepository implements MatchStore {
         id,
         'matchStarted',
         'Match started with ${state.playerCount} players. '
-        'Composition: ${state.compositionSummary}.',
+            'Composition: ${state.compositionSummary}.',
       );
       return id;
     });
@@ -42,9 +42,9 @@ class GameRepository implements MatchStore {
   @override
   Future<void> saveState(int gameId, GameState state) {
     return _db.transaction(() async {
-      await (_db.update(_db.games)..where((g) => g.id.equals(gameId))).write(
-        _gamesCompanion(state),
-      );
+      await (_db.update(
+        _db.games,
+      )..where((g) => g.id.equals(gameId))).write(_gamesCompanion(state));
       await _replacePlayers(gameId, state);
     });
   }
@@ -147,6 +147,23 @@ class GameRepository implements MatchStore {
     return rows.map(_summaryOf).toList();
   }
 
+  /// The names at the most recent match, in seat order.
+  @override
+  Future<List<String>> lastRoster() async {
+    final row =
+        await (_db.select(_db.games)
+              ..orderBy([(g) => OrderingTerm.desc(g.updatedAt)])
+              ..limit(1))
+            .getSingleOrNull();
+    if (row == null) return const [];
+    final seats =
+        await (_db.select(_db.players)
+              ..where((p) => p.gameId.equals(row.id))
+              ..orderBy([(p) => OrderingTerm.asc(p.seatNumber)]))
+            .get();
+    return [for (final seat in seats) seat.displayName];
+  }
+
   Future<List<EventRecord>> events(int gameId) {
     return (_db.select(_db.gameEvents)
           ..where((e) => e.gameId.equals(gameId))
@@ -245,25 +262,21 @@ class GameRepository implements MatchStore {
       createdAt: Value(state.startedAt.toUtc().millisecondsSinceEpoch),
       updatedAt: Value(now),
       playerCount: Value(state.playerCount),
-      status: Value(
-        finished ? MatchStatus.finished : MatchStatus.inProgress,
-      ),
+      status: Value(finished ? MatchStatus.finished : MatchStatus.inProgress),
       winner: Value(finished ? _winnerOf(state) : null),
       durationSeconds: Value(
-        finished ? state.finishedAt!.difference(state.startedAt).inSeconds : null,
+        finished
+            ? state.finishedAt!.difference(state.startedAt).inSeconds
+            : null,
       ),
       phase: Value(state.phase.name),
       pausedFrom: Value(state.pausedFrom?.name),
       leaderSeat: Value(state.leaderSeat),
       questNumber: Value(state.questNumber),
       rejectionCount: Value(state.rejectionCount),
-      questResults: Value(
-        state.questResults.map((r) => r.name).join(','),
-      ),
+      questResults: Value(state.questResults.map((r) => r.name).join(',')),
       questTeams: Value(_encodeQuestTeams(state.questTeams)),
-      currentTeam: Value(
-        ([...state.currentTeam]..sort()).join(','),
-      ),
+      currentTeam: Value(([...state.currentTeam]..sort()).join(',')),
       composition: Value(_encodeComposition(state.composition)),
       winReason: Value(finished ? winReasonOf(state) : null),
       assassinationOutcome: Value(
@@ -302,10 +315,12 @@ class GameRepository implements MatchStore {
                 ? QuestResult.success
                 : QuestResult.fail,
       ]),
-      currentTeam: List<int>.unmodifiable([
-        for (final seat in row.currentTeam.split(','))
-          if (seat.isNotEmpty) int.tryParse(seat) ?? 0,
-      ].where((seat) => seat > 0)),
+      currentTeam: List<int>.unmodifiable(
+        [
+          for (final seat in row.currentTeam.split(','))
+            if (seat.isNotEmpty) int.tryParse(seat) ?? 0,
+        ].where((seat) => seat > 0),
+      ),
       questTeams: _decodeQuestTeams(row.questTeams),
       approveVotes: 0,
       rejectVotes: 0,
@@ -348,6 +363,8 @@ class GameRepository implements MatchStore {
       winReason: row.winReason,
       durationSeconds: row.durationSeconds,
       assassinationOutcome: row.assassinationOutcome,
+      questTeams: _decodeQuestTeams(row.questTeams),
+      rejectionCount: row.rejectionCount,
     );
   }
 
@@ -367,7 +384,8 @@ class GameRepository implements MatchStore {
 
   static String _encodeComposition(Composition composition) {
     return jsonEncode({
-      for (final entry in composition.counts.entries) entry.key.name: entry.value,
+      for (final entry in composition.counts.entries)
+        entry.key.name: entry.value,
     });
   }
 
@@ -390,9 +408,7 @@ class GameRepository implements MatchStore {
 
   /// `1,3;2,4,5` — one group of seats per resolved quest.
   static String _encodeQuestTeams(List<List<int>> questTeams) {
-    return questTeams
-        .map((seats) => ([...seats]..sort()).join(','))
-        .join(';');
+    return questTeams.map((seats) => ([...seats]..sort()).join(',')).join(';');
   }
 
   /// Tolerant of a missing, older or malformed value: an unreadable group is

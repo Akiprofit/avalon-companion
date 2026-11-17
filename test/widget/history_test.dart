@@ -99,6 +99,40 @@ void main() {
     }
   });
 
+  testWidgets('a stored match opens its quest-by-quest record', (tester) async {
+    final store = FakeMatchStore()
+      ..summaries = [
+        summaryOf(
+          id: 7,
+          questResults: const [QuestResult.success, QuestResult.fail],
+          questTeams: const [
+            [1, 2],
+            [3, 4, 5],
+          ],
+          rejectionCount: 2,
+        ),
+      ];
+
+    await pumpHistory(tester, store);
+    await tester.tap(find.byKey(const Key('history_match_7')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('history_detail_sheet')), findsOneWidget);
+    expect(find.byKey(const Key('history_detail_title')), findsOneWidget);
+    expect(find.text('Quest 1 · won'), findsOneWidget);
+    expect(find.text('Seats 1, 2 went on the quest.'), findsOneWidget);
+    expect(find.text('Quest 2 · lost'), findsOneWidget);
+    expect(find.text('Seats 3, 4, 5 went on the quest.'), findsOneWidget);
+    expect(find.text('The remaining quests were not played.'), findsOneWidget);
+    expect(find.text('Proposals rejected in the last round'), findsOneWidget);
+    expect(find.textContaining('Roles are never stored'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('history_detail_close')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('history_detail_sheet')), findsNothing);
+    expect(find.byKey(const Key('history_match_7')), findsOneWidget);
+  });
+
   group('clearing history', () {
     testWidgets('deletes the chosen number, oldest first', (tester) async {
       final store = FakeMatchStore()
