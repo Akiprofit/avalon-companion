@@ -4,14 +4,16 @@ import '../../game_engine/models/game_state.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_metrics.dart';
 import '../theme/app_text.dart';
+import 'quest_tracker.dart';
 
-/// The board as it was played: which players went on each resolved quest.
+/// The board as it was played: the five quest markers, and under them the team
+/// that went on each resolved quest.
 ///
 /// This is public state only. The table saw every one of these teams when it
 /// approved them, so reading them back says nothing about who holds which
 /// loyalty card — it is exactly the memory the table is allowed to have.
-class QuestLog extends StatelessWidget {
-  const QuestLog({super.key, required this.game});
+class QuestBoard extends StatelessWidget {
+  const QuestBoard({super.key, required this.game});
 
   final GameState game;
 
@@ -21,9 +23,20 @@ class QuestLog extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        for (var i = 0; i < runs.length; i++) ...[
-          if (i > 0) const Divider(height: Space.lg),
-          _QuestRunRow(run: runs[i], game: game),
+        QuestTracker(slots: game.questSlots),
+        if (runs.isEmpty) ...[
+          const SizedBox(height: Space.sm),
+          Text(
+            'The team for each quest appears here once it resolves — what the '
+            'table saw when it approved it. It says nothing about who is loyal.',
+            style: AppText.caption,
+          ),
+        ] else ...[
+          const SizedBox(height: Space.md),
+          for (var i = 0; i < runs.length; i++) ...[
+            if (i > 0) const Divider(height: Space.md),
+            _QuestRunRow(run: runs[i], game: game),
+          ],
         ],
       ],
     );
@@ -49,7 +62,8 @@ class _QuestRunRow extends StatelessWidget {
     ];
 
     return Semantics(
-      label: 'Quest ${run.questNumber}, $outcome'
+      label:
+          'Quest ${run.questNumber}, $outcome'
           '${names.isEmpty ? ', team not recorded' : ', taken by ${names.join(', ')}'}',
       child: ExcludeSemantics(
         child: Row(

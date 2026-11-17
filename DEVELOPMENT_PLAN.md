@@ -891,10 +891,10 @@ Known limits:
   pick a JRE from a VS Code extension that has no `jlink`, which fails the
   `androidJdkImage` transform. Restoring that file will reintroduce the failure.
 
-## UI/UX pass — tier 1 complete on automated gates
+## UI/UX pass — tiers 1 and 2 complete on automated gates
 
-Delivered: three changes at the table. No rule, engine or stored value changed; each is
-covered by widget tests that drive the real screens.
+Delivered: six changes at the table. No rule, engine or stored value changed; each is covered
+by widget tests that drive the real screens.
 
 - **Vote by seat.** `VotingScreen` marks each seat approve or reject once, instead of two
   steppers the MC taps until they add up. Tapping the same side clears the seat; tapping the
@@ -910,17 +910,32 @@ covered by widget tests that drive the real screens.
   labelled action behind a confirmation. The transport is now previous, replay, play/pause and
   next only, so the control that skips the script cannot be hit while reaching for next. The
   English/Filipino switch moved to the top of the panel, out of the thumb row.
+- **One quest board.** `QuestBoard` (`lib/core/widgets/quest_board.dart`, replacing
+  `QuestLog`) stacks the five markers and the team that went on each resolved quest in one card,
+  with one line of explanation while nothing has resolved. The dashboard's second "Past quest
+  teams" section and its caption are gone, and the victory screen uses the same board.
+- **Roster grid.** The dashboard table is a two-column grid of seat tiles (`PlayerGrid`,
+  `PlayerSeatTile`): seat number, name, leader crown, gold border and team mark for the current
+  quest team. Two columns at every width, so a tablet keeps the phone layout.
+- **Home hero.** While a match is live, home opens with a card for it — players, quest number,
+  phase, quests resolved — and **Continue Game** is the gold action, with **New Game** demoted
+  to the secondary button. The History and Settings cards are removed because the bottom
+  navigation already reaches both; How to Play stays.
 
 Gate evidence:
 
 | Check | Result |
 | --- | --- |
 | `flutter analyze` | No issues found |
-| `flutter test` | 284 tests pass (280 + 4) |
+| `flutter test` | 286 tests pass (280 + 6) |
 | Vote by seat | `test/widget/voting_test.dart`: every seat counted before resolving, a seat cleared and recast, a miscount corrected, and the approve/reject outcomes |
 | Discussion ring | `test/widget/team_selection_test.dart`: the ring starts at 1.0, follows the clock and pauses on tap |
 | Night controls | `test/widget/narration_controls_test.dart`: no stop in the transport, the language row sits above it, End night cancels and then confirms into the draw |
+| Merged board | `quest_log_test.dart`: the board appears once, names the team that went, and shows its hint line before the first quest resolves |
+| Home and grid | `home_dashboard_test.dart`: the live match is the hero with a PrimaryButton, New Game is not, the duplicate cards are gone, and seats lay out two per row at 56 dp |
+| Navigation | `history_test.dart` reaches history through the bottom navigation, the only path now |
 | Phone and tablet | no layout rule changed: the same screens, still in the 600 dp column on a tablet |
+
 
 ## Next phase
 

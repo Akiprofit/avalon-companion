@@ -32,10 +32,12 @@ void main() {
         if ((defaults[character.label] ?? 0) > 0)
           character: defaults[character.label]!,
     };
-    container.read(gameSessionProvider.notifier).start(
-      names: const ['Ann', 'Ben', 'Cara', 'Dev', 'Eli'],
-      composition: Composition(playerCount: 5, counts: counts),
-    );
+    container
+        .read(gameSessionProvider.notifier)
+        .start(
+          names: const ['Ann', 'Ben', 'Cara', 'Dev', 'Eli'],
+          composition: Composition(playerCount: 5, counts: counts),
+        );
     return container;
   }
 
@@ -78,7 +80,7 @@ void main() {
     playQuest(container, team: [1, 2], fails: 1);
     await openDashboard(tester);
 
-    expect(find.text('PAST QUEST TEAMS'), findsOneWidget);
+    expect(find.text('THE QUESTS'), findsOneWidget);
     expect(find.text('Quest 1 · lost'), findsOneWidget);
     expect(find.text('Ann, Ben'), findsOneWidget);
     expect(find.text('Seats 1, 2'), findsOneWidget);
@@ -91,10 +93,15 @@ void main() {
     startMatch(tester);
     await openDashboard(tester);
 
+    expect(find.text('THE QUESTS'), findsOneWidget);
     expect(
-      find.text('PAST QUEST TEAMS'),
+      find.text('Quest 1 · won'),
       findsNothing,
       reason: 'nothing to review before the first quest resolves',
+    );
+    expect(
+      find.textContaining('appears here once it resolves'),
+      findsOneWidget,
     );
   });
 

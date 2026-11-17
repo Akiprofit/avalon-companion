@@ -13,10 +13,9 @@ import '../../core/widgets/confirmation_dialog.dart';
 import '../../core/widgets/game_progress_header.dart';
 import '../../core/widgets/mc_pin_dialog.dart';
 import '../../core/widgets/medieval_card.dart';
-import '../../core/widgets/player_tile.dart';
+import '../../core/widgets/player_grid.dart';
 import '../../core/widgets/primary_button.dart';
-import '../../core/widgets/quest_log.dart';
-import '../../core/widgets/quest_tracker.dart';
+import '../../core/widgets/quest_board.dart';
 import '../../core/widgets/secondary_button.dart';
 import '../../core/widgets/section_header.dart';
 import '../../core/widgets/status_indicator.dart';
@@ -243,27 +242,8 @@ class DashboardScreen extends ConsumerWidget {
                 Space.xl,
               ),
               children: [
-                const SectionHeader(title: 'Quest progress'),
-                MedievalCard(child: QuestTracker(slots: game.questSlots)),
-                if (game.questLog.isNotEmpty) ...[
-                  const SizedBox(height: Space.lg),
-                  SectionHeader(
-                    title: 'Past quest teams',
-                    trailing: MetaPill(
-                      label: game.questLog.length == 1
-                          ? '1 quest'
-                          : '${game.questLog.length} quests',
-                    ),
-                  ),
-                  MedievalCard(child: QuestLog(game: game)),
-                  const SizedBox(height: Space.xs),
-                  Text(
-                    'Who went on each resolved quest — exactly what the table '
-                    'saw when it approved the team. It says nothing about who '
-                    'is loyal.',
-                    style: AppText.caption,
-                  ),
-                ],
+                const SectionHeader(title: 'The quests'),
+                MedievalCard(child: QuestBoard(game: game)),
                 if (isDiscussion) ...[
                   const SizedBox(height: Space.lg),
                   SectionHeader(
@@ -395,18 +375,10 @@ class DashboardScreen extends ConsumerWidget {
                 ),
                 MedievalCard(
                   padding: const EdgeInsets.all(Space.xs),
-                  child: Column(
-                    children: [
-                      for (final player in game.players) ...[
-                        if (player.seat > 1) const SizedBox(height: Space.xxs),
-                        PlayerTile(
-                          name: player.name,
-                          seat: player.seat,
-                          isLeader: player.seat == game.leaderSeat,
-                          isSelected: game.currentTeam.contains(player.seat),
-                        ),
-                      ],
-                    ],
+                  child: PlayerGrid(
+                    players: game.players,
+                    leaderSeat: game.leaderSeat,
+                    selectedSeats: game.currentTeam.toSet(),
                   ),
                 ),
                 const SizedBox(height: Space.lg),

@@ -1,4 +1,4 @@
-﻿import 'package:material_ui/material_ui.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -11,8 +11,7 @@ import '../../core/widgets/avalon_screen.dart';
 import '../../core/widgets/confirmation_dialog.dart';
 import '../../core/widgets/medieval_card.dart';
 import '../../core/widgets/primary_button.dart';
-import '../../core/widgets/quest_log.dart';
-import '../../core/widgets/quest_tracker.dart';
+import '../../core/widgets/quest_board.dart';
 import '../../core/widgets/secondary_button.dart';
 import '../../core/widgets/section_header.dart';
 import '../../game_engine/controllers/game_session_controller.dart';
@@ -192,12 +191,7 @@ class VictoryScreen extends ConsumerWidget {
             title: 'The five quests',
             trailing: MetaPill(label: '${game.questResults.length} played'),
           ),
-          MedievalCard(child: QuestTracker(slots: game.questSlots)),
-          if (game.questLog.isNotEmpty) ...[
-            const SizedBox(height: Space.lg),
-            const SectionHeader(title: 'The board, quest by quest'),
-            MedievalCard(child: QuestLog(game: game)),
-          ],
+          MedievalCard(child: QuestBoard(game: game)),
           const SizedBox(height: Space.lg),
           const SectionHeader(title: 'Final summary'),
           MedievalCard(
@@ -272,10 +266,7 @@ class _SummaryRow extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: Space.sm),
-              Text(
-                value,
-                style: AppText.bodyStrong.copyWith(color: tone),
-              ),
+              Text(value, style: AppText.bodyStrong.copyWith(color: tone)),
             ],
           ),
         ),

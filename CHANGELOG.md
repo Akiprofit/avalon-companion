@@ -20,14 +20,27 @@ development phase, in the order the plan defines them.
   a confirmation, and the narration transport is now previous, replay, play/pause and next.
   The English/Filipino switch moved to the top of the panel instead of sitting under the
   transport, where it crowded the thumb row.
+- **One quest board.** The dashboard's five quest markers and the separate "Past quest teams"
+  card are now a single **The quests** board: the markers, then the team that went on each
+  resolved quest, with the empty card explaining itself in one line. The victory screen uses the
+  same board instead of a second section. `QuestLog` became `QuestBoard`
+  (`lib/core/widgets/quest_board.dart`).
+- **The table is a grid.** The dashboard roster is a two-column grid of seat tiles — number,
+  name, leader crown, gold mark for the quest team — instead of a ten-row list. Same two columns
+  on a tablet, inside the existing 600 dp column.
+- **Home leads with the live match.** While a match is in progress, home opens with a hero card
+  showing the table size, quest number, phase and resolved quests, with **Continue Game** as the
+  gold action and **New Game** demoted beneath it. The duplicate History and Settings cards are
+  gone — the bottom navigation already reaches both — leaving How to Play as the only card.
 
 ### Verified
 
 | Check | Result |
 | --- | --- |
 | `flutter analyze` | No issues found |
-| `flutter test` | 284 tests pass (280 + 4) |
-| New coverage | `voting_test.dart` rewritten for seat marking, clearing and correction; a ring test in `team_selection_test.dart`; `narration_controls_test.dart` for the night layout and the End night confirmation |
+| `flutter test` | 286 tests pass (280 + 6) |
+| New coverage | `voting_test.dart` rewritten for seat marking, clearing and correction; a ring test in `team_selection_test.dart`; `narration_controls_test.dart` for the night layout and the End night confirmation; `home_dashboard_test.dart` for the live-match hero, the removed duplicate cards and the two-column seat grid |
+| Updated coverage | `quest_log_test.dart` now reads the merged board; `history_test.dart` reaches history through the bottom navigation; `match_setup_test.dart` checks the hero copy |
 
 ## [1.2.0] – Tablet layout (2026-11-17)
 

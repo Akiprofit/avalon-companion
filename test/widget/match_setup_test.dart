@@ -46,8 +46,11 @@ void main() {
       }
       await tester.pumpAndSettle();
 
-      expect(continueEnabled(tester), isTrue,
-          reason: '$count players with distinct names should be startable');
+      expect(
+        continueEnabled(tester),
+        isTrue,
+        reason: '$count players with distinct names should be startable',
+      );
       expect(find.text('Two players share the same name.'), findsNothing);
     }
   });
@@ -79,8 +82,11 @@ void main() {
     expect(find.text('THE ROUND TABLE'), findsWidgets);
     expect(find.text('7 seated'), findsOneWidget);
     expect(find.text('Player 7'), findsOneWidget);
-    expect(tester.takeException(), isNull,
-        reason: 'the dashboard must lay out without overflow at 360 dp');
+    expect(
+      tester.takeException(),
+      isNull,
+      reason: 'the dashboard must lay out without overflow at 360 dp',
+    );
 
     // Leave the dashboard: the match stays live.
     await tester.tap(find.byKey(const Key('dashboard_home')));
@@ -88,7 +94,8 @@ void main() {
     expect(find.text('Leave the match?'), findsOneWidget);
     await tester.tap(find.text('Leave match'));
     await tester.pumpAndSettle();
-    expect(find.text('In progress: 7 players, quest 1 of 5.'), findsOneWidget);
+    expect(find.text('MATCH IN PROGRESS'), findsOneWidget);
+    expect(find.text('7 players · Quest 1 of 5'), findsOneWidget);
 
     final continueButton = tester.widget<Semantics>(
       find

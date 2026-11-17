@@ -26,7 +26,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 1600));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('home_history')));
+    await tester.tap(find.byKey(const Key('nav_history')));
     await tester.pumpAndSettle();
   }
 
@@ -115,9 +115,7 @@ void main() {
       expect(find.text('Clear history'), findsOneWidget);
       expect(find.text('Delete the oldest 1'), findsOneWidget);
       expect(
-        tester
-            .widget<Text>(find.byKey(const Key('history_clear_value')))
-            .data,
+        tester.widget<Text>(find.byKey(const Key('history_clear_value'))).data,
         '1',
       );
 
@@ -128,11 +126,9 @@ void main() {
       await tester.tap(find.byKey(const Key('history_clear_confirm')));
       await tester.pumpAndSettle();
 
-      expect(
-        store.summaries.map((summary) => summary.id),
-        [3],
-        reason: 'the two oldest matches went, the newest stayed',
-      );
+      expect(store.summaries.map((summary) => summary.id), [
+        3,
+      ], reason: 'the two oldest matches went, the newest stayed');
       expect(find.text('Deleted 2 matches.'), findsOneWidget);
       expect(find.text('1 stored'), findsOneWidget);
 
@@ -185,7 +181,11 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('The match in progress is kept.'), findsOneWidget);
-      expect(find.text('All 1'), findsNothing, reason: 'one match is all of them');
+      expect(
+        find.text('All 1'),
+        findsNothing,
+        reason: 'one match is all of them',
+      );
       expect(find.text('Delete the match'), findsOneWidget);
 
       await tester.tap(find.byKey(const Key('history_clear_confirm')));

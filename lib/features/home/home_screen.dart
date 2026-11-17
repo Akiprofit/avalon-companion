@@ -14,7 +14,9 @@ import '../../core/widgets/gold_divider.dart';
 import '../../core/widgets/medieval_card.dart';
 import '../../core/widgets/primary_button.dart';
 import '../../core/widgets/secondary_button.dart';
+import '../../core/widgets/section_header.dart';
 import '../../game_engine/controllers/game_session_controller.dart';
+import '../../game_engine/models/game_state.dart';
 import '../../game_engine/models/phase.dart';
 import '../setup/setup_controller.dart';
 
@@ -68,75 +70,75 @@ class HomeScreen extends ConsumerWidget {
             ),
             const SizedBox(height: Space.sm),
             const GoldDivider(),
-            PrimaryButton(
-              key: const Key('home_new_game'),
-              label: 'New Game',
-              icon: Icons.add_circle_outline,
-              onPressed: () {
-                ref.read(setupProvider.notifier).reset();
-                context.goNamed(RouteNames.setup);
-              },
-            ),
-            const SizedBox(height: Space.sm),
-            SecondaryButton(
-              key: const Key('home_continue_game'),
-              label: game != null && game.isFinished
-                  ? 'Review the Last Match'
-                  : 'Continue Game',
-              icon: game != null && game.isFinished
-                  ? Icons.emoji_events_outlined
-                  : Icons.play_arrow_rounded,
-              onPressed: game == null
-                  ? null
-                  : () => context.goNamed(RouteNames.dashboard),
-            ),
-            if (game == null)
-              Padding(
-                padding: const EdgeInsets.only(top: Space.xs, left: Space.xxs),
-                child: Text('No match in progress.', style: AppText.caption),
-              )
-            else if (game.isFinished)
-              Padding(
-                padding: const EdgeInsets.only(top: Space.xs, left: Space.xxs),
-                child: Text(
-                  'Last match ended in '
-                  '${game.phase == Phase.goodVictory ? 'a Good' : 'an Evil'} '
-                  'victory.',
-                  style: AppText.caption,
-                ),
-              )
-            else
-              Padding(
-                padding: const EdgeInsets.only(top: Space.xs, left: Space.xxs),
-                child: Text(
-                  'In progress: ${game.playerCount} players, quest '
-                  '${game.questNumber} of 5.',
-                  style: AppText.caption,
-                ),
+            if (game != null && !game.isFinished) ...[
+              // A live match is what the MC came back for: it gets the hero
+              // card, and New Game steps down to a secondary action.
+              _ContinueCard(
+                game: game,
+                onTap: () => context.goNamed(RouteNames.dashboard),
               ),
+              const SizedBox(height: Space.sm),
+              SecondaryButton(
+                key: const Key('home_new_game'),
+                label: 'New Game',
+                icon: Icons.add_circle_outline,
+                onPressed: () {
+                  ref.read(setupProvider.notifier).reset();
+                  context.goNamed(RouteNames.setup);
+                },
+              ),
+            ] else ...[
+              PrimaryButton(
+                key: const Key('home_new_game'),
+                label: 'New Game',
+                icon: Icons.add_circle_outline,
+                onPressed: () {
+                  ref.read(setupProvider.notifier).reset();
+                  context.goNamed(RouteNames.setup);
+                },
+              ),
+              const SizedBox(height: Space.sm),
+              SecondaryButton(
+                key: const Key('home_continue_game'),
+                label: game != null && game.isFinished
+                    ? 'Review the Last Match'
+                    : 'Continue Game',
+                icon: game != null && game.isFinished
+                    ? Icons.emoji_events_outlined
+                    : Icons.play_arrow_rounded,
+                onPressed: game == null
+                    ? null
+                    : () => context.goNamed(RouteNames.dashboard),
+              ),
+              if (game == null)
+                Padding(
+                  padding: const EdgeInsets.only(
+                    top: Space.xs,
+                    left: Space.xxs,
+                  ),
+                  child: Text('No match in progress.', style: AppText.caption),
+                )
+              else
+                Padding(
+                  padding: const EdgeInsets.only(
+                    top: Space.xs,
+                    left: Space.xxs,
+                  ),
+                  child: Text(
+                    'Last match ended in '
+                    '${game.phase == Phase.goodVictory ? 'a Good' : 'an Evil'} '
+                    'victory.',
+                    style: AppText.caption,
+                  ),
+                ),
+            ],
             const SizedBox(height: Space.md),
-            _HomeAction(
-              key: const Key('home_history'),
-              icon: Icons.history_edu_outlined,
-              title: 'Game History',
-              subtitle: 'Past matches and their outcomes',
-              onTap: () => context.goNamed(RouteNames.history),
-            ),
-            const SizedBox(height: Space.xs),
             _HomeAction(
               key: const Key('home_how_to_play'),
               icon: Icons.menu_book_outlined,
               title: 'How to Play',
               subtitle: 'Roles, quests, voting and victory',
               onTap: () => context.pushNamed(RouteNames.howToPlay),
-            ),
-            const SizedBox(height: Space.xs),
-            _HomeAction(
-              key: const Key('home_settings'),
-              icon: Icons.tune_outlined,
-              title: 'Settings',
-              subtitle: 'Narration, timing and app preferences',
-              onTap: () => context.goNamed(RouteNames.settings),
             ),
             const SizedBox(height: Space.xxl),
             Text(
@@ -181,15 +183,76 @@ class _HomeEmblem extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: AppColors.surface,
-              border: Border.all(
-                color: AppColors.gold.withValues(alpha: 0.55),
-              ),
+              border: Border.all(color: AppColors.gold.withValues(alpha: 0.55)),
             ),
             child: const Icon(
               Icons.shield_moon_outlined,
               size: 44,
               color: AppColors.lightGold,
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ContinueCard extends StatelessWidget {
+  const _ContinueCard({required this.game, required this.onTap});
+
+  final GameState game;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final played = game.questResults.length;
+    return MedievalCard(
+      showTopRule: true,
+      borderColor: AppColors.gold.withValues(alpha: 0.35),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.play_circle_outline,
+                size: 18,
+                color: AppColors.gold,
+              ),
+              const SizedBox(width: Space.xs),
+              Expanded(
+                child: Text(
+                  'MATCH IN PROGRESS',
+                  style: AppText.caption.copyWith(
+                    color: AppColors.mutedGold,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 1.5,
+                  ),
+                ),
+              ),
+              MetaPill(label: game.phase.label),
+            ],
+          ),
+          const SizedBox(height: Space.sm),
+          Text(
+            '${game.playerCount} players · Quest ${game.questNumber} of 5',
+            style: AppText.bodyStrong,
+          ),
+          const SizedBox(height: Space.xxs),
+          Text(
+            played == 0
+                ? 'No quests resolved yet.'
+                : played == 1
+                ? '1 quest resolved so far.'
+                : '$played quests resolved so far.',
+            style: AppText.caption,
+          ),
+          const SizedBox(height: Space.sm),
+          PrimaryButton(
+            key: const Key('home_continue_game'),
+            label: 'Continue Game',
+            icon: Icons.play_arrow_rounded,
+            onPressed: onTap,
           ),
         ],
       ),
@@ -232,11 +295,7 @@ class _HomeAction extends StatelessWidget {
               ],
             ),
           ),
-          const Icon(
-            Icons.chevron_right,
-            size: 20,
-            color: AppColors.mutedText,
-          ),
+          const Icon(Icons.chevron_right, size: 20, color: AppColors.mutedText),
         ],
       ),
     );
