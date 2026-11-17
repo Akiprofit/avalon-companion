@@ -893,8 +893,8 @@ Known limits:
 
 ## UI/UX pass — tiers 1–3 complete on automated gates
 
-Delivered: nine changes at the table. No rule, engine or stored value changed; each is covered
-by widget tests that drive the real screens.
+Delivered: nine changes at the table. Version 1.3.0+19; no rule, engine or stored value changed;
+each is covered by widget tests that drive the real screens.
 
 - **Vote by seat.** `VotingScreen` marks each seat approve or reject once, instead of two
   steppers the MC taps until they add up. Tapping the same side clears the seat; tapping the
@@ -945,13 +945,16 @@ Gate evidence:
 | History detail | `history_test.dart`: a stored match opens its quest-by-quest record, shows its seats and rejected count, and closes back to the list |
 | Last table | `last_table_test.dart`: the chip restores seven seats and their names, stays editable, and is absent with nothing stored |
 | Navigation | `history_test.dart` reaches history through the bottom navigation, the only path now |
+| Release APK | 62.9 MB (65,999,270 bytes), `versionName` 1.3.0, `versionCode` 19, three ABIs |
+| Signature | `CN=Avalon Companion`, SHA-256 `1aa864f1…a570b808` — the same key as 1.0.0–1.2.0; APK SHA-256 `25E1660B…C05761D3` |
+| GitHub release | `v1.3.0` published with `Avalon-Companion-1.3.0.apk`; digest matches the local build |
 | Phone and tablet | no layout rule changed: the same screens, still in the 600 dp column on a tablet |
 
 
 ## Next phase
 
-No phase is scheduled: **1.0.0** is the released build, signed, installed and verified on the
-phone. Work after 1.0.0 would be maintenance rather than plan phases — lifting the
+No phase is scheduled: **1.3.0** is the released build, signed and published, with 1.0.0–1.2.0
+verified on the phone. Work after 1.3.0 would be maintenance rather than plan phases — lifting the
 `path_provider_android` pin now that the NDK is installed, split-per-abi APKs if download size
 matters, commissioned artwork to replace the public-domain plates, or a Play Store listing with
 its own upload key.

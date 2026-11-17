@@ -3,7 +3,7 @@
 All notable changes to Avalon Companion are recorded here. One entry per completed
 development phase, in the order the plan defines them.
 
-## [Unreleased] – UI/UX pass
+## [1.3.0] – UI/UX pass (2026-11-17)
 
 ### Changed
 
@@ -50,6 +50,9 @@ development phase, in the order the plan defines them.
 | `flutter test` | 290 tests pass (286 + 4) |
 | New coverage | `voting_test.dart` rewritten for seat marking, clearing and correction; a ring test in `team_selection_test.dart`; `narration_controls_test.dart` for the night layout and the End night confirmation; `home_dashboard_test.dart` for the live-match hero, the removed duplicate cards and the two-column seat grid; `history_test.dart` for the detail sheet; `last_table_test.dart` for the restored table |
 | Updated coverage | `quest_log_test.dart` now reads the merged board; `history_test.dart` reaches history through the bottom navigation; `match_setup_test.dart` checks the hero copy; `voting_test.dart` covers the no-vote empty state |
+| Release APK | `flutter build apk --release` succeeds: 62.9 MB (65,999,270 bytes), `versionName` 1.3.0, `versionCode` 19, arm64-v8a + armeabi-v7a + x86_64 |
+| Signature | one signer, `CN=Avalon Companion`, SHA-256 `1aa864f1…a570b808` — the same key as 1.0.0–1.2.0; APK SHA-256 `25E1660B…C05761D3` |
+| GitHub release | `v1.3.0` published with `Avalon-Companion-1.3.0.apk`; its digest matches the local build |
 
 ## [1.2.0] – Tablet layout (2026-11-17)
 
