@@ -3,6 +3,29 @@
 All notable changes to Avalon Companion are recorded here. One entry per completed
 development phase, in the order the plan defines them.
 
+## [1.3.1] – Device-pass fixes (2026-11-17)
+
+### Fixed
+
+- **The night title fits.** The night screen's app bar now reads **THE NIGHT**. *NIGHT NARRATION*
+  was truncated to "NIGHT NARRAT…" on a 360 dp phone once **End night** moved into the bar beside
+  it.
+- **An unfinished record does not claim the match ended.** Opening an in-progress match from
+  history now says "No quest has resolved yet." instead of "No quest was resolved before the
+  match ended."
+
+### Verified
+
+| Check | Result |
+| --- | --- |
+| `flutter analyze` | No issues found |
+| `flutter test` | 291 tests pass (290 + 1) |
+| Device pass | Installed over 1.1.0 on a Galaxy A36 (Android 17): the in-place upgrade kept the stored match, and the full loop — night, draw, team, vote by seat, quest — ran on the release build |
+| New coverage | `narration_controls_test.dart` asserts the shorter title; `history_test.dart` opens an unfinished record and checks its wording |
+| Release APK | 62.9 MB (65,999,270 bytes), `versionName` 1.3.1, `versionCode` 20, arm64-v8a + armeabi-v7a + x86_64 |
+| Signature | one signer, `CN=Avalon Companion`, SHA-256 `1aa864f1…a570b808` — the same key as 1.0.0–1.3.0; APK SHA-256 `4B64481B…CDE41105` |
+| GitHub release | `v1.3.1` published with `Avalon-Companion-1.3.1.apk`; its digest matches the local build |
+
 ## [1.3.0] – UI/UX pass (2026-11-17)
 
 ### Changed

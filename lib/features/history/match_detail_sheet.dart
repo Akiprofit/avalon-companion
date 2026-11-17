@@ -117,7 +117,9 @@ class MatchDetailSheet extends StatelessWidget {
               const SizedBox(height: Space.xs),
               if (summary.questResults.isEmpty)
                 Text(
-                  'No quest was resolved before the match ended.',
+                  summary.isInProgress
+                      ? 'No quest has resolved yet.'
+                      : 'No quest was resolved before the match ended.',
                   style: AppText.body,
                 )
               else

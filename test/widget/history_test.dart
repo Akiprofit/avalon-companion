@@ -90,6 +90,34 @@ void main() {
     expect(find.textContaining('Still running'), findsOneWidget);
   });
 
+  testWidgets('an unfinished record says no quest has resolved yet', (
+    tester,
+  ) async {
+    final store = FakeMatchStore()
+      ..summaries = [
+        summaryOf(
+          id: 11,
+          status: MatchStatus.inProgress,
+          winner: null,
+          winReason: null,
+          questResults: const [],
+          durationSeconds: null,
+        ),
+      ];
+
+    await pumpHistory(tester, store);
+    await tester.tap(find.byKey(const Key('history_match_11')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Still running'), findsOneWidget);
+    expect(find.text('No quest has resolved yet.'), findsOneWidget);
+    expect(
+      find.text('No quest was resolved before the match ended.'),
+      findsNothing,
+      reason: 'the match has not ended',
+    );
+  });
+
   testWidgets('history never shows a player name', (tester) async {
     final store = FakeMatchStore()..summaries = [summaryOf()];
     await pumpHistory(tester, store);

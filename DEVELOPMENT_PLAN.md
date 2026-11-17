@@ -951,6 +951,34 @@ Gate evidence:
 | Phone and tablet | no layout rule changed: the same screens, still in the 600 dp column on a tablet |
 
 
+## Device pass — 1.3.1 on a Galaxy A36
+
+1.3.0 was installed with `adb install -r` over the 1.1.0 build already on the phone. The upgrade
+kept the stored match and its SQLite file. The release build was then driven by hand through
+home → night → draw → team → vote → quest → day.
+
+What the device showed, and what 1.3.1 changes:
+
+- **The night title was truncated.** With **End night** in the app bar, *NIGHT NARRATION* rendered
+  as "NIGHT NARRAT…". The title is now **THE NIGHT**, which fits beside the action at 360 dp.
+- **An unfinished record claimed the match ended.** The history detail sheet said "No quest was
+  resolved before the match ended." for a match still in progress. It now says "No quest has
+  resolved yet."; finished and abandoned matches keep the original line.
+
+Everything else behaved as designed on the phone: the home hero restored the live match, the
+two-column roster and merged quest board laid out cleanly, the discussion ring counted down from
+5:00 and paused on tap, seat voting enabled *Resolve* only after all five seats, and the board
+showed **Quest 1 · won, Seats 1, 2** after the quest resolved.
+
+| Check | Result |
+| --- | --- |
+| `flutter test` | 291 tests pass (290 + 1) |
+| Release APK | `versionName` 1.3.1, `versionCode` 20, same signer as 1.0.0–1.3.0 |
+| Signature | `CN=Avalon Companion`, APK SHA-256 `4B64481B…CDE41105` |
+| GitHub release | `v1.3.1` published with `Avalon-Companion-1.3.1.apk`; digest matches the local build |
+| Install | `adb install -r` over 1.1.0 succeeded and kept stored data |
+| Re-check | title and record wording confirmed on the phone after the fix |
+
 ## Next phase
 
 No phase is scheduled: **1.3.0** is the released build, signed and published, with 1.0.0–1.2.0

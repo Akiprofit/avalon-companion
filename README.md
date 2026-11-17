@@ -12,7 +12,7 @@
   <a href="https://github.com/Akiprofit/avalon-companion/releases/latest">
     <img alt="Download the Android APK" src="https://img.shields.io/badge/Download-Android%20APK-C5A15B?style=for-the-badge&logo=android&logoColor=0B0E14" />
   </a>
-  <img alt="Version 1.3.0" src="https://img.shields.io/badge/version-1.3.0-0B0E14?style=for-the-badge" />
+  <img alt="Version 1.3.1" src="https://img.shields.io/badge/version-1.3.1-0B0E14?style=for-the-badge" />
   <img alt="Offline first" src="https://img.shields.io/badge/offline-first-3D9B72?style=for-the-badge" />
 </p>
 
@@ -43,7 +43,7 @@ The latest signed Android APK is on the
 
 ### Install on Android
 
-1. Download `Avalon-Companion-1.3.0.apk` from the latest release.
+1. Download `Avalon-Companion-1.3.1.apk` from the latest release.
 2. Open the downloaded APK.
 3. Allow **Install unknown apps** for the browser or file manager you used.
 4. Tap **Install**.
@@ -288,6 +288,9 @@ docs/icon.png          the app icon used by this README
 
 ## Status
 
+**v1.3.1** — Device-pass fixes. The night title fits beside **End night**, and
+an unfinished match's record no longer says the match ended.
+
 **v1.3.0** — UI/UX pass. Nine table-side changes: vote by seat,
 the discussion ring, separated night controls, one quest board, a two-column
 roster grid, a live-match home hero, a history detail sheet, **Use the last
@@ -310,10 +313,10 @@ wheel and King selection, the discussion timer, team proposal and vote, quest
 resolution and the 4th-quest two-fail rule, assassination outcome, results,
 history, resume, settings and the MC PIN.
 
-Every phase is verified by `flutter analyze`, **290 unit and widget tests**, and
+Every phase is verified by `flutter analyze`, **291 unit and widget tests**, and
 three on-device integration tests on a Galaxy A36 (Android 17) through signed
-1.0.0, 1.1.0 and 1.2.0 builds; 1.3.0 is covered by the same automated gates.
-Tablet sizes are covered by widget tests only.
+1.0.0, 1.1.0 and 1.2.0 builds; 1.3.0 and 1.3.1 were installed and driven by
+hand on the same phone. Tablet sizes are covered by widget tests only.
 See [`DEVELOPMENT_PLAN.md`](DEVELOPMENT_PLAN.md) for the phase table,
 [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md) for the visual system and
 [`CHANGELOG.md`](CHANGELOG.md) for what has shipped.

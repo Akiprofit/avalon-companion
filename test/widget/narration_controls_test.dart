@@ -61,6 +61,11 @@ void main() {
       lessThan(next.dy),
       reason: 'language is above the transport',
     );
+    expect(
+      find.text('THE NIGHT'),
+      findsOneWidget,
+      reason: 'the shorter title fits beside the End night action',
+    );
   });
 
   testWidgets('ending the night asks first, then opens the draw', (

@@ -151,7 +151,7 @@ class _NarrationScreenState extends ConsumerState<NarrationScreen>
       padded: false,
       backgroundImage: Artwork.narration,
       appBar: AppBar(
-        title: const Text('NIGHT NARRATION'),
+        title: const Text('THE NIGHT'),
         leading: IconButton(
           key: const Key('narration_exit'),
           icon: const Icon(Icons.arrow_back),
