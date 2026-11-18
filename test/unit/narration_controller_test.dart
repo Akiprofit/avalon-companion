@@ -4,11 +4,14 @@ import 'package:avalon_companion/game_engine/models/character.dart';
 import 'package:avalon_companion/game_engine/models/composition.dart';
 import 'package:avalon_companion/game_engine/rules/avalon_tables.dart';
 import 'package:avalon_companion/narration_engine/controllers/narration_controller.dart';
+import 'package:avalon_companion/narration_engine/controllers/voice_packs_controller.dart';
 import 'package:avalon_companion/narration_engine/models/narration_instruction.dart';
+import 'package:avalon_companion/narration_engine/models/voice_pack.dart';
 import 'package:avalon_companion/narration_engine/services/clip_provider.dart';
 import 'package:avalon_companion/narration_engine/services/clip_service.dart';
 import 'package:avalon_companion/narration_engine/services/tts_provider.dart';
 import 'package:avalon_companion/narration_engine/services/tts_service.dart';
+import 'package:avalon_companion/narration_engine/services/voice_pack_catalogue.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -148,6 +151,19 @@ abstract final class AndroidLocales {
   static const filipino = 'fil-PH';
 }
 
+/// A fixed voice list, so a test can choose a pack without reading the bundle.
+class FakeVoicePacksController extends VoicePacksController {
+  FakeVoicePacksController(this._state);
+
+  final VoicePacksState _state;
+
+  @override
+  VoicePacksState build() => _state;
+
+  @override
+  Future<void> refresh() async {}
+}
+
 Composition compositionFor(int playerCount) {
   final defaults = AvalonTables.defaultComposition(playerCount);
   final counts = <Character, int>{};
@@ -178,6 +194,7 @@ void main() {
     bool available = true,
     Set<String>? languages,
     FakeClipService? recorded,
+    VoicePacksState? voices,
   }) {
     tts = FakeTtsService(available: available, languages: languages);
     // Recorded narration is off unless a test asks for it, so these tests keep
@@ -187,6 +204,8 @@ void main() {
       overrides: [
         ttsServiceProvider.overrideWithValue(tts),
         clipServiceProvider.overrideWithValue(clips),
+        if (voices != null)
+          voicePacksProvider.overrideWith(() => FakeVoicePacksController(voices)),
       ],
     );
     addTearDown(container.dispose);
@@ -693,6 +712,77 @@ void main() {
       clips.completeClip();
       await settle();
       unawaited(controller().pause());
+      await settle();
+    });
+  });
+
+  group('the chosen narrator voice', () {
+    // A half-recorded voice: one line in English, nothing in Filipino.
+    const dahlia = VoicePack(
+      id: 'dahlia',
+      name: 'Voice of Dahlia',
+      root: '/data/voices/dahlia',
+      clips: {'en': {'night.close_eyes'}},
+    );
+
+    VoicePacksState voices() => VoicePacksState(
+      packs: [VoicePackCatalogue.classic, dahlia],
+      loaded: true,
+    );
+
+    test('plays the chosen voice where it has a recording', () async {
+      setUpController(recorded: FakeClipService(), voices: voices());
+      await controller().setVoicePack('dahlia');
+      await controller().prepare();
+      await settle();
+
+      unawaited(controller().replay());
+      await settle();
+
+      expect(clips.played, ['/data/voices/dahlia/en/night.close_eyes.mp3']);
+      expect(tts.spoken, isEmpty, reason: 'the voice replaces the phone');
+
+      clips.completeClip();
+      await settle();
+    });
+
+    test('a line the voice did not record falls back to the phone', () async {
+      setUpController(recorded: FakeClipService(), voices: voices());
+      await controller().setVoicePack('dahlia');
+      await controller().prepare();
+      await settle();
+
+      // The second line is not in this pack.
+      unawaited(controller().next());
+      await settle();
+      unawaited(controller().replay());
+      await settle();
+
+      expect(clips.played, isEmpty, reason: 'nothing was recorded for it');
+      expect(tts.spoken.single, state().current!.english);
+
+      tts.completeSpeech();
+      await settle();
+    });
+
+    test('a voice missing from this device falls back to the shipped one',
+        () async {
+      setUpController(recorded: FakeClipService(), voices: voices());
+      await controller().setVoicePack('voice-that-was-deleted');
+      await controller().prepare();
+      await settle();
+
+      unawaited(controller().replay());
+      await settle();
+
+      expect(
+        clips.played.single,
+        'assets/audio/narration/en/night.close_eyes.mp3',
+        reason: 'an unknown pack never means silence',
+      );
+      expect(tts.spoken, isEmpty);
+
+      clips.completeClip();
       await settle();
     });
   });

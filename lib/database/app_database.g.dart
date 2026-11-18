@@ -2976,6 +2976,17 @@ class $SettingsTable extends Settings
     ),
     defaultValue: const Constant(true),
   );
+  static const VerificationMeta _voicePackIdMeta = const VerificationMeta(
+    'voicePackId',
+  );
+  @override
+  late final GeneratedColumn<String> voicePackId = GeneratedColumn<String>(
+    'voice_pack_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -2997,6 +3008,7 @@ class $SettingsTable extends Settings
     kingSelection,
     narratorExtraDelayMs,
     teamVoteEnabled,
+    voicePackId,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -3165,6 +3177,15 @@ class $SettingsTable extends Settings
         ),
       );
     }
+    if (data.containsKey('voice_pack_id')) {
+      context.handle(
+        _voicePackIdMeta,
+        voicePackId.isAcceptableOrUnknown(
+          data['voice_pack_id']!,
+          _voicePackIdMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -3250,6 +3271,10 @@ class $SettingsTable extends Settings
         DriftSqlType.bool,
         data['${effectivePrefix}team_vote_enabled'],
       )!,
+      voicePackId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}voice_pack_id'],
+      ),
     );
   }
 
@@ -3292,6 +3317,10 @@ class SettingsRecord extends DataClass implements Insertable<SettingsRecord> {
   /// Whether the table votes on every proposed team. Off is a house rule: the
   /// chosen team goes straight to the quest and rejections never count.
   final bool teamVoteEnabled;
+
+  /// The narrator voice the MC chose. Null means the recordings that ship with
+  /// the app, so an untouched install needs no row value.
+  final String? voicePackId;
   const SettingsRecord({
     required this.id,
     required this.narrationLanguage,
@@ -3312,6 +3341,7 @@ class SettingsRecord extends DataClass implements Insertable<SettingsRecord> {
     required this.kingSelection,
     required this.narratorExtraDelayMs,
     required this.teamVoteEnabled,
+    this.voicePackId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -3339,6 +3369,9 @@ class SettingsRecord extends DataClass implements Insertable<SettingsRecord> {
     map['king_selection'] = Variable<String>(kingSelection);
     map['narrator_extra_delay_ms'] = Variable<int>(narratorExtraDelayMs);
     map['team_vote_enabled'] = Variable<bool>(teamVoteEnabled);
+    if (!nullToAbsent || voicePackId != null) {
+      map['voice_pack_id'] = Variable<String>(voicePackId);
+    }
     return map;
   }
 
@@ -3367,6 +3400,9 @@ class SettingsRecord extends DataClass implements Insertable<SettingsRecord> {
       kingSelection: Value(kingSelection),
       narratorExtraDelayMs: Value(narratorExtraDelayMs),
       teamVoteEnabled: Value(teamVoteEnabled),
+      voicePackId: voicePackId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(voicePackId),
     );
   }
 
@@ -3399,6 +3435,7 @@ class SettingsRecord extends DataClass implements Insertable<SettingsRecord> {
         json['narratorExtraDelayMs'],
       ),
       teamVoteEnabled: serializer.fromJson<bool>(json['teamVoteEnabled']),
+      voicePackId: serializer.fromJson<String?>(json['voicePackId']),
     );
   }
   @override
@@ -3424,6 +3461,7 @@ class SettingsRecord extends DataClass implements Insertable<SettingsRecord> {
       'kingSelection': serializer.toJson<String>(kingSelection),
       'narratorExtraDelayMs': serializer.toJson<int>(narratorExtraDelayMs),
       'teamVoteEnabled': serializer.toJson<bool>(teamVoteEnabled),
+      'voicePackId': serializer.toJson<String?>(voicePackId),
     };
   }
 
@@ -3447,6 +3485,7 @@ class SettingsRecord extends DataClass implements Insertable<SettingsRecord> {
     String? kingSelection,
     int? narratorExtraDelayMs,
     bool? teamVoteEnabled,
+    Value<String?> voicePackId = const Value.absent(),
   }) => SettingsRecord(
     id: id ?? this.id,
     narrationLanguage: narrationLanguage ?? this.narrationLanguage,
@@ -3467,6 +3506,7 @@ class SettingsRecord extends DataClass implements Insertable<SettingsRecord> {
     kingSelection: kingSelection ?? this.kingSelection,
     narratorExtraDelayMs: narratorExtraDelayMs ?? this.narratorExtraDelayMs,
     teamVoteEnabled: teamVoteEnabled ?? this.teamVoteEnabled,
+    voicePackId: voicePackId.present ? voicePackId.value : this.voicePackId,
   );
   SettingsRecord copyWithCompanion(SettingsCompanion data) {
     return SettingsRecord(
@@ -3517,6 +3557,9 @@ class SettingsRecord extends DataClass implements Insertable<SettingsRecord> {
       teamVoteEnabled: data.teamVoteEnabled.present
           ? data.teamVoteEnabled.value
           : this.teamVoteEnabled,
+      voicePackId: data.voicePackId.present
+          ? data.voicePackId.value
+          : this.voicePackId,
     );
   }
 
@@ -3541,7 +3584,8 @@ class SettingsRecord extends DataClass implements Insertable<SettingsRecord> {
           ..write('mcPinHash: $mcPinHash, ')
           ..write('kingSelection: $kingSelection, ')
           ..write('narratorExtraDelayMs: $narratorExtraDelayMs, ')
-          ..write('teamVoteEnabled: $teamVoteEnabled')
+          ..write('teamVoteEnabled: $teamVoteEnabled, ')
+          ..write('voicePackId: $voicePackId')
           ..write(')'))
         .toString();
   }
@@ -3567,6 +3611,7 @@ class SettingsRecord extends DataClass implements Insertable<SettingsRecord> {
     kingSelection,
     narratorExtraDelayMs,
     teamVoteEnabled,
+    voicePackId,
   );
   @override
   bool operator ==(Object other) =>
@@ -3590,7 +3635,8 @@ class SettingsRecord extends DataClass implements Insertable<SettingsRecord> {
           other.mcPinHash == this.mcPinHash &&
           other.kingSelection == this.kingSelection &&
           other.narratorExtraDelayMs == this.narratorExtraDelayMs &&
-          other.teamVoteEnabled == this.teamVoteEnabled);
+          other.teamVoteEnabled == this.teamVoteEnabled &&
+          other.voicePackId == this.voicePackId);
 }
 
 class SettingsCompanion extends UpdateCompanion<SettingsRecord> {
@@ -3613,6 +3659,7 @@ class SettingsCompanion extends UpdateCompanion<SettingsRecord> {
   final Value<String> kingSelection;
   final Value<int> narratorExtraDelayMs;
   final Value<bool> teamVoteEnabled;
+  final Value<String?> voicePackId;
   final Value<int> rowid;
   const SettingsCompanion({
     this.id = const Value.absent(),
@@ -3634,6 +3681,7 @@ class SettingsCompanion extends UpdateCompanion<SettingsRecord> {
     this.kingSelection = const Value.absent(),
     this.narratorExtraDelayMs = const Value.absent(),
     this.teamVoteEnabled = const Value.absent(),
+    this.voicePackId = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   SettingsCompanion.insert({
@@ -3656,6 +3704,7 @@ class SettingsCompanion extends UpdateCompanion<SettingsRecord> {
     this.kingSelection = const Value.absent(),
     this.narratorExtraDelayMs = const Value.absent(),
     this.teamVoteEnabled = const Value.absent(),
+    this.voicePackId = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id);
   static Insertable<SettingsRecord> custom({
@@ -3678,6 +3727,7 @@ class SettingsCompanion extends UpdateCompanion<SettingsRecord> {
     Expression<String>? kingSelection,
     Expression<int>? narratorExtraDelayMs,
     Expression<bool>? teamVoteEnabled,
+    Expression<String>? voicePackId,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -3703,6 +3753,7 @@ class SettingsCompanion extends UpdateCompanion<SettingsRecord> {
       if (narratorExtraDelayMs != null)
         'narrator_extra_delay_ms': narratorExtraDelayMs,
       if (teamVoteEnabled != null) 'team_vote_enabled': teamVoteEnabled,
+      if (voicePackId != null) 'voice_pack_id': voicePackId,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -3727,6 +3778,7 @@ class SettingsCompanion extends UpdateCompanion<SettingsRecord> {
     Value<String>? kingSelection,
     Value<int>? narratorExtraDelayMs,
     Value<bool>? teamVoteEnabled,
+    Value<String?>? voicePackId,
     Value<int>? rowid,
   }) {
     return SettingsCompanion(
@@ -3749,6 +3801,7 @@ class SettingsCompanion extends UpdateCompanion<SettingsRecord> {
       kingSelection: kingSelection ?? this.kingSelection,
       narratorExtraDelayMs: narratorExtraDelayMs ?? this.narratorExtraDelayMs,
       teamVoteEnabled: teamVoteEnabled ?? this.teamVoteEnabled,
+      voicePackId: voicePackId ?? this.voicePackId,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -3815,6 +3868,9 @@ class SettingsCompanion extends UpdateCompanion<SettingsRecord> {
     if (teamVoteEnabled.present) {
       map['team_vote_enabled'] = Variable<bool>(teamVoteEnabled.value);
     }
+    if (voicePackId.present) {
+      map['voice_pack_id'] = Variable<String>(voicePackId.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -3843,6 +3899,464 @@ class SettingsCompanion extends UpdateCompanion<SettingsRecord> {
           ..write('kingSelection: $kingSelection, ')
           ..write('narratorExtraDelayMs: $narratorExtraDelayMs, ')
           ..write('teamVoteEnabled: $teamVoteEnabled, ')
+          ..write('voicePackId: $voicePackId, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $VoicePacksTable extends VoicePacks
+    with TableInfo<$VoicePacksTable, VoicePackRecord> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $VoicePacksTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _clipsMeta = const VerificationMeta('clips');
+  @override
+  late final GeneratedColumn<String> clips = GeneratedColumn<String>(
+    'clips',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('{}'),
+  );
+  static const VerificationMeta _builtInMeta = const VerificationMeta(
+    'builtIn',
+  );
+  @override
+  late final GeneratedColumn<bool> builtIn = GeneratedColumn<bool>(
+    'built_in',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("built_in" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _hiddenMeta = const VerificationMeta('hidden');
+  @override
+  late final GeneratedColumn<bool> hidden = GeneratedColumn<bool>(
+    'hidden',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("hidden" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _rootMeta = const VerificationMeta('root');
+  @override
+  late final GeneratedColumn<String> root = GeneratedColumn<String>(
+    'root',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<int> createdAt = GeneratedColumn<int>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    clips,
+    builtIn,
+    hidden,
+    root,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'voice_packs';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<VoicePackRecord> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('clips')) {
+      context.handle(
+        _clipsMeta,
+        clips.isAcceptableOrUnknown(data['clips']!, _clipsMeta),
+      );
+    }
+    if (data.containsKey('built_in')) {
+      context.handle(
+        _builtInMeta,
+        builtIn.isAcceptableOrUnknown(data['built_in']!, _builtInMeta),
+      );
+    }
+    if (data.containsKey('hidden')) {
+      context.handle(
+        _hiddenMeta,
+        hidden.isAcceptableOrUnknown(data['hidden']!, _hiddenMeta),
+      );
+    }
+    if (data.containsKey('root')) {
+      context.handle(
+        _rootMeta,
+        root.isAcceptableOrUnknown(data['root']!, _rootMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  VoicePackRecord map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return VoicePackRecord(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      clips: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}clips'],
+      )!,
+      builtIn: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}built_in'],
+      )!,
+      hidden: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}hidden'],
+      )!,
+      root: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}root'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $VoicePacksTable createAlias(String alias) {
+    return $VoicePacksTable(attachedDatabase, alias);
+  }
+}
+
+class VoicePackRecord extends DataClass implements Insertable<VoicePackRecord> {
+  final String id;
+
+  /// Display name. The folder stays [id] whatever this says.
+  final String name;
+
+  /// Recorded line ids per language folder, as JSON: `{"en":[…],"fil":[…]}`.
+  final String clips;
+
+  /// True for the recordings inside the APK: they can be hidden, not deleted.
+  final bool builtIn;
+
+  /// Hidden voices stay playable for a match in progress but leave the list.
+  final bool hidden;
+
+  /// Asset folder for a bundled voice, absolute directory for an imported one.
+  final String root;
+
+  /// UTC milliseconds since epoch; orders imported voices in the list.
+  final int createdAt;
+  const VoicePackRecord({
+    required this.id,
+    required this.name,
+    required this.clips,
+    required this.builtIn,
+    required this.hidden,
+    required this.root,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    map['clips'] = Variable<String>(clips);
+    map['built_in'] = Variable<bool>(builtIn);
+    map['hidden'] = Variable<bool>(hidden);
+    map['root'] = Variable<String>(root);
+    map['created_at'] = Variable<int>(createdAt);
+    return map;
+  }
+
+  VoicePacksCompanion toCompanion(bool nullToAbsent) {
+    return VoicePacksCompanion(
+      id: Value(id),
+      name: Value(name),
+      clips: Value(clips),
+      builtIn: Value(builtIn),
+      hidden: Value(hidden),
+      root: Value(root),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory VoicePackRecord.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return VoicePackRecord(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      clips: serializer.fromJson<String>(json['clips']),
+      builtIn: serializer.fromJson<bool>(json['builtIn']),
+      hidden: serializer.fromJson<bool>(json['hidden']),
+      root: serializer.fromJson<String>(json['root']),
+      createdAt: serializer.fromJson<int>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'clips': serializer.toJson<String>(clips),
+      'builtIn': serializer.toJson<bool>(builtIn),
+      'hidden': serializer.toJson<bool>(hidden),
+      'root': serializer.toJson<String>(root),
+      'createdAt': serializer.toJson<int>(createdAt),
+    };
+  }
+
+  VoicePackRecord copyWith({
+    String? id,
+    String? name,
+    String? clips,
+    bool? builtIn,
+    bool? hidden,
+    String? root,
+    int? createdAt,
+  }) => VoicePackRecord(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    clips: clips ?? this.clips,
+    builtIn: builtIn ?? this.builtIn,
+    hidden: hidden ?? this.hidden,
+    root: root ?? this.root,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  VoicePackRecord copyWithCompanion(VoicePacksCompanion data) {
+    return VoicePackRecord(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      clips: data.clips.present ? data.clips.value : this.clips,
+      builtIn: data.builtIn.present ? data.builtIn.value : this.builtIn,
+      hidden: data.hidden.present ? data.hidden.value : this.hidden,
+      root: data.root.present ? data.root.value : this.root,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('VoicePackRecord(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('clips: $clips, ')
+          ..write('builtIn: $builtIn, ')
+          ..write('hidden: $hidden, ')
+          ..write('root: $root, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, name, clips, builtIn, hidden, root, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is VoicePackRecord &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.clips == this.clips &&
+          other.builtIn == this.builtIn &&
+          other.hidden == this.hidden &&
+          other.root == this.root &&
+          other.createdAt == this.createdAt);
+}
+
+class VoicePacksCompanion extends UpdateCompanion<VoicePackRecord> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<String> clips;
+  final Value<bool> builtIn;
+  final Value<bool> hidden;
+  final Value<String> root;
+  final Value<int> createdAt;
+  final Value<int> rowid;
+  const VoicePacksCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.clips = const Value.absent(),
+    this.builtIn = const Value.absent(),
+    this.hidden = const Value.absent(),
+    this.root = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  VoicePacksCompanion.insert({
+    required String id,
+    required String name,
+    this.clips = const Value.absent(),
+    this.builtIn = const Value.absent(),
+    this.hidden = const Value.absent(),
+    this.root = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       name = Value(name);
+  static Insertable<VoicePackRecord> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<String>? clips,
+    Expression<bool>? builtIn,
+    Expression<bool>? hidden,
+    Expression<String>? root,
+    Expression<int>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (clips != null) 'clips': clips,
+      if (builtIn != null) 'built_in': builtIn,
+      if (hidden != null) 'hidden': hidden,
+      if (root != null) 'root': root,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  VoicePacksCompanion copyWith({
+    Value<String>? id,
+    Value<String>? name,
+    Value<String>? clips,
+    Value<bool>? builtIn,
+    Value<bool>? hidden,
+    Value<String>? root,
+    Value<int>? createdAt,
+    Value<int>? rowid,
+  }) {
+    return VoicePacksCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      clips: clips ?? this.clips,
+      builtIn: builtIn ?? this.builtIn,
+      hidden: hidden ?? this.hidden,
+      root: root ?? this.root,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (clips.present) {
+      map['clips'] = Variable<String>(clips.value);
+    }
+    if (builtIn.present) {
+      map['built_in'] = Variable<bool>(builtIn.value);
+    }
+    if (hidden.present) {
+      map['hidden'] = Variable<bool>(hidden.value);
+    }
+    if (root.present) {
+      map['root'] = Variable<String>(root.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<int>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('VoicePacksCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('clips: $clips, ')
+          ..write('builtIn: $builtIn, ')
+          ..write('hidden: $hidden, ')
+          ..write('root: $root, ')
+          ..write('createdAt: $createdAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -3858,6 +4372,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $TeamProposalsTable teamProposals = $TeamProposalsTable(this);
   late final $GameEventsTable gameEvents = $GameEventsTable(this);
   late final $SettingsTable settings = $SettingsTable(this);
+  late final $VoicePacksTable voicePacks = $VoicePacksTable(this);
   late final Index playersGameId = Index(
     'players_game_id',
     'CREATE INDEX players_game_id ON players (game_id)',
@@ -3897,6 +4412,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     teamProposals,
     gameEvents,
     settings,
+    voicePacks,
     playersGameId,
     playersSeat,
     questsGameId,
@@ -6132,6 +6648,7 @@ typedef $$SettingsTableCreateCompanionBuilder = SettingsCompanion Function({
   Value<String> kingSelection,
   Value<int> narratorExtraDelayMs,
   Value<bool> teamVoteEnabled,
+  Value<String?> voicePackId,
   Value<int> rowid,
 });
 typedef $$SettingsTableUpdateCompanionBuilder = SettingsCompanion Function({
@@ -6154,6 +6671,7 @@ typedef $$SettingsTableUpdateCompanionBuilder = SettingsCompanion Function({
   Value<String> kingSelection,
   Value<int> narratorExtraDelayMs,
   Value<bool> teamVoteEnabled,
+  Value<String?> voicePackId,
   Value<int> rowid,
 });
 
@@ -6258,6 +6776,11 @@ class $$SettingsTableFilterComposer
 
   ColumnFilters<bool> get teamVoteEnabled => $composableBuilder(
     column: $table.teamVoteEnabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get voicePackId => $composableBuilder(
+    column: $table.voicePackId,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -6365,6 +6888,11 @@ class $$SettingsTableOrderingComposer
     column: $table.teamVoteEnabled,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get voicePackId => $composableBuilder(
+    column: $table.voicePackId,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$SettingsTableAnnotationComposer
@@ -6460,6 +6988,11 @@ class $$SettingsTableAnnotationComposer
     column: $table.teamVoteEnabled,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get voicePackId => $composableBuilder(
+    column: $table.voicePackId,
+    builder: (column) => column,
+  );
 }
 
 class $$SettingsTableTableManager
@@ -6512,6 +7045,7 @@ class $$SettingsTableTableManager
                 Value<String> kingSelection = const Value.absent(),
                 Value<int> narratorExtraDelayMs = const Value.absent(),
                 Value<bool> teamVoteEnabled = const Value.absent(),
+                Value<String?> voicePackId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SettingsCompanion(
                 id: id,
@@ -6533,6 +7067,7 @@ class $$SettingsTableTableManager
                 kingSelection: kingSelection,
                 narratorExtraDelayMs: narratorExtraDelayMs,
                 teamVoteEnabled: teamVoteEnabled,
+                voicePackId: voicePackId,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -6556,6 +7091,7 @@ class $$SettingsTableTableManager
                 Value<String> kingSelection = const Value.absent(),
                 Value<int> narratorExtraDelayMs = const Value.absent(),
                 Value<bool> teamVoteEnabled = const Value.absent(),
+                Value<String?> voicePackId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SettingsCompanion.insert(
                 id: id,
@@ -6577,6 +7113,7 @@ class $$SettingsTableTableManager
                 kingSelection: kingSelection,
                 narratorExtraDelayMs: narratorExtraDelayMs,
                 teamVoteEnabled: teamVoteEnabled,
+                voicePackId: voicePackId,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -6613,6 +7150,251 @@ typedef $$SettingsTableProcessedTableManager =
       SettingsRecord,
       PrefetchHooks Function()
     >;
+typedef $$VoicePacksTableCreateCompanionBuilder = VoicePacksCompanion Function({
+  required String id,
+  required String name,
+  Value<String> clips,
+  Value<bool> builtIn,
+  Value<bool> hidden,
+  Value<String> root,
+  Value<int> createdAt,
+  Value<int> rowid,
+});
+typedef $$VoicePacksTableUpdateCompanionBuilder = VoicePacksCompanion Function({
+  Value<String> id,
+  Value<String> name,
+  Value<String> clips,
+  Value<bool> builtIn,
+  Value<bool> hidden,
+  Value<String> root,
+  Value<int> createdAt,
+  Value<int> rowid,
+});
+
+class $$VoicePacksTableFilterComposer
+    extends Composer<_$AppDatabase, $VoicePacksTable> {
+  $$VoicePacksTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get clips => $composableBuilder(
+    column: $table.clips,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get builtIn => $composableBuilder(
+    column: $table.builtIn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get hidden => $composableBuilder(
+    column: $table.hidden,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get root => $composableBuilder(
+    column: $table.root,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$VoicePacksTableOrderingComposer
+    extends Composer<_$AppDatabase, $VoicePacksTable> {
+  $$VoicePacksTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get clips => $composableBuilder(
+    column: $table.clips,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get builtIn => $composableBuilder(
+    column: $table.builtIn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get hidden => $composableBuilder(
+    column: $table.hidden,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get root => $composableBuilder(
+    column: $table.root,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$VoicePacksTableAnnotationComposer
+    extends Composer<_$AppDatabase, $VoicePacksTable> {
+  $$VoicePacksTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get clips =>
+      $composableBuilder(column: $table.clips, builder: (column) => column);
+
+  GeneratedColumn<bool> get builtIn =>
+      $composableBuilder(column: $table.builtIn, builder: (column) => column);
+
+  GeneratedColumn<bool> get hidden =>
+      $composableBuilder(column: $table.hidden, builder: (column) => column);
+
+  GeneratedColumn<String> get root =>
+      $composableBuilder(column: $table.root, builder: (column) => column);
+
+  GeneratedColumn<int> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$VoicePacksTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $VoicePacksTable,
+          VoicePackRecord,
+          $$VoicePacksTableFilterComposer,
+          $$VoicePacksTableOrderingComposer,
+          $$VoicePacksTableAnnotationComposer,
+          $$VoicePacksTableCreateCompanionBuilder,
+          $$VoicePacksTableUpdateCompanionBuilder,
+          (
+            VoicePackRecord,
+            BaseReferences<_$AppDatabase, $VoicePacksTable, VoicePackRecord>,
+          ),
+          VoicePackRecord,
+          PrefetchHooks Function()
+        > {
+  $$VoicePacksTableTableManager(_$AppDatabase db, $VoicePacksTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$VoicePacksTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$VoicePacksTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$VoicePacksTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> clips = const Value.absent(),
+                Value<bool> builtIn = const Value.absent(),
+                Value<bool> hidden = const Value.absent(),
+                Value<String> root = const Value.absent(),
+                Value<int> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => VoicePacksCompanion(
+                id: id,
+                name: name,
+                clips: clips,
+                builtIn: builtIn,
+                hidden: hidden,
+                root: root,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String name,
+                Value<String> clips = const Value.absent(),
+                Value<bool> builtIn = const Value.absent(),
+                Value<bool> hidden = const Value.absent(),
+                Value<String> root = const Value.absent(),
+                Value<int> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => VoicePacksCompanion.insert(
+                id: id,
+                name: name,
+                clips: clips,
+                builtIn: builtIn,
+                hidden: hidden,
+                root: root,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$VoicePacksTable, VoicePackRecord>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $VoicePacksTable,
+                    VoicePackRecord
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$VoicePacksTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $VoicePacksTable,
+      VoicePackRecord,
+      $$VoicePacksTableFilterComposer,
+      $$VoicePacksTableOrderingComposer,
+      $$VoicePacksTableAnnotationComposer,
+      $$VoicePacksTableCreateCompanionBuilder,
+      $$VoicePacksTableUpdateCompanionBuilder,
+      (
+        VoicePackRecord,
+        BaseReferences<_$AppDatabase, $VoicePacksTable, VoicePackRecord>,
+      ),
+      VoicePackRecord,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -6629,4 +7411,6 @@ class $AppDatabaseManager {
       $$GameEventsTableTableManager(_db, _db.gameEvents);
   $$SettingsTableTableManager get settings =>
       $$SettingsTableTableManager(_db, _db.settings);
+  $$VoicePacksTableTableManager get voicePacks =>
+      $$VoicePacksTableTableManager(_db, _db.voicePacks);
 }

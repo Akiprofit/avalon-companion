@@ -1,7 +1,11 @@
 package com.avalon.companion
 
+import android.app.Activity
+import android.content.Intent
 import android.media.MediaPlayer
+import android.net.Uri
 import android.os.Bundle
+import android.provider.OpenableColumns
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import android.speech.tts.Voice
@@ -10,6 +14,7 @@ import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
+import java.io.File
 import java.util.Locale
 import java.util.UUID
 
@@ -27,6 +32,13 @@ class MainActivity : FlutterActivity() {
         const val CHANNEL = "com.avalon.companion/tts"
         const val HOST_CHANNEL = "com.avalon.companion/host"
         const val CLIP_CHANNEL = "com.avalon.companion/clips"
+        const val VOICE_CHANNEL = "com.avalon.companion/voices"
+
+        /** Request code for picking a voice zip. */
+        const val PICK_ZIP_REQUEST = 4211
+
+        /** Imported voices are unpacked here, next to the app's own storage. */
+        const val VOICES_DIR = "voices"
 
         /** The Royal Chronicler's default: British English. */
         const val DEFAULT_LOCALE = "en-GB"
@@ -48,6 +60,9 @@ class MainActivity : FlutterActivity() {
 
     private var clipChannel: MethodChannel? = null
     private var clipPlayer: MediaPlayer? = null
+
+    private var voiceChannel: MethodChannel? = null
+    private var pendingPick: MethodChannel.Result? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -85,12 +100,103 @@ class MainActivity : FlutterActivity() {
                 else -> result.notImplemented()
             }
         }
+
+        // Voice packs: where imported voices live, and the system picker that
+        // hands the app a zip. The file is copied into the cache first, so the
+        // import works whatever the phone's storage provider is.
+        val voices = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, VOICE_CHANNEL)
+        voiceChannel = voices
+        voices.setMethodCallHandler { call, result ->
+            when (call.method) {
+                "directory" -> result.success(voicesDirectory().absolutePath)
+                "pickZip" -> pickZip(result)
+                else -> result.notImplemented()
+            }
+        }
+    }
+
+    /** `<app files>/voices`: the only place an imported voice is read from. */
+    private fun voicesDirectory(): File = File(filesDir, VOICES_DIR).apply { mkdirs() }
+
+    /**
+     * Opens the system file browser for a zip.
+     *
+     * The picker returns a content URI, which is not a path the player can use,
+     * so the file is copied into the app cache and that path is handed back.
+     * The Dart side deletes the copy once the pack is unpacked.
+     */
+    private fun pickZip(result: MethodChannel.Result) {
+        if (pendingPick != null) {
+            result.success(null)
+            return
+        }
+        pendingPick = result
+        try {
+            val intent =
+                Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                    // Zip mime types are unreliable across providers, so the
+                    // picker is opened wide and the archive is validated after.
+                    type = "*/*"
+                }
+            startActivityForResult(intent, PICK_ZIP_REQUEST)
+        } catch (_: Exception) {
+            pendingPick = null
+            result.success(null)
+        }
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (requestCode == PICK_ZIP_REQUEST) {
+            val pending = pendingPick
+            pendingPick = null
+            val uri = data?.data
+            if (resultCode != Activity.RESULT_OK || uri == null) {
+                pending?.success(null)
+                return
+            }
+            pending?.success(copyToCache(uri))
+            return
+        }
+        super.onActivityResult(requestCode, resultCode, data)
+    }
+
+    /** Copies the chosen document into the cache and returns its absolute path. */
+    private fun copyToCache(uri: Uri): String? {
+        return try {
+            val name = displayName(uri) ?: "voice.zip"
+            val safe = name.replace(Regex("[^A-Za-z0-9._-]"), "_").takeLast(80)
+            val target = File(cacheDir, "import-${System.currentTimeMillis()}-$safe")
+            contentResolver.openInputStream(uri)?.use { input ->
+                target.outputStream().use { output -> input.copyTo(output) }
+            } ?: return null
+            if (target.length() > 0) target.absolutePath else null
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private fun displayName(uri: Uri): String? {
+        return try {
+            contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
+                ?.use { cursor ->
+                    if (!cursor.moveToFirst()) return null
+                    val index = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                    if (index < 0) null else cursor.getString(index)
+                }
+        } catch (_: Exception) {
+            null
+        }
     }
 
     /**
-     * Plays one recorded narration line, read straight from the APK's asset
-     * bundle. Everything is local: the recording ships with the app. The line
-     * plays at the pace it was recorded; only the volume is adjustable.
+     * Plays one recorded narration line.
+     *
+     * A bundled line is read straight from the APK's asset bundle; an imported
+     * one is an ordinary file in app storage, addressed by its absolute path.
+     * Everything is local either way: nothing is streamed or downloaded. The
+     * line plays at the pace it was recorded; only the volume is adjustable.
      */
     private fun playClip(call: MethodCall, result: MethodChannel.Result) {
         val asset = call.argument<String>("asset")
@@ -103,14 +209,18 @@ class MainActivity : FlutterActivity() {
         runOnUiThread {
             stopClip()
             try {
-                val descriptor = assets.openFd(CLIP_ROOT + asset)
                 val player = MediaPlayer()
-                player.setDataSource(
-                    descriptor.fileDescriptor,
-                    descriptor.startOffset,
-                    descriptor.length,
-                )
-                descriptor.close()
+                if (asset.startsWith("/")) {
+                    player.setDataSource(asset)
+                } else {
+                    val descriptor = assets.openFd(CLIP_ROOT + asset)
+                    player.setDataSource(
+                        descriptor.fileDescriptor,
+                        descriptor.startOffset,
+                        descriptor.length,
+                    )
+                    descriptor.close()
+                }
                 player.setVolume(volume, volume)
                 player.setOnCompletionListener {
                     releaseClip(player)
@@ -414,6 +524,10 @@ class MainActivity : FlutterActivity() {
         stopClip()
         clipChannel?.setMethodCallHandler(null)
         clipChannel = null
+        pendingPick?.success(null)
+        pendingPick = null
+        voiceChannel?.setMethodCallHandler(null)
+        voiceChannel = null
         super.onDestroy()
     }
 }

@@ -22,6 +22,13 @@ class SettingsController extends Notifier<AppSettings> {
   void setLanguage(NarrationLanguage language) =>
       update((s) => s.copyWith(defaultLanguage: language));
 
+  /// Chooses the recorded narrator; null restores the shipped recordings.
+  void setVoicePack(String? packId) => update(
+    (s) => packId == null
+        ? s.copyWith(clearNarratorPack: true)
+        : s.copyWith(narratorPackId: packId),
+  );
+
   void setRate(double rate) =>
       update((s) => s.copyWith(narrationRate: rate.clamp(0.5, 1.5)));
 

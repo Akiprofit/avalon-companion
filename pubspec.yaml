@@ -2,7 +2,7 @@ name: avalon_companion
 description: "Offline Game Master companion for physical games of The Resistance: Avalon."
 publish_to: 'none'
 
-version: 1.4.0+21
+version: 1.5.0+22
 
 environment:
   sdk: ^3.14.0
@@ -19,6 +19,9 @@ dependencies:
   drift: ^2.35.4
   drift_flutter: ^0.3.1
   crypto: ^3.0.6
+  # Reading a narrator voice pack handed to the app as a .zip. Pure Dart: the
+  # archive is unpacked on the device, never uploaded.
+  archive: ^3.6.1
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -45,6 +48,10 @@ flutter:
     # Flutter asset folders are not recursive: each language folder is listed.
     - assets/audio/narration/en/
     - assets/audio/narration/fil/
+    # Extra bundled voices, one folder per voice. Each `<voice>/en/` and
+    # `<voice>/fil/` folder must be listed on its own line; see the README
+    # inside this directory.
+    - assets/audio/voices/
 
   fonts:
     - family: Cinzel

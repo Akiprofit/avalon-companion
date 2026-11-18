@@ -168,16 +168,63 @@ class Settings extends Table {
   /// chosen team goes straight to the quest and rejections never count.
   BoolColumn get teamVoteEnabled =>
       boolean().withDefault(const Constant(true))();
+
+  /// The narrator voice the MC chose. Null means the recordings that ship with
+  /// the app, so an untouched install needs no row value.
+  TextColumn get voicePackId => text().nullable()();
+}
+
+/// The narrator voices this device knows about — master plan PART 8.
+///
+/// A voice is a folder of one MP3 per narration line, in `en/` and `fil/`, plus
+/// the name the MC sees. Bundled voices are seeded here on first read so that
+/// renaming and hiding them is ordinary storage work; imported voices are rows
+/// whose [root] is a directory in app storage.
+///
+/// Nothing here touches the game: a match never depends on which voice is
+/// chosen, and every line falls back to text-to-speech on its own.
+@DataClassName('VoicePackRecord')
+class VoicePacks extends Table {
+  TextColumn get id => text()();
+
+  /// Display name. The folder stays [id] whatever this says.
+  TextColumn get name => text()();
+
+  /// Recorded line ids per language folder, as JSON: `{"en":[…],"fil":[…]}`.
+  TextColumn get clips => text().withDefault(const Constant('{}'))();
+
+  /// True for the recordings inside the APK: they can be hidden, not deleted.
+  BoolColumn get builtIn => boolean().withDefault(const Constant(false))();
+
+  /// Hidden voices stay playable for a match in progress but leave the list.
+  BoolColumn get hidden => boolean().withDefault(const Constant(false))();
+
+  /// Asset folder for a bundled voice, absolute directory for an imported one.
+  TextColumn get root => text().withDefault(const Constant(''))();
+
+  /// UTC milliseconds since epoch; orders imported voices in the list.
+  IntColumn get createdAt => integer().withDefault(const Constant(0))();
+
+  @override
+  Set<Column> get primaryKey => {id};
 }
 
 @DriftDatabase(
-  tables: [Games, Players, Quests, TeamProposals, GameEvents, Settings],
+  tables: [
+    Games,
+    Players,
+    Quests,
+    TeamProposals,
+    GameEvents,
+    Settings,
+    VoicePacks,
+  ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -204,6 +251,12 @@ class AppDatabase extends _$AppDatabase {
       // Older rows cannot recover teams they never stored, so they stay empty.
       if (from < 6) {
         await m.addColumn(games, games.questTeams);
+      }
+      // v7 added narrator voice packs and the chosen voice. Bundled voices are
+      // seeded from the app on first read, so nothing to backfill here.
+      if (from < 7) {
+        await m.createTable(voicePacks);
+        await m.addColumn(settings, settings.voicePackId);
       }
     },
     beforeOpen: (details) async {

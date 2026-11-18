@@ -24,6 +24,7 @@ import '../../narration_engine/services/tts_provider.dart';
 import '../../narration_engine/services/tts_service.dart';
 import 'pin_controller.dart';
 import 'settings_controller.dart';
+import 'voice_pack_picker.dart';
 
 /// Screen 15 — settings.
 ///
@@ -121,12 +122,15 @@ class SettingsScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'The night is read by the recorded narrator that ships with '
-                  'the app. The voice settings below shape the fallback used '
-                  'only when a recorded line cannot play.',
+                  'The night is read by one recorded voice. Import a voice as '
+                  'a .zip, rename it, or hide the narrator that ships with the '
+                  'app. The settings below shape the fallback used only when a '
+                  'recorded line cannot play.',
                   style: AppText.caption,
                 ),
-                const SizedBox(height: Space.sm),
+                const SizedBox(height: Space.xs),
+                const VoicePackSummaryTile(),
+                const Divider(height: Space.lg),
                 Text('Language', style: AppText.bodyStrong),
                 const SizedBox(height: Space.xs),
                 SegmentedButton<NarrationLanguage>(

@@ -12,7 +12,7 @@
   <a href="https://github.com/Akiprofit/avalon-companion/releases/latest">
     <img alt="Download the Android APK" src="https://img.shields.io/badge/Download-Android%20APK-C5A15B?style=for-the-badge&logo=android&logoColor=0B0E14" />
   </a>
-  <img alt="Version 1.4.0" src="https://img.shields.io/badge/version-1.4.0-0B0E14?style=for-the-badge" />
+  <img alt="Version 1.5.0" src="https://img.shields.io/badge/version-1.5.0-0B0E14?style=for-the-badge" />
   <img alt="Offline first" src="https://img.shields.io/badge/offline-first-3D9B72?style=for-the-badge" />
 </p>
 
@@ -43,7 +43,7 @@ The latest signed Android APK is on the
 
 ### Install on Android
 
-1. Download `Avalon-Companion-1.4.0.apk` from the latest release.
+1. Download `Avalon-Companion-1.5.0.apk` from the latest release.
 2. Open the downloaded APK.
 3. Allow **Install unknown apps** for the browser or file manager you used.
 4. Tap **Install**.
@@ -81,6 +81,12 @@ The latest signed Android APK is on the
   confirmation, so it cannot be hit while reaching for next
 - **Narrator extra delay:** 0–20 seconds of silence after every line, counted
   from the moment the voice stops, so the table has time to move its cards
+- **Narrator voices are packs, not files.** Import a voice as a `.zip` holding
+  an `en/` folder, a `fil/` folder, or both; name it — *Voice of Dahlia* — and
+  it reads the night. The shipped narrator can be renamed or hidden, and an
+  imported voice can be deleted again along with its recordings. Any line a
+  voice did not record falls back to the phone, so a half-finished set still
+  works
 - A low night ambience can loop under the narration
 - The screen stays on during a live match; confirmed actions tick and vibrate
 
@@ -164,10 +170,13 @@ The latest signed Android APK is on the
 
 - **Flutter** stable (developed against Flutter 3.50 / Dart 3.14)
 - **Riverpod** for state
-- **Drift + SQLite** for matches, history and settings (schema v6)
+- **Drift + SQLite** for matches, history and settings (schema v7)
 - **go_router** for navigation
 - **Kotlin MethodChannel + `MediaPlayer`** for the recorded narrator
   (`com.avalon.companion/clips`); **flutter_tts** as the fallback voice
+- **Kotlin MethodChannel + `archive`** for importing a voice
+  (`com.avalon.companion/voices`): the system file picker hands over a zip,
+  which is unpacked on the device — nothing is uploaded
 - No network access needed at runtime
 
 Rules live in `lib/game_engine/` as pure Dart. No Flutter import is allowed
@@ -278,6 +287,7 @@ lib/
   narration_engine/    script data, narration controller, recorded clips, TTS fallback
 assets/
   audio/narration/     the narrator's recordings: en/ and fil/, one MP3 per night line
+  audio/voices/        extra bundled voices, one folder per voice (see its README)
   images/              the seven public-domain environment plates
 test/
   database/            the real schema, against in-memory SQLite
@@ -292,6 +302,11 @@ docs/icon.png          the app icon used by this README
 ---
 
 ## Status
+
+**v1.5.0** — Narrator voices. The night can be read by a voice the MC adds,
+not only the one that ships: import a zip of recordings, name it, hide the
+shipped voice, delete an added one. A pack covers the lines it has and falls
+back to the phone for the rest, line by line.
 
 **v1.4.0** — History selection. Long-press a finished or abandoned match to
 buzz, select it and delete it with others; select-all never includes the match
@@ -323,7 +338,7 @@ wheel and King selection, the discussion timer, team proposal and vote, quest
 resolution and the 4th-quest two-fail rule, assassination outcome, results,
 history, resume, settings and the MC PIN.
 
-Every phase is verified by `flutter analyze`, **300 unit and widget tests**, and
+Every phase is verified by `flutter analyze`, **325 unit and widget tests**, and
 three on-device integration tests on a Galaxy A36 (Android 17) through signed
 1.0.0, 1.1.0 and 1.2.0 builds; 1.3.0, 1.3.1 and 1.4.0 were installed and driven
 by hand on the same phone. Tablet sizes are covered by widget tests only.

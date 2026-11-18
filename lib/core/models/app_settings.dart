@@ -39,6 +39,7 @@ class AppSettings {
     this.autoAdvance = false,
     this.ambientAudio = false,
     this.narratorVoiceId,
+    this.narratorPackId,
     this.narratorExtraDelay = Duration.zero,
     this.keepScreenAwake = true,
     this.confirmations = true,
@@ -59,6 +60,9 @@ class AppSettings {
 
   /// Installed TTS voice chosen by the MC; null means "the best available".
   final String? narratorVoiceId;
+
+  /// Narrator voice pack chosen by the MC; null means the shipped recordings.
+  final String? narratorPackId;
 
   /// Extra silence after every spoken narration line, before the panel moves on.
   /// Zero keeps the pace the script itself asks for.
@@ -94,6 +98,8 @@ class AppSettings {
     bool? ambientAudio,
     String? narratorVoiceId,
     bool clearNarratorVoice = false,
+    String? narratorPackId,
+    bool clearNarratorPack = false,
     Duration? narratorExtraDelay,
     bool? keepScreenAwake,
     bool? confirmations,
@@ -114,6 +120,9 @@ class AppSettings {
       narratorVoiceId: clearNarratorVoice
           ? null
           : narratorVoiceId ?? this.narratorVoiceId,
+      narratorPackId: clearNarratorPack
+          ? null
+          : narratorPackId ?? this.narratorPackId,
       narratorExtraDelay: narratorExtraDelay ?? this.narratorExtraDelay,
       keepScreenAwake: keepScreenAwake ?? this.keepScreenAwake,
       confirmations: confirmations ?? this.confirmations,

@@ -26,6 +26,7 @@ void main() {
     String kingSelection = 'manual',
     int extraDelayMs = 0,
     bool teamVote = true,
+    String? pack,
   }) {
     return SettingsRecord(
       id: 1,
@@ -47,6 +48,7 @@ void main() {
       kingSelection: kingSelection,
       narratorExtraDelayMs: extraDelayMs,
       teamVoteEnabled: teamVote,
+      voicePackId: pack,
     );
   }
 
@@ -63,6 +65,7 @@ void main() {
       haptics: false,
       soundEffects: false,
       narratorVoiceId: 'en-gb-x-gba-local',
+      narratorPackId: 'voice-of-dahlia',
       narratorExtraDelay: Duration(seconds: 7),
       discussionSeconds: 420,
       defaultPlayerCount: 8,
@@ -88,6 +91,7 @@ void main() {
     expect(companion.kingSelection.value, 'automatic');
     expect(companion.narratorExtraDelayMs.value, 7000);
     expect(companion.teamVoteEnabled.value, false);
+    expect(companion.voicePackId.value, 'voice-of-dahlia');
 
     final decoded = SettingsRepository.decode(
       record(
@@ -106,6 +110,7 @@ void main() {
         kingSelection: 'automatic',
         extraDelayMs: 7000,
         teamVote: false,
+        pack: 'voice-of-dahlia',
       ),
     );
 
@@ -124,6 +129,11 @@ void main() {
     expect(decoded.kingSelectionMode, KingSelectionMode.automatic);
     expect(decoded.narratorExtraDelay, const Duration(seconds: 7));
     expect(decoded.teamVoteEnabled, isFalse);
+    expect(
+      decoded.narratorPackId,
+      'voice-of-dahlia',
+      reason: 'the chosen narrator voice survives a restart',
+    );
   });
 
   test('an unknown King mode falls back to the manual wheel', () {
@@ -179,9 +189,9 @@ void main() {
     if (await file.exists()) await file.delete();
 
     // Build a real database with the current schema, write a row, then wind it
-    // back to v4: drop the columns v5 and v6 added and reset the version stamp.
-    // Reopening it is what runs the migration, exactly as an upgraded install
-    // does.
+    // back to v4: drop the columns and the table v5–v7 added and reset the
+    // version stamp. Reopening it is what runs the migration, exactly as an
+    // upgraded install does.
     final before = AppDatabase(NativeDatabase(file));
     await before
         .into(before.settings)
@@ -195,6 +205,8 @@ void main() {
     sqlite3.open(file.path)
       ..execute('ALTER TABLE settings DROP COLUMN team_vote_enabled')
       ..execute('ALTER TABLE games DROP COLUMN quest_teams')
+      ..execute('ALTER TABLE settings DROP COLUMN voice_pack_id')
+      ..execute('DROP TABLE voice_packs')
       ..execute('PRAGMA user_version = 4')
       ..close();
 

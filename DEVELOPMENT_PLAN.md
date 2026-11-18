@@ -1025,10 +1025,75 @@ matches can go at once.
 | Signature | `CN=Avalon Companion`, SHA-256 `1aa864f1…a570b808` — the same key as 1.0.0–1.3.1; APK SHA-256 `B84CF79D…4D5178F0` |
 | GitHub release | `v1.4.0` published with `Avalon-Companion-1.4.0.apk`; its digest matches the local build |
 
+## Narrator voices — 1.5.0
+
+Requested after 1.4.0: more narrator voices, the shipped one out of the way, and "just import a
+file" to add one.
+
+### What changed
+
+- **`VoicePack`** (`lib/narration_engine/models/voice_pack.dart`) is the unit of a voice: id, name,
+  root, the line ids each language can play, `builtIn`, `hidden`. `pathFor` returns null for a line
+  the pack did not record, so the narration controller falls back to text-to-speech line by line
+  rather than per pack.
+- **`VoicePackCatalogue`** reads Flutter's own asset manifest instead of a hard-coded list:
+  `assets/audio/narration` is the `classic` voice; every `assets/audio/voices/<pack>/<en|fil>/*.mp3`
+  is another bundled voice, named from its folder (`voice-of-dahlia` → "Voice of Dahlia") or
+  `voice.json`. A manifest that cannot be read leaves the shipped voice in place.
+- **`VoiceImport`** is pure: zip bytes to `{en: {id: bytes}}`, ignoring READMEs, `__MACOSX`, other
+  language folders and anything that is not `.mp3`. A zip with no narration raises a readable
+  `VoiceImportException`; `slugForName` and `uniqueId` keep folder names safe and distinct, and
+  `isValidId` is checked before any file is read or written.
+- **`VoiceFiles`** is behind a conditional export so the web build still compiles: `dart:io` writes
+  clips under `<app files>/voices/<pack>/` and deletes a voice again. **`VoiceImportChannel`** is
+  the Kotlin half — `directory` and `pickZip`, using `ACTION_OPEN_DOCUMENT` and a cache copy so
+  content URIs from any storage provider work.
+- **`VoicePacksController`** merges the bundle with the stored rows, seeds a row for each bundled
+  voice so it can be renamed and hidden, drops rows for voices this build no longer ships, and
+  keeps working with no database (in-memory list, shipped voice intact).
+- **Schema v7** adds `voicePacks` and `settings.voicePackId`. `NarrationController` takes the chosen
+  id from settings, resolves it through the loaded packs, and treats an unknown id as the shipped
+  recordings. Settings keeps the chosen voice through `SettingsRepository`.
+- **Settings → Narration** leads with the voice and its coverage ("English 14/14 · Filipino not
+  recorded"), then language and the fallback controls. The picker content is a fixed-width
+  `SizedBox` around the shrink-wrapped list: `AlertDialog` wraps content in `IntrinsicWidth`, and a
+  viewport cannot answer intrinsic measurements — the first build threw in layout instead of
+  opening the dialog.
+- **Kotlin**: the voices channel, `voicesDirectory()`, `pickZip()`/`onActivityResult()` and
+  `copyToCache()`. `playClip` accepts an absolute path, so an imported recording plays through the
+  same `MediaPlayer` as a bundled asset.
+
+### Interaction
+
+| Action | Result |
+| --- | --- |
+| Settings → Narrator voice | Lists the shipped voice and every added one, with English and Filipino counts |
+| Import a voice… | System picker → name dialog → the voice becomes the narrator, with a snackbar |
+| Rename… | Only the label changes; the folder and MP3s are untouched |
+| Hide (bundled) | Leaves the list, stays playable for a match in progress; restorable from Hidden voices |
+| Delete (imported) | Confirmation names the voice; the row and its recordings go; the active voice falls back to the shipped one |
+| A line the voice did not record | The phone speaks that line; the rest of the night stays in the chosen voice |
+
+### Gate evidence
+
+| Check | Result |
+| --- | --- |
+| `flutter analyze` | No issues found |
+| `flutter test` | 325 tests pass (300 + 25) |
+| Model and import | `voice_packs_test.dart`: manifest parsing (only `<pack>/<lang>/<id>.mp3`, README and other folders ignored), readable names and `voice.json`, a pack missing a language, zip folders/flat/junk/not-a-zip, path-climbing ids, unique folder ids, and install/delete of real files in a temp directory |
+| Narration | `narration_controller_test.dart` (+3): the chosen pack's own path is played, a line it did not record falls back to speech, an unknown pack falls back to the shipped recordings |
+| Settings | `voice_picker_test.dart` (+5): the coverage label, switching voices, renaming, deleting the active imported voice, and hiding the bundled one (which offers Hide, never Delete); the picker's layout is exercised by every one of these |
+| Data | `voice_packs_test.dart` also covers the stored clip map (empty/corrupt read as "no recordings"), rename/hide keeping the folder, and the v6 → v7 upgrade; `settings_store_test.dart` round-trips the chosen voice |
+| Device pass | **Not run.** No phone was attached, and no voice recordings ship with this build, so the file picker, the unpacking and absolute-path playback are unverified on hardware |
+| Release APK | **Not built or published for 1.5.0** |
+
 ## Next phase
 
 No phase is scheduled: **1.4.0** is the released build, signed and published, with 1.0.0–1.3.1
-verified on the phone. Work after 1.4.0 would be maintenance rather than plan phases — lifting the
+verified on the phone. **1.5.0** is implemented and covered by automated gates but not released: it
+needs a device pass — import a real voice zip, rename it, play a line, hide it, delete it — and the
+MC's own recordings, because none are bundled with the build. Work after that is maintenance rather
+than plan phases — lifting the
 `path_provider_android` pin now that the NDK is installed, split-per-abi APKs if download size
 matters, commissioned artwork to replace the public-domain plates, or a Play Store listing with
 its own upload key.

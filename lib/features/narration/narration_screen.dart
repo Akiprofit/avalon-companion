@@ -50,6 +50,7 @@ class _NarrationScreenState extends ConsumerState<NarrationScreen>
       controller.setExtraDelay(settings.narratorExtraDelay);
       unawaited(controller.setPitch(settings.narrationPitch));
       unawaited(controller.setVoice(settings.narratorVoiceId));
+      unawaited(controller.setVoicePack(settings.narratorPackId));
       if (game != null) {
         controller.load(game.composition);
         controller.setLanguage(settings.defaultLanguage);

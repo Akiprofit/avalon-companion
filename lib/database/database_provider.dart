@@ -6,6 +6,7 @@ import 'app_database.dart';
 import 'repositories/game_repository.dart';
 import 'repositories/pin_repository.dart';
 import 'repositories/settings_repository.dart';
+import 'repositories/voice_pack_repository.dart';
 
 /// Opens the on-device SQLite file. Called once, from `bootstrap()`.
 ///
@@ -37,6 +38,13 @@ final settingsStoreProvider = Provider<SettingsRepository?>((ref) {
 final pinStoreProvider = Provider<PinRepository?>((ref) {
   final db = ref.watch(appDatabaseProvider);
   return db == null ? null : PinRepository(db);
+});
+
+/// The narrator voice store. Null when there is no database, which leaves the
+/// bundled recordings as the only voice — the app still narrates.
+final voicePackStoreProvider = Provider<VoicePackRepository?>((ref) {
+  final db = ref.watch(appDatabaseProvider);
+  return db == null ? null : VoicePackRepository(db);
 });
 
 /// Settings read before the first frame, so the first narration already uses

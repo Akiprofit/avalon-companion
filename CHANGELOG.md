@@ -3,6 +3,55 @@
 All notable changes to Avalon Companion are recorded here. One entry per completed
 development phase, in the order the plan defines them.
 
+## [1.5.0] — Narrator voices (2026-11-18)
+
+### Added
+
+- **A voice is a pack, not a file.** The night is fourteen separate lines, so a
+  voice answers for each one on its own. A pack that records some of them still
+  works: the lines it did not record are spoken by the phone, one line at a time,
+  instead of going silent.
+- **Import a voice from Settings → Narrator voice.** The system file picker hands
+  the app a `.zip`; the recordings inside `en/` and/or `fil/` are unpacked into
+  app storage, the MC names it (**Voice of Dahlia**), and it becomes the narrator.
+  A zip with the MP3s at its top level is read as English. Nothing is uploaded.
+- **Rename, hide, delete.** The shipped narrator and any bundled voice can be
+  renamed or hidden from the list; an imported voice can be deleted for real,
+  recordings included. Deleting or hiding the voice in use returns the match to
+  the shipped recordings rather than to silence.
+- **Bundled voices.** A rebuild can ship extra voices by dropping
+  `assets/audio/voices/<pack>/en/` (and `fil/`) into the project, listing each
+  language folder in `pubspec.yaml`, and optionally naming it in `voice.json`.
+  `assets/audio/voices/README.md` documents the layout.
+
+### Changed
+
+- **Settings → Narration** now leads with the voice in use and what it covers
+  ("English 14/14 · Filipino not recorded"), then the language and the fallback
+  voice controls. A hidden voice stays usable for a match already running and
+  comes back from **Hidden voices**.
+- **Drift schema v7** adds the `voicePacks` table and `settings.voicePackId`.
+  Upgrade keeps every saved match, the history and every setting; bundled voices
+  are seeded on first read.
+- **`archive` 3.6.1** (pure Dart, already in the pub cache) reads the zip. The
+  file picker and the voices directory come from a Kotlin MethodChannel
+  (`com.avalon.companion/voices`); `MediaPlayer` now accepts an absolute path as
+  well as an APK asset, so an imported recording plays exactly like a bundled one.
+- The web build still compiles: `dart:io` is isolated behind a conditional
+  export, and the import action is hidden where the filesystem is not available.
+
+### Verified
+
+| Check | Result |
+| --- | --- |
+| `flutter analyze` | No issues found |
+| `flutter test` | 325 tests pass (300 + 25) |
+| Voice coverage | `voice_packs_test.dart` (17): asset manifest parsing, readable names and `voice.json`, a pack missing a language, zip folders/flat/junk/not-a-zip, path-climbing ids, unique folder ids, DB round trip, the v6 → v7 upgrade, rename and hide, and install/delete of real files in a temp directory |
+| Narration coverage | `narration_controller_test.dart` (+3): the chosen pack's own path is played, a line it did not record falls back to speech, and an unknown pack falls back to the shipped recordings |
+| Settings coverage | `voice_picker_test.dart` (+5): the coverage label, switching voices, renaming, deleting the active imported voice, and hiding the bundled one (which offers Hide, never Delete); `settings_store_test.dart` also round-trips the chosen voice |
+| Device pass | **Not run.** No phone was attached to this machine, and no voice recordings ship with this build, so the file picker, the unpacking and the absolute-path playback are covered by unit and widget tests only |
+| Release APK | **Not built for 1.5.0 yet** |
+
 ## [1.4.0] – History selection (2026-11-17)
 
 ### Added

@@ -4,12 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../game_engine/models/composition.dart';
 import '../models/narration_instruction.dart';
+import '../models/voice_pack.dart';
 import '../scripts/night_script.dart';
 import '../services/clip_provider.dart';
 import '../services/clip_service.dart';
-import '../services/narration_clips.dart';
 import '../services/tts_provider.dart';
 import '../services/tts_service.dart';
+import 'voice_packs_controller.dart';
 
 class NarrationState {
   const NarrationState({
@@ -21,6 +22,7 @@ class NarrationState {
     this.volume = 0.8,
     this.pitch = 0.92,
     this.voiceId,
+    this.voicePackId,
     this.extraDelay = Duration.zero,
     this.voiceNotice,
   });
@@ -39,6 +41,12 @@ class NarrationState {
   /// Exact installed voice chosen in settings; null means the best for the
   /// language. Kept here so a mid-match language switch re-picks a voice.
   final String? voiceId;
+
+  /// Recorded narrator chosen in settings; null means the shipped recordings.
+  ///
+  /// It lives in the panel state as well as in settings so a voice switched
+  /// between two matches takes effect on the next night, never mid-line.
+  final String? voicePackId;
 
   /// Silence the MC asked for after every line, on top of the script's own
   /// beat. It starts only once the line has finished speaking.
@@ -68,6 +76,8 @@ class NarrationState {
     double? pitch,
     String? voiceId,
     bool clearVoice = false,
+    String? voicePackId,
+    bool clearVoicePack = false,
     Duration? extraDelay,
     String? voiceNotice,
     bool clearVoiceNotice = false,
@@ -81,6 +91,9 @@ class NarrationState {
       volume: volume ?? this.volume,
       pitch: pitch ?? this.pitch,
       voiceId: clearVoice ? null : (voiceId ?? this.voiceId),
+      voicePackId: clearVoicePack
+          ? null
+          : (voicePackId ?? this.voicePackId),
       extraDelay: extraDelay ?? this.extraDelay,
       voiceNotice: clearVoiceNotice ? null : (voiceNotice ?? this.voiceNotice),
     );
@@ -122,9 +135,13 @@ class NarrationController extends Notifier<NarrationState> {
   TtsService get _tts => ref.read(ttsServiceProvider);
   ClipService get _clips => ref.read(clipServiceProvider);
 
+  /// The recorded voice this night is read in.
+  VoicePack get _pack => ref.read(voicePacksProvider).active(state.voicePackId);
+
   /// Prepares the recorded narration and the speech engine. Called once when
   /// the narration screen opens.
   Future<void> prepare() async {
+    await ref.read(voicePacksProvider.notifier).refresh();
     await _clips.initialize();
     await _tts.initialize();
     await _refreshVoiceNotice();
@@ -141,6 +158,7 @@ class NarrationController extends Notifier<NarrationState> {
       volume: state.volume,
       pitch: state.pitch,
       voiceId: state.voiceId,
+      voicePackId: state.voicePackId,
       extraDelay: state.extraDelay,
     );
   }
@@ -237,6 +255,19 @@ class NarrationController extends Notifier<NarrationState> {
     }
   }
 
+  /// Chooses the recorded narrator, or null for the recordings in the app.
+  Future<void> setVoicePack(String? voicePackId) async {
+    if (state.voicePackId == voicePackId) return;
+    state = voicePackId == null
+        ? state.copyWith(clearVoicePack: true)
+        : state.copyWith(voicePackId: voicePackId);
+    await _refreshVoiceNotice();
+    if (state.isAutoPlaying) {
+      _silence();
+      await _speakCurrent();
+    }
+  }
+
   Future<void> _refreshVoiceNotice() async {
     // A recorded line needs no installed voice, so there is nothing to warn
     // about while the recordings cover the night.
@@ -266,12 +297,10 @@ class NarrationController extends Notifier<NarrationState> {
     if (current == null) return;
 
     // The recordings are the narrator. The speech engine only covers a line
-    // nobody recorded, or a clip the player could not open.
-    if (_hasClipFor(current)) {
-      final played = await _clips.play(
-        NarrationClips.assetFor(current.id, state.language),
-        volume: state.volume,
-      );
+    // this voice did not record, or a clip the player could not open.
+    final clip = _pack.pathFor(current.id, state.language);
+    if (clip != null && _clips.isAvailable) {
+      final played = await _clips.play(clip, volume: state.volume);
       if (generation != _generation) return;
       if (played) {
         await _advanceAfter(current, generation);
@@ -334,9 +363,11 @@ class NarrationController extends Notifier<NarrationState> {
     }
   }
 
-  /// Whether [line] plays from a recording on this device.
+  /// Whether [line] plays from this voice's recordings.
   bool _hasClipFor(NarrationInstruction? line) =>
-      line != null && _clips.isAvailable && NarrationClips.has(line.id);
+      line != null &&
+      _clips.isAvailable &&
+      _pack.pathFor(line.id, state.language) != null;
 
   /// Stops speech and invalidates any in-flight utterance callback.
   void _silence() {
