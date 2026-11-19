@@ -12,7 +12,7 @@
   <a href="https://github.com/Akiprofit/avalon-companion/releases/latest">
     <img alt="Download the Android APK" src="https://img.shields.io/badge/Download-Android%20APK-C5A15B?style=for-the-badge&logo=android&logoColor=0B0E14" />
   </a>
-  <img alt="Version 1.7.0" src="https://img.shields.io/badge/version-1.7.0-0B0E14?style=for-the-badge" />
+  <img alt="Version 1.7.1" src="https://img.shields.io/badge/version-1.7.1-0B0E14?style=for-the-badge" />
   <img alt="Offline first" src="https://img.shields.io/badge/offline-first-3D9B72?style=for-the-badge" />
 </p>
 
@@ -43,7 +43,7 @@ The latest signed Android APK is on the
 
 ### Install on Android
 
-1. Download `Avalon-Companion-1.7.0.apk` from the latest release.
+1. Download `Avalon-Companion-1.7.1.apk` from the latest release.
 2. Open the downloaded APK.
 3. Allow **Install unknown apps** for the browser or file manager you used.
 4. Tap **Install**.
@@ -305,7 +305,8 @@ lib/
   game_engine/         models, rule tables, session controller
   narration_engine/    script data, narration controller, recorded clips, TTS fallback
 assets/
-  audio/narration/     the narrator's recordings: en/ and fil/, one MP3 per night line
+  audio/narration/     the narrator bundled with the app: Dahlia voices/en and /fil,
+                       one MP3 per night line (see its README)
   audio/voices/        extra bundled voices, one folder per voice (see its README)
   images/              the seven public-domain environment plates
 test/
@@ -321,6 +322,14 @@ docs/icon.png          the app icon used by this README
 ---
 
 ## Status
+
+**v1.7.1** — Dahlia's folder. The narrator's recordings now ship in
+`assets/audio/narration/Dahlia voices/`, the built-in voice is listed as
+**Dahlia**, and the native player encodes the folder name Flutter writes into
+the APK, so narration inside a folder with a space still plays.
+
+The signed **1.7.1+25** APK (64.0 MB) is installed on the same Galaxy A36 and
+opened, with the device gate passing on the encoded path.
 
 **v1.7.0** — Table safety. The proposal, the vote result and the quest result
 can each be undone until anything else happens in the match, restoring the

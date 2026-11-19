@@ -37,16 +37,19 @@ void main() {
     );
   });
 
-  test('the clips live in the language folders the app reads', () {
+  test('the clips live in the narrator folders the app reads', () {
     expect(
       NarrationClips.assetFor('night.end', NarrationLanguage.english),
-      'assets/audio/narration/en/night.end.mp3',
+      'assets/audio/narration/Dahlia voices/en/night.end.mp3',
     );
     expect(
       NarrationClips.assetFor('night.end', NarrationLanguage.filipino),
-      'assets/audio/narration/fil/night.end.mp3',
+      'assets/audio/narration/Dahlia voices/fil/night.end.mp3',
     );
-    expect(NarrationClips.directory, Directory('assets/audio/narration').path);
+    expect(
+      NarrationClips.directory,
+      Directory('assets/audio/narration/Dahlia voices').path,
+    );
   });
 
   test('no round line has a recording yet', () {
@@ -73,7 +76,7 @@ void main() {
       expect(
         pubspec.contains('${NarrationClips.directory}/$folder/'),
         isTrue,
-        reason: 'pubspec.yaml must list assets/audio/narration/$folder/',
+        reason: 'pubspec.yaml must list ${NarrationClips.directory}/$folder/',
       );
     }
   });

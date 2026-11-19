@@ -10,11 +10,21 @@ list exactly the recorded ids.
 
 ## Layout
 
+One folder per narrator, then one per language:
+
 ```
 assets/audio/narration/
-  en/    English recordings
-  fil/   Filipino recordings
+  Dahlia voices/     the narrator bundled with the app
+    en/              English recordings
+    fil/             Filipino recordings
 ```
+
+`Dahlia voices/` is the folder `NarrationClips.voice` names, so renaming it in
+the file system means renaming it there, in `pubspec.yaml` and in this README.
+
+A second folder beside it is **not** played by the app. To add another narrator,
+bundle it under `assets/audio/voices/<pack>/en|fil/` — see
+`assets/audio/voices/README.md` — and choose it in **Settings → Narrator voice**.
 
 One file per instruction id, same name in both languages:
 

@@ -199,7 +199,7 @@ void main() {
       isNull,
       reason: 'deleting the narrator falls back to the shipped recordings',
     );
-    expect(find.text('Avalon narrator'), findsOneWidget);
+    expect(find.text('Dahlia'), findsOneWidget);
   });
 
   testWidgets('a bundled voice is hidden instead of deleted', (tester) async {

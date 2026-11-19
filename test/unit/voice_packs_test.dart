@@ -46,8 +46,8 @@ void main() {
   group('the catalogue', () {
     test('finds the shipped narrator and every bundled voice folder', () {
       final packs = VoicePackCatalogue.fromAssets(const [
-        'assets/audio/narration/en/night.close_eyes.mp3',
-        'assets/audio/narration/fil/night.close_eyes.mp3',
+        'assets/audio/narration/Dahlia voices/en/night.close_eyes.mp3',
+        'assets/audio/narration/Dahlia voices/fil/night.close_eyes.mp3',
         'assets/audio/voices/voice-of-dahlia/en/night.close_eyes.mp3',
         'assets/audio/voices/voice-of-dahlia/fil/night.close_eyes.mp3',
         'assets/audio/voices/voice-of-dahlia/en/notes.txt',
@@ -66,7 +66,7 @@ void main() {
 
     test('only counts recordings under a language folder', () {
       final packs = VoicePackCatalogue.fromAssets(const [
-        'assets/audio/narration/en/night.end.mp3',
+        'assets/audio/narration/Dahlia voices/en/night.end.mp3',
         'assets/audio/voices/dahlia/night.end.mp3',
         'assets/audio/voices/dahlia/en/README.md',
         'assets/audio/voices/dahlia/en/._night.end.mp3',
@@ -78,7 +78,7 @@ void main() {
 
     test('a pack missing a language falls back for that language only', () {
       final packs = VoicePackCatalogue.fromAssets(const [
-        'assets/audio/narration/en/night.end.mp3',
+        'assets/audio/narration/Dahlia voices/en/night.end.mp3',
         'assets/audio/voices/dahlia/en/night.end.mp3',
       ]);
       final dahlia = packs.last;

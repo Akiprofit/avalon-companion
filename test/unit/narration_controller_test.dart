@@ -600,7 +600,7 @@ void main() {
       unawaited(controller().replay());
       await settle();
 
-      expect(clips.played, ['assets/audio/narration/en/night.close_eyes.mp3']);
+      expect(clips.played, ['assets/audio/narration/Dahlia voices/en/night.close_eyes.mp3']);
       expect(tts.spoken, isEmpty, reason: 'the engine is the fallback only');
 
       clips.completeClip();
@@ -777,7 +777,7 @@ void main() {
 
       expect(
         clips.played.single,
-        'assets/audio/narration/en/night.close_eyes.mp3',
+        'assets/audio/narration/Dahlia voices/en/night.close_eyes.mp3',
         reason: 'an unknown pack never means silence',
       );
       expect(tts.spoken, isEmpty);

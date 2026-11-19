@@ -50,6 +50,17 @@ class MainActivity : FlutterActivity() {
         const val CLIP_ROOT = "flutter_assets/"
     }
 
+    /**
+     * The APK entry for a bundled clip.
+     *
+     * Flutter writes asset names into the bundle percent-encoded, so a voice
+     * folder called `Dahlia voices` is stored as `Dahlia%20voices`. The asset
+     * key handed to the player is the readable path, and it has to be encoded
+     * again here or `openFd` reports a missing file and the line falls back to
+     * the phone's voice.
+     */
+    private fun assetKey(asset: String) = CLIP_ROOT + asset.replace(" ", "%20")
+
     private var channel: MethodChannel? = null
     private var engine: TextToSpeech? = null
     private var ready = false
@@ -213,7 +224,7 @@ class MainActivity : FlutterActivity() {
                 if (asset.startsWith("/")) {
                     player.setDataSource(asset)
                 } else {
-                    val descriptor = assets.openFd(CLIP_ROOT + asset)
+                    val descriptor = assets.openFd(assetKey(asset))
                     player.setDataSource(
                         descriptor.fileDescriptor,
                         descriptor.startOffset,

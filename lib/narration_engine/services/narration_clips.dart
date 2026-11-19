@@ -3,15 +3,26 @@ import '../models/narration_instruction.dart';
 /// The recorded narrator lines shipped inside the app.
 ///
 /// One MP3 per instruction id, per language, in
-/// `assets/audio/narration/<en|fil>/<id>.mp3`. A line listed here is spoken from
-/// its recording; anything else falls back to the platform text-to-speech
-/// engine, so a missing file degrades to a voice rather than silence.
+/// `assets/audio/narration/<voice>/<en|fil>/<id>.mp3`. A line listed here is
+/// spoken from its recording; anything else falls back to the platform
+/// text-to-speech engine, so a missing file degrades to a voice rather than
+/// silence.
+///
+/// The recordings ship under the voice that made them, so another narrator's
+/// folder can sit beside `Dahlia voices/` in `assets/audio/narration/`. Only
+/// [voice] is bundled as the app's narrator today; extra voices are added under
+/// `assets/audio/voices/` and appear in Settings.
 ///
 /// Keep this set in step with the files: `test/unit/narration_clips_test.dart`
 /// fails when a recording is missing, and when an id here has no matching line
 /// in [NightScript].
 abstract final class NarrationClips {
-  static const directory = 'assets/audio/narration';
+  /// The folder this app bundles as its narrator, inside [narratorDirectory].
+  static const voice = 'Dahlia voices';
+
+  static const narratorDirectory = 'assets/audio/narration';
+
+  static const directory = '$narratorDirectory/$voice';
 
   /// Every night line that has a recording in both languages.
   static const ids = <String>{

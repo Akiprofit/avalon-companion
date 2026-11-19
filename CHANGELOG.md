@@ -3,6 +3,32 @@
 All notable changes to Avalon Companion are recorded here. One entry per completed
 development phase, in the order the plan defines them.
 
+## [1.7.1] — Dahlia's folder (2026-11-20)
+
+### Changed
+
+- **The narrator has a name and a folder.** Her 28 recordings now ship under
+  `assets/audio/narration/Dahlia voices/{en,fil}/`, so the narration folder can hold more than
+  one voice, and the built-in voice is listed as **Dahlia** in Settings. Extra narrators still
+  go under `assets/audio/voices/<pack>/` and are picked in **Settings → Narrator voice**.
+
+### Fixed
+
+- **A space in the narrator folder silenced the narration.** Flutter writes asset names into
+  the APK percent-encoded — `Dahlia voices` becomes `Dahlia%20voices` — and the native player
+  opened the readable path with `AssetManager.openFd`, which missed it and fell through to the
+  phone's text-to-speech. The clip channel now encodes the key first, so every recorded night
+  line plays from the bundle again. Found by the device gate, not by the host tests.
+
+### Verified
+
+| Check | Result |
+| --- | --- |
+| `flutter analyze` | No issues found |
+| `flutter test` | 341 tests pass |
+| Device | `clip_playback_test.dart` passes on the Galaxy A36 (SM-A366B): a night line decodes from the `Dahlia%20voices` path in the APK |
+| Release APK | Signed **1.7.1+25** built (64.0 MB), zipaligned, verified with the release key and installed over 1.7.0 on the Galaxy A36; SHA-256 `d22b36cc…74b6b57` |
+
 ## [1.7.0] — Table safety (2026-11-19)
 
 ### Added

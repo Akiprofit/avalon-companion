@@ -2,7 +2,7 @@ name: avalon_companion
 description: "Offline Game Master companion for physical games of The Resistance: Avalon."
 publish_to: 'none'
 
-version: 1.7.0+24
+version: 1.7.1+25
 
 environment:
   sdk: ^3.14.0
@@ -46,8 +46,8 @@ flutter:
   assets:
     - assets/images/
     # Flutter asset folders are not recursive: each language folder is listed.
-    - assets/audio/narration/en/
-    - assets/audio/narration/fil/
+    - assets/audio/narration/Dahlia voices/en/
+    - assets/audio/narration/Dahlia voices/fil/
     # Extra bundled voices, one folder per voice. Each `<voice>/en/` and
     # `<voice>/fil/` folder must be listed on its own line; see the README
     # inside this directory.

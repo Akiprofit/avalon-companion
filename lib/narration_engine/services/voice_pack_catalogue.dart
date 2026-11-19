@@ -12,7 +12,7 @@ import 'narration_clips.dart';
 /// `<root>/<en|fil>/<id>.mp3`:
 ///
 /// * **Bundled.** Recordings inside the APK. The shipped narrator is
-///   `assets/audio/narration`; extra voices are folders under
+///   `assets/audio/narration/Dahlia voices`; extra voices are folders under
 ///   `assets/audio/voices/<pack>/`.
 /// * **Imported.** Recordings the MC unzipped into app storage. Their [root] is
 ///   an absolute directory, so nothing has to be rebuilt to use them.
@@ -23,7 +23,7 @@ import 'narration_clips.dart';
 abstract final class VoicePackCatalogue {
   /// The recordings that ship inside the app.
   static const classicId = 'classic';
-  static const classicName = 'Avalon narrator';
+  static const classicName = 'Dahlia';
 
   /// Extra bundled voices: one folder per voice.
   static const assetDirectory = 'assets/audio/voices';
@@ -96,9 +96,9 @@ abstract final class VoicePackCatalogue {
       if (parts[0] != 'assets' || parts[1] != 'audio') continue;
 
       if (parts[2] == 'narration') {
-        // assets/audio/narration/<lang>/<id>.mp3
-        if (parts.length != 5) continue;
-        _record(clips, classicId, parts[3], parts[4]);
+        // assets/audio/narration/<voice>/<lang>/<id>.mp3
+        if (parts.length != 6 || parts[3] != NarrationClips.voice) continue;
+        _record(clips, classicId, parts[4], parts[5]);
         continue;
       }
 

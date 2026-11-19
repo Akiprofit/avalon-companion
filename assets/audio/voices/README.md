@@ -66,5 +66,5 @@ fil/night.close_eyes.mp3
 Anything that is not `.mp3` inside `en/` or `fil/` is ignored, as are other
 language folders. MP3, 44.1 kHz, mono, 64–96 kbps keeps a full set small.
 
-The shipped narrator (`assets/audio/narration/`) cannot be removed. If a voice
+The shipped narrator (`assets/audio/narration/Dahlia voices/`) cannot be removed. If a voice
 is missing a line, that line is spoken by the phone instead of going silent.

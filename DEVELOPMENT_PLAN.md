@@ -1037,7 +1037,8 @@ file" to add one.
   the pack did not record, so the narration controller falls back to text-to-speech line by line
   rather than per pack.
 - **`VoicePackCatalogue`** reads Flutter's own asset manifest instead of a hard-coded list:
-  `assets/audio/narration` is the `classic` voice; every `assets/audio/voices/<pack>/<en|fil>/*.mp3`
+  `assets/audio/narration/Dahlia voices` is the `classic` voice; every
+  `assets/audio/voices/<pack>/<en|fil>/*.mp3`
   is another bundled voice, named from its folder (`voice-of-dahlia` → "Voice of Dahlia") or
   `voice.json`. A manifest that cannot be read leaves the shipped voice in place.
 - **`VoiceImport`** is pure: zip bytes to `{en: {id: bytes}}`, ignoring READMEs, `__MACOSX`, other
@@ -1178,9 +1179,42 @@ each reversible until the next action.
 | Device pass | **Passed on a Galaxy A36 (SM-A366B) over wireless debugging.** `app_test.dart` (2 tests) and `clip_playback_test.dart` (1) ran on the phone: the settings switch survives the installed database, a match starts on the real store with no role column in any table, and a night line decodes in both languages |
 | Release APK | Signed **1.7.0+24** built (64.0 MB), zipaligned and verified with the release key, installed on the phone and opened; SHA-256 `66f84332…d1657f06` |
 
+## Dahlia's folder — 1.7.1
+
+The narrator is Dahlia, and her recordings are now filed under her name so the narration folder
+can hold more than one voice without a second folder convention.
+
+### What changed
+
+- `assets/audio/narration/Dahlia voices/{en,fil}/` holds the 28 recordings; `NarrationClips`
+  names the folder once (`voice`) and builds `directory` from it, and `pubspec.yaml` lists the
+  two language folders. `VoicePackCatalogue` reads the `<voice>/<lang>/<id>.mp3` layout.
+- The built-in voice is listed as **Dahlia** in **Settings → Narrator voice**
+  (`VoicePackCatalogue.classicName`).
+- Extra narrators still live under `assets/audio/voices/<pack>/`; a second folder inside
+  `narration/` is not played, and the narration README says so.
+
+### Fixed on the way
+
+- **The space in the folder name broke playback.** Flutter stores asset keys percent-encoded in
+  the APK, so the folder is `Dahlia%20voices` inside `flutter_assets`. The host tests passed
+  because they read the files from disk; the device gate failed because `AssetManager.openFd`
+  was given the readable path and every line fell back to text-to-speech. `MainActivity.assetKey`
+  now encodes the key before opening it.
+
+### Gate evidence
+
+| Check | Result |
+| --- | --- |
+| `flutter analyze` | No issues found |
+| `flutter test` | 341 tests pass |
+| Narration tests | `narration_clips_test.dart`, `narration_controller_test.dart` and `voice_packs_test.dart` (51 tests) pass against the new paths |
+| Device | `clip_playback_test.dart` passes on the Galaxy A36 (SM-A366B): the English and Filipino lines decode from `Dahlia%20voices` in the APK |
+| Release APK | Signed **1.7.1+25** built (64.0 MB), zipaligned, verified with the release key and installed over 1.7.0 on the Galaxy A36; SHA-256 `d22b36cc…74b6b57` |
+
 ## Next phase
 
-No phase is scheduled: **1.7.0** is the current build (2026-11-19). 1.6.0 is the published
+No phase is scheduled: **1.7.1** is the current build (2026-11-20). 1.7.0 is the published
 release; 1.5.0's voice packs ship inside it, and 1.0.0–1.3.1 remain verified on the phone. The
 voice import still needs a real zip and the MC's recordings — none are bundled. Work after that
 is maintenance rather than plan phases — lifting the `path_provider_android` pin now that the
