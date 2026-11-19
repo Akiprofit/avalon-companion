@@ -42,7 +42,7 @@ development phase, in the order the plan defines them.
 | Manual coverage | `how_to_play_test.dart` (3): opening copy, setup and the night order, the quest table, the majority/rejection/two-fail rules, the accusation and both victory paths — scrolled end to end at phone size |
 | Content accuracy | Team sizes and the two-fail threshold come from `AvalonTables`; vote, token and victory wording matches `GameEngine`; the night matches `NightScript` |
 | Device pass | **Passed on a Galaxy A36 (SM-A366B).** The three integration tests ran on the phone: a settings switch round-trips through the installed database, a match starts on the real store with no role column in any table, and a recorded night line decodes in English and Filipino. The manual was also opened on the device and scrolled from **Before you begin** to **At the table**; the quest table rendered with its header |
-| Release APK | Signed **1.6.0+23** built (63.9 MB) and installed over 1.4.0 on the same phone. No GitHub release was created |
+| Release APK | Signed **1.6.0+23** built (63.9 MB), installed over 1.4.0 on the phone, and published as [**v1.6.0**](https://github.com/Akiprofit/avalon-companion/releases/tag/v1.6.0) with `Avalon-Companion-1.6.0.apk` (SHA-256 `5f87bbee…c5e0f`) |
 | Voice import | **Still unverified on hardware:** no voice recordings ship with this build, so the picker and zip unpacking were not exercised on the device |
 
 ## [1.5.0] — Narrator voices (2026-11-18)

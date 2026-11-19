@@ -1136,16 +1136,15 @@ instruction to play Avalon, like a user manual".
 | Manual coverage | `how_to_play_test.dart`: opening copy, setup and night order, the quest table, the strict-majority/five-rejection/two-fail rules, the accusation and both victory paths; the page is scrolled end to end at phone size, so layout is exercised |
 | Content accuracy | Team sizes and the two-fail threshold are read from `AvalonTables`; vote, token and victory language matches `GameEngine`; the night matches `NightScript` |
 | Device pass | **Passed on a Galaxy A36 (SM-A366B).** `flutter test integration_test` ran all 3 tests on the phone: the settings switch writes to the installed database, a match starts on the real store, and no table has a role column; a recorded night line decodes in both languages. The manual was opened and scrolled on the device from the opening to **At the table**, and the quest table rendered |
-| Release APK | Signed **1.6.0+23** built (63.9 MB) and installed over 1.4.0 on the phone. No GitHub release was created |
+| Release APK | Signed **1.6.0+23** built (63.9 MB), installed over 1.4.0 on the phone, and published as [**v1.6.0**](https://github.com/Akiprofit/avalon-companion/releases/tag/v1.6.0) with `Avalon-Companion-1.6.0.apk`; the uploaded asset's SHA-256 matches the local build |
 | Voice import | **Still unverified on hardware:** no recordings ship, so the picker and zip unpacking were not exercised |
 
 ## Next phase
 
-No phase is scheduled: **1.4.0** is the published build, signed and with 1.0.0–1.3.1 verified on
-the phone. **1.5.0** and **1.6.0** are built, signed and pass the device gate on the A36, but
-neither has a GitHub release yet. The voice import still needs a real zip and the MC's recordings
-— none are bundled — and 1.6.0 is static content on top. Work after that is maintenance rather
-than plan phases — lifting the
+No phase is scheduled: **1.6.0** is the published build (2026-11-19), signed, installed on the
+A36 and passing the device gate; 1.5.0's voice packs ship inside it, and 1.0.0–1.3.1 remain
+verified on the phone. The voice import still needs a real zip and the MC's recordings — none are
+bundled. Work after that is maintenance rather than plan phases — lifting the
 `path_provider_android` pin now that the NDK is installed, split-per-abi APKs if download size
 matters, commissioned artwork to replace the public-domain plates, or a Play Store listing with
 its own upload key.
