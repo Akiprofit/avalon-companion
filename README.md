@@ -12,7 +12,7 @@
   <a href="https://github.com/Akiprofit/avalon-companion/releases/latest">
     <img alt="Download the Android APK" src="https://img.shields.io/badge/Download-Android%20APK-C5A15B?style=for-the-badge&logo=android&logoColor=0B0E14" />
   </a>
-  <img alt="Version 1.5.0" src="https://img.shields.io/badge/version-1.5.0-0B0E14?style=for-the-badge" />
+  <img alt="Version 1.5.0" src="https://img.shields.io/badge/version-1.6.0-0B0E14?style=for-the-badge" />
   <img alt="Offline first" src="https://img.shields.io/badge/offline-first-3D9B72?style=for-the-badge" />
 </p>
 
@@ -43,7 +43,7 @@ The latest signed Android APK is on the
 
 ### Install on Android
 
-1. Download `Avalon-Companion-1.5.0.apk` from the latest release.
+1. Download `Avalon-Companion-1.6.0.apk` from the latest release.
 2. Open the downloaded APK.
 3. Allow **Install unknown apps** for the browser or file manager you used.
 4. Tap **Install**.
@@ -127,6 +127,19 @@ The latest signed Android APK is on the
   deleted cards collapse out of the list
 - **Use the last table** on setup restores the player count and every name from
   the most recent match, still editable — names only, no roles
+
+### The manual
+
+- **How to Play is the actual game**, not a help page for the app: seating and
+  dealing, every character, the night in order, the round loop, the team size
+  for every player count, and the rules that decide close games — a strict
+  majority, five rejected proposals, quest 4 needing two fails, and the final
+  accusation
+- **It says who does what.** The table plays the cards; the MC follows the same
+  page to know which app action comes next, from **Begin the match** to
+  **See the Result**
+- The manual never maps a role to a seat, and it says plainly why: the app is
+  never told which card a player holds
 
 ### Settings and table tools
 
@@ -302,6 +315,11 @@ docs/icon.png          the app icon used by this README
 ---
 
 ## Status
+
+**v1.6.0** — The manual. **How to Play** now teaches Avalon itself: the deal,
+the characters, the night order, the round loop, every team size from five to
+ten players, the rules that catch groups out, the accusation and both victory
+paths, with the MC's app action marked at each step.
 
 **v1.5.0** — Narrator voices. The night can be read by a voice the MC adds,
 not only the one that ships: import a zip of recordings, name it, hide the

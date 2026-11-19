@@ -3,6 +3,47 @@
 All notable changes to Avalon Companion are recorded here. One entry per completed
 development phase, in the order the plan defines them.
 
+## [1.6.0] — The manual (2026-11-19)
+
+### Added
+
+- **How to Play now teaches Avalon, not the app.** The page is a user manual in play order:
+  before you begin, set up the table, know the characters, the night, every round, team size,
+  rules that catch people out, the final accusation, how to win, using the app, at the table.
+  It covers the physical deal, the approve and reject cards, the leader token, and what each
+  character knows — in the same order the night is actually run.
+- **The numbers are the engine's.** The team-size table is drawn from `AvalonTables` for every
+  count from 5 to 10 and every quest, so the manual cannot disagree with the app. The two-fail
+  rule on quest 4 at seven or more players, the strict majority, the five-rejection loss, the
+  clockwise token and both victory paths are stated the way `GameEngine` implements them.
+- **The night section follows the recording.** Close eyes, minions without Oberon, Merlin seeing
+  every evil player except Mordred, Percival seeing two possible Merlins, then the first Lord.
+  A character who is not in play gets no step, exactly as in narration.
+- **The MC's part is marked at each step** — New Game, Preparation, Begin the match, Open Night
+  Narration, Choose the Quest Team, Open the Vote, Resolve the Quest, Begin the Accusation, See
+  the Result — so one person can hold the phone and still follow the table.
+- **"At the table" advice:** eyes closed means eyes closed, never show a card, Merlin must be
+  useful without being obvious, Evil can pass a quest to buy trust, and house rules are agreed
+  before the deal.
+
+### Changed
+
+- The old page's three short sections became **eleven**, and "What this app does" became the
+  opening "Before you begin", which now explains the game first and the phone second.
+- The page remains one scrollable list of section cards, centred in the same 600 dp column as
+  every other screen; no new route or stored state.
+
+### Verified
+
+| Check | Result |
+| --- | --- |
+| `flutter analyze` | No issues found |
+| `flutter test` | 328 tests pass (325 + 3) |
+| Manual coverage | `how_to_play_test.dart` (3): opening copy, setup and the night order, the quest table, the majority/rejection/two-fail rules, the accusation and both victory paths — scrolled end to end at phone size |
+| Content accuracy | Team sizes and the two-fail threshold come from `AvalonTables`; vote, token and victory wording matches `GameEngine`; the night matches `NightScript` |
+| Device pass | **Not run for this change.** Static content; nothing device-specific was added |
+| Release APK | **Not built or published for 1.6.0** |
+
 ## [1.5.0] — Narrator voices (2026-11-18)
 
 ### Added

@@ -1087,13 +1087,64 @@ file" to add one.
 | Device pass | **Not run.** No phone was attached, and no voice recordings ship with this build, so the file picker, the unpacking and absolute-path playback are unverified on hardware |
 | Release APK | **Not built or published for 1.5.0** |
 
+## The manual — 1.6.0
+
+Requested after 1.5.0: **How to Play** should teach the game, not the app — "the actual
+instruction to play Avalon, like a user manual".
+
+### What changed
+
+- **`HowToPlayScreen`** is now a manual in play order: before you begin, set up the table,
+  know the characters, the night, every round, team size, rules that catch people out, the
+  final accusation, how to win, using the app, at the table.
+- **The rules come from the engine, not from memory.** The team-size table is rendered from
+  `AvalonTables.teamSize` for every count from 5 to 10, so it cannot drift from the numbers
+  the engine enforces; the two-fail rule, strict majority, five rejections, token order and
+  win conditions are stated the way `GameEngine` and `AvalonTables` implement them.
+- **The night section follows `NightScript`**: close eyes, minions without Oberon, Merlin
+  seeing every evil player except Mordred, Percival seeing Merlin and Morgana, then the
+  first Lord draw. The app skips absent characters, exactly as the narration does.
+- **The MC's part is marked at each step**: New Game, Preparation, Begin the match, Open
+  Night Narration, Choose the Quest Team, Open the Vote, Resolve the Quest, Begin the
+  Accusation, See the Result. The manual also states what the app deliberately does not do,
+  and why: it is never told who holds which card.
+- **The list is one scrollable page**, section by section, with the same section headers and
+  cards as the rest of the app; no new route, no game state.
+
+### Interaction
+
+| Section | What it settles |
+| --- | --- |
+| Before you begin | 5–10 players, one character card each, one phone with the MC |
+| Set up the table | Seating, roster, deal, approve/reject cards, leader token, first night |
+| Know the characters | Merlin, Percival, loyal servant, Assassin, Morgana, Mordred, Oberon, minion |
+| The night | The exact order and who may open their eyes |
+| Every round | Proposal, discussion, vote by seat, strict majority, rejection, next leader |
+| Team size | A 5–10 × quest 1–5 table read from `AvalonTables` |
+| Rules that catch people out | Ties, five rejections, quest 4's two fails, quest cards, accusation |
+| The final accusation | The Assassin names Merlin; the app stores only the outcome |
+| How to win | Three quests plus Merlin alive; three fails, five rejections or Merlin named |
+| Using the app | The dashboard's phase button, night transport, language, voice, pause |
+| At the table | Eyes closed, no card shows, bluffing, house rules agreed up front |
+
+### Gate evidence
+
+| Check | Result |
+| --- | --- |
+| `flutter analyze` | No issues found |
+| `flutter test` | 328 tests pass (325 + 3) |
+| Manual coverage | `how_to_play_test.dart`: opening copy, setup and night order, the quest table, the strict-majority/five-rejection/two-fail rules, the accusation and both victory paths; the page is scrolled end to end at phone size, so layout is exercised |
+| Content accuracy | Team sizes and the two-fail threshold are read from `AvalonTables`; vote, token and victory language matches `GameEngine`; the night matches `NightScript` |
+| Device pass | **Not run for this change.** Static content, so nothing device-specific was added |
+| Release APK | **Not built or published for 1.6.0** |
+
 ## Next phase
 
 No phase is scheduled: **1.4.0** is the released build, signed and published, with 1.0.0–1.3.1
-verified on the phone. **1.5.0** is implemented and covered by automated gates but not released: it
-needs a device pass — import a real voice zip, rename it, play a line, hide it, delete it — and the
-MC's own recordings, because none are bundled with the build. Work after that is maintenance rather
-than plan phases — lifting the
+verified on the phone. **1.5.0** and **1.6.0** are implemented and covered by automated gates but
+not released: 1.5.0 needs a device pass — import a real voice zip, rename it, play a line, hide it,
+delete it — and the MC's own recordings, because none are bundled with the build. 1.6.0 is static
+content on top. Work after that is maintenance rather than plan phases — lifting the
 `path_provider_android` pin now that the NDK is installed, split-per-abi APKs if download size
 matters, commissioned artwork to replace the public-domain plates, or a Play Store listing with
 its own upload key.
