@@ -3,6 +3,28 @@
 All notable changes to Avalon Companion are recorded here. One entry per completed
 development phase, in the order the plan defines them.
 
+## [1.7.2] — Okley (2026-11-20)
+
+### Added
+
+- **A second narrator ships with the app.** Okley's 28 recordings — all 14 night lines in
+  English and in Filipino — are bundled under `assets/audio/voices/okley/`, so the table can
+  switch narrator from **Settings → Narrator voice** without a rebuild, a download or a zip.
+  Dahlia is still the default; the choice is remembered per device.
+- Two tests guard the folder: one fails if a bundled voice folder is missing from
+  `pubspec.yaml` (Flutter asset folders are not recursive, so an unlisted folder is silent),
+  and one fails if Okley's set is incomplete or its name does not read as **Okley**.
+
+### Verified
+
+| Check | Result |
+| --- | --- |
+| `flutter analyze` | No issues found |
+| `flutter test` | 343 tests pass (341 + 2) |
+| Voice tests | `voice_packs_test.dart` (19 tests): the folder is listed, every line is present in both languages, and the pack is named Okley |
+| Device | `clip_playback_test.dart` passes on the Galaxy A36 (SM-A366B); the release app lists **Dahlia** and **Okley**, each English 14/14 · Filipino 14/14, and choosing Okley sticks after the dialog closes |
+| Release APK | Signed **1.7.2+26** built (66.5 MB), zipaligned, verified with the release key and installed over 1.7.1 |
+
 ## [1.7.1] — Dahlia's folder (2026-11-20)
 
 ### Changed

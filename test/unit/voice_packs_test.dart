@@ -318,4 +318,52 @@ void main() {
       expect(voices.single.root, '/storage/voices/dahlia');
     });
   });
+
+  test('every bundled voice folder is listed in pubspec', () {
+    // Flutter asset folders are not recursive. A voice folder that is on disk
+    // but not listed is invisible to the app: no line plays and the picker
+    // never shows it. This is the guard the shipped narrator already has.
+    final pubspec = File('pubspec.yaml').readAsStringSync();
+    final voices = Directory(
+      VoicePackCatalogue.assetDirectory,
+    ).listSync().whereType<Directory>();
+
+    expect(voices, isNotEmpty, reason: 'Okley ships inside the APK');
+    for (final voice in voices) {
+      final root = voice.path.replaceAll(r'\', '/');
+      for (final language in ['en', 'fil']) {
+        if (!Directory('$root/$language').existsSync()) continue;
+        expect(
+          pubspec.contains('$root/$language/'),
+          isTrue,
+          reason: 'pubspec.yaml must list $root/$language/',
+        );
+      }
+    }
+  });
+
+  test('the bundled Okley voice has both languages and a name', () {
+    final assets = [
+      // One shipped line, so the catalogue also builds the classic pack.
+      NarrationClips.assetFor('night.end', NarrationLanguage.english),
+      for (final language in ['en', 'fil'])
+        for (final file in Directory(
+          '${VoicePackCatalogue.assetDirectory}/okley/$language',
+        ).listSync().whereType<File>())
+          '${VoicePackCatalogue.assetDirectory}/okley/$language/'
+              '${file.uri.pathSegments.last}',
+    ];
+    final pack = VoicePackCatalogue.fromAssets(
+      assets,
+    ).singleWhere((pack) => pack.id == 'okley');
+
+    expect(pack.name, 'Okley');
+    for (final language in NarrationLanguage.values) {
+      expect(
+        pack.clips[NarrationClips.folderFor(language)],
+        NarrationClips.ids,
+        reason: 'a complete set, so no line falls back to the phone',
+      );
+    }
+  });
 }

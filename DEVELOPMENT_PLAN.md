@@ -1179,6 +1179,33 @@ each reversible until the next action.
 | Device pass | **Passed on a Galaxy A36 (SM-A366B) over wireless debugging.** `app_test.dart` (2 tests) and `clip_playback_test.dart` (1) ran on the phone: the settings switch survives the installed database, a match starts on the real store with no role column in any table, and a night line decodes in both languages |
 | Release APK | Signed **1.7.0+24** built (64.0 MB), zipaligned and verified with the release key, installed on the phone and opened; SHA-256 `66f84332…d1657f06` |
 
+## Okley — 1.7.2
+
+The second narrator arrived as 28 MP3s — all 14 night lines in both languages — dropped into
+`assets/audio/narration/Okley/`. That folder is storage: the app only bundles the voice named
+by `NarrationClips.voice` and the packs under `assets/audio/voices/`. The set was moved to
+`assets/audio/voices/okley/` (lowercase, the id rule for pack folders), named by `voice.json`,
+and its two language folders were added to `pubspec.yaml`.
+
+### What changed
+
+- **Okley is a bundled voice**, listed in **Settings → Narrator voice** beside **Dahlia**.
+  Choosing it plays Okley for every line; the choice is stored, and Dahlia remains the default.
+- **Two guards for bundled voices.** `voice_packs_test.dart` now fails when a folder on disk is
+  missing from `pubspec.yaml`, and when Okley's set is not exactly the 14 ids in both languages
+  or its name does not read as Okley. The first is the failure mode that makes a voice silent
+  rather than wrong: Flutter asset folders are not recursive.
+
+### Gate evidence
+
+| Check | Result |
+| --- | --- |
+| `flutter analyze` | No issues found |
+| `flutter test` | 343 tests pass (341 + 2) |
+| Voice catalogue | `voice_packs_test.dart` (19 tests): the folder is listed, both languages carry the full set, the pack is named Okley |
+| Device | `clip_playback_test.dart` passes on the Galaxy A36 (SM-A366B); the release app lists **Dahlia** and **Okley**, each English 14/14 · Filipino 14/14, and choosing Okley survives the dialog |
+| Release APK | Signed **1.7.2+26** built (66.5 MB), zipaligned, verified with the release key and installed over 1.7.1; SHA-256 `f8db5469…1804ed28` |
+
 ## Dahlia's folder — 1.7.1
 
 The narrator is Dahlia, and her recordings are now filed under her name so the narration folder
@@ -1214,9 +1241,10 @@ can hold more than one voice without a second folder convention.
 
 ## Next phase
 
-No phase is scheduled: **1.7.1** is the current build (2026-11-20). 1.7.0 is the published
+No phase is scheduled: **1.7.2** is the current build (2026-11-20). 1.7.0 is the published
 release; 1.5.0's voice packs ship inside it, and 1.0.0–1.3.1 remain verified on the phone. The
-voice import still needs a real zip and the MC's recordings — none are bundled. Work after that
+voice import still needs a real zip — Okley proves the bundled path, not the import path. Work
+after that
 is maintenance rather than plan phases — lifting the `path_provider_android` pin now that the
 NDK is installed, split-per-abi APKs if download size matters, commissioned artwork to replace
 the public-domain plates, or a Play Store listing with its own upload key.

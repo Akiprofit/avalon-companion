@@ -2,7 +2,7 @@ name: avalon_companion
 description: "Offline Game Master companion for physical games of The Resistance: Avalon."
 publish_to: 'none'
 
-version: 1.7.1+25
+version: 1.7.2+26
 
 environment:
   sdk: ^3.14.0
@@ -51,7 +51,8 @@ flutter:
     # Extra bundled voices, one folder per voice. Each `<voice>/en/` and
     # `<voice>/fil/` folder must be listed on its own line; see the README
     # inside this directory.
-    - assets/audio/voices/
+    - assets/audio/voices/okley/en/
+    - assets/audio/voices/okley/fil/
 
   fonts:
     - family: Cinzel

@@ -12,7 +12,7 @@
   <a href="https://github.com/Akiprofit/avalon-companion/releases/latest">
     <img alt="Download the Android APK" src="https://img.shields.io/badge/Download-Android%20APK-C5A15B?style=for-the-badge&logo=android&logoColor=0B0E14" />
   </a>
-  <img alt="Version 1.7.1" src="https://img.shields.io/badge/version-1.7.1-0B0E14?style=for-the-badge" />
+  <img alt="Version 1.7.2" src="https://img.shields.io/badge/version-1.7.2-0B0E14?style=for-the-badge" />
   <img alt="Offline first" src="https://img.shields.io/badge/offline-first-3D9B72?style=for-the-badge" />
 </p>
 
@@ -43,7 +43,7 @@ The latest signed Android APK is on the
 
 ### Install on Android
 
-1. Download `Avalon-Companion-1.7.1.apk` from the latest release.
+1. Download `Avalon-Companion-1.7.2.apk` from the latest release.
 2. Open the downloaded APK.
 3. Allow **Install unknown apps** for the browser or file manager you used.
 4. Tap **Install**.
@@ -322,6 +322,11 @@ docs/icon.png          the app icon used by this README
 ---
 
 ## Status
+
+**v1.7.2** — Okley. A second narrator ships inside the APK: all 14 night
+lines in English and Filipino, selectable in **Settings → Narrator voice**.
+Dahlia stays the default. A test now fails if a bundled voice folder is left
+out of `pubspec.yaml`, because an unlisted folder plays nothing at all.
 
 **v1.7.1** — Dahlia's folder. The narrator's recordings now ship in
 `assets/audio/narration/Dahlia voices/`, the built-in voice is listed as
