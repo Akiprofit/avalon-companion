@@ -33,8 +33,10 @@ SQLite file on the device.
 
 ## Download
 
-The latest signed Android APK is on the
-[**Releases page**](https://github.com/Akiprofit/avalon-companion/releases/latest).
+The latest **published** signed Android APK is on the
+[**Releases page**](https://github.com/Akiprofit/avalon-companion/releases/latest)
+(currently 1.4.0). The 1.6.0 build is signed and tested on the phone but not
+published yet; it can be built from source with `flutter build apk --release`.
 
 - Android **7.0 and newer**
 - Works completely offline
@@ -43,7 +45,8 @@ The latest signed Android APK is on the
 
 ### Install on Android
 
-1. Download `Avalon-Companion-1.6.0.apk` from the latest release.
+1. Get the signed APK: download the latest published release, or build 1.6.0
+   from source — the output is `build/app/outputs/flutter-apk/app-release.apk`.
 2. Open the downloaded APK.
 3. Allow **Install unknown apps** for the browser or file manager you used.
 4. Tap **Install**.
@@ -320,6 +323,11 @@ docs/icon.png          the app icon used by this README
 the characters, the night order, the round loop, every team size from five to
 ten players, the rules that catch groups out, the accusation and both victory
 paths, with the MC's app action marked at each step.
+
+The signed **1.6.0+23** APK (63.9 MB) was built, installed over 1.4.0 on a
+Galaxy A36, and opened on the phone; all three integration tests pass there and
+the manual scrolls from the opening to **At the table**. No GitHub release was
+created for 1.5.0 or 1.6.0 yet.
 
 **v1.5.0** — Narrator voices. The night can be read by a voice the MC adds,
 not only the one that ships: import a zip of recordings, name it, hide the

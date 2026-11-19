@@ -41,8 +41,9 @@ development phase, in the order the plan defines them.
 | `flutter test` | 328 tests pass (325 + 3) |
 | Manual coverage | `how_to_play_test.dart` (3): opening copy, setup and the night order, the quest table, the majority/rejection/two-fail rules, the accusation and both victory paths — scrolled end to end at phone size |
 | Content accuracy | Team sizes and the two-fail threshold come from `AvalonTables`; vote, token and victory wording matches `GameEngine`; the night matches `NightScript` |
-| Device pass | **Not run for this change.** Static content; nothing device-specific was added |
-| Release APK | **Not built or published for 1.6.0** |
+| Device pass | **Passed on a Galaxy A36 (SM-A366B).** The three integration tests ran on the phone: a settings switch round-trips through the installed database, a match starts on the real store with no role column in any table, and a recorded night line decodes in English and Filipino. The manual was also opened on the device and scrolled from **Before you begin** to **At the table**; the quest table rendered with its header |
+| Release APK | Signed **1.6.0+23** built (63.9 MB) and installed over 1.4.0 on the same phone. No GitHub release was created |
+| Voice import | **Still unverified on hardware:** no voice recordings ship with this build, so the picker and zip unpacking were not exercised on the device |
 
 ## [1.5.0] — Narrator voices (2026-11-18)
 
