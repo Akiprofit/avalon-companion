@@ -1203,7 +1203,7 @@ plays a line.
 | `flutter analyze` | No issues found |
 | `flutter test` | 347 tests pass (343 + 4) |
 | Picker | `voice_picker_test.dart` (+4, 9 tests total): the shipped voice plays Dahlia's asset path, an imported voice plays its own, Filipino picks the `fil` file, a one-language voice falls back, a silent pack cannot be sampled, and closing stops the clip |
-| Device | Signed **1.8.0+27** installed over 1.7.2 on the Galaxy A36 (SM-A366B); the sample was not walked on the phone because it was in use |
+| Device | Walked on the Galaxy A36 (SM-A366B) with 1.8.0+27: the button flips to a stop square, `dumpsys audio` shows the app's `MediaPlayer` at `state:started` (44.1 kHz), tapping the other voice stops the first, and closing the list leaves no player running |
 | Release APK | Signed **1.8.0+27** built, zipaligned, verified with the release key and installed over 1.7.2 |
 
 ## Okley — 1.7.2

@@ -23,7 +23,7 @@ development phase, in the order the plan defines them.
 | `flutter analyze` | No issues found |
 | `flutter test` | 347 tests pass (343 + 4) |
 | Picker | `voice_picker_test.dart` (+4): the shipped voice samples its Dahlia line, an imported voice samples its own folder, a Filipino table gets the Filipino file, a one-language voice falls back, and closing the list stops the clip |
-| Device | Signed **1.8.0+27** installed over 1.7.2 on the Galaxy A36 (SM-A366B). The on-screen sample was **not** walked on the phone: it was in use, so this row is the install, not a device pass |
+| Device | Walked on the Galaxy A36 (SM-A366B) with 1.8.0+27: the play button turns into a stop square and `dumpsys audio` shows the app's `MediaPlayer` at `state:started`; tapping the other voice stops the first; closing the list leaves no player running |
 | Release APK | Signed **1.8.0+27** built, zipaligned, verified with the release key and installed over 1.7.2 |
 
 ## [1.7.2] — Okley (2026-11-20)
