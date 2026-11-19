@@ -3,6 +3,29 @@
 All notable changes to Avalon Companion are recorded here. One entry per completed
 development phase, in the order the plan defines them.
 
+## [1.8.0] — Hear it before you pick it (2026-11-20)
+
+### Added
+
+- **Every voice has a play button.** In **Settings → Narrator voice**, the button beside a name
+  plays that narrator's first night line — *Everyone, close your eyes and place one fist on the
+  table* — so the MC hears Dahlia and Okley back to back before choosing. Tap again to stop, and
+  the sample stops when the list closes.
+- **The sample follows the table's language.** An English table hears the English recording; a
+  Filipino table hears the Filipino one. A voice that recorded only one language still samples,
+  playing the language it has instead of going silent.
+- A voice with no recordings at all shows a muted button rather than pretending to play.
+
+### Verified
+
+| Check | Result |
+| --- | --- |
+| `flutter analyze` | No issues found |
+| `flutter test` | 347 tests pass (343 + 4) |
+| Picker | `voice_picker_test.dart` (+4): the shipped voice samples its Dahlia line, an imported voice samples its own folder, a Filipino table gets the Filipino file, a one-language voice falls back, and closing the list stops the clip |
+| Device | Signed **1.8.0+27** installed over 1.7.2 on the Galaxy A36 (SM-A366B). The on-screen sample was **not** walked on the phone: it was in use, so this row is the install, not a device pass |
+| Release APK | Signed **1.8.0+27** built, zipaligned, verified with the release key and installed over 1.7.2 |
+
 ## [1.7.2] — Okley (2026-11-20)
 
 ### Added

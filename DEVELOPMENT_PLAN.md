@@ -1179,6 +1179,33 @@ each reversible until the next action.
 | Device pass | **Passed on a Galaxy A36 (SM-A366B) over wireless debugging.** `app_test.dart` (2 tests) and `clip_playback_test.dart` (1) ran on the phone: the settings switch survives the installed database, a match starts on the real store with no role column in any table, and a night line decodes in both languages |
 | Release APK | Signed **1.7.0+24** built (64.0 MB), zipaligned and verified with the release key, installed on the phone and opened; SHA-256 `66f84332…d1657f06` |
 
+## Hear it before you pick it — 1.8.0
+
+Choosing a narrator by name alone was guesswork once there were two. Each row in the picker now
+plays a line.
+
+### What changed
+
+- **A play button per voice** (`voice_pack_picker.dart`). It plays the first id the pack has —
+  `night.close_eyes`, the line that opens every match — at the volume from settings, and flips
+  to a stop icon while it runs. A second tap stops it; so does closing the dialog, via the
+  clip service captured in `initState` (Riverpod forbids touching `ref` in `dispose`).
+- **`samplePathFor(pack, language)`** prefers the table's language and falls back to the other,
+  so a voice that only recorded Filipino still samples instead of showing a dead button. A pack
+  with no recordings shows a muted icon.
+- The button reuses `clipServiceProvider`, so tests record what was asked to play and no
+  platform channel is touched.
+
+### Gate evidence
+
+| Check | Result |
+| --- | --- |
+| `flutter analyze` | No issues found |
+| `flutter test` | 347 tests pass (343 + 4) |
+| Picker | `voice_picker_test.dart` (+4, 9 tests total): the shipped voice plays Dahlia's asset path, an imported voice plays its own, Filipino picks the `fil` file, a one-language voice falls back, a silent pack cannot be sampled, and closing stops the clip |
+| Device | Signed **1.8.0+27** installed over 1.7.2 on the Galaxy A36 (SM-A366B); the sample was not walked on the phone because it was in use |
+| Release APK | Signed **1.8.0+27** built, zipaligned, verified with the release key and installed over 1.7.2 |
+
 ## Okley — 1.7.2
 
 The second narrator arrived as 28 MP3s — all 14 night lines in both languages — dropped into
@@ -1241,7 +1268,7 @@ can hold more than one voice without a second folder convention.
 
 ## Next phase
 
-No phase is scheduled: **1.7.2** is the current build (2026-11-20). 1.7.0 is the published
+No phase is scheduled: **1.8.0** is the current build (2026-11-20). 1.7.0 is the published
 release; 1.5.0's voice packs ship inside it, and 1.0.0–1.3.1 remain verified on the phone. The
 voice import still needs a real zip — Okley proves the bundled path, not the import path. Work
 after that

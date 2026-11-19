@@ -2,8 +2,12 @@ import 'package:avalon_companion/app/app.dart';
 import 'package:avalon_companion/core/constants/routes.dart';
 import 'package:avalon_companion/database/database_provider.dart';
 import 'package:avalon_companion/features/settings/settings_controller.dart';
+import 'package:avalon_companion/features/settings/voice_pack_picker.dart';
 import 'package:avalon_companion/narration_engine/controllers/voice_packs_controller.dart';
+import 'package:avalon_companion/narration_engine/models/narration_instruction.dart';
 import 'package:avalon_companion/narration_engine/models/voice_pack.dart';
+import 'package:avalon_companion/narration_engine/services/clip_provider.dart';
+import 'package:avalon_companion/narration_engine/services/clip_service.dart';
 import 'package:avalon_companion/narration_engine/services/voice_files.dart';
 import 'package:avalon_companion/narration_engine/services/voice_pack_catalogue.dart';
 import 'package:avalon_companion/narration_engine/services/voice_providers.dart';
@@ -48,12 +52,38 @@ class _NoFiles extends VoiceFiles {
   Future<void> discardCopy(String zipPath) async {}
 }
 
+/// Records what the sample button asked to play, completing at once so the
+/// test never waits for audio.
+class _RecordingClips implements ClipService {
+  final played = <String>[];
+  var stops = 0;
+
+  @override
+  bool get isAvailable => true;
+
+  @override
+  Future<void> initialize() async {}
+
+  @override
+  Future<bool> play(String assetPath, {required double volume}) async {
+    played.add(assetPath);
+    return true;
+  }
+
+  @override
+  Future<void> stop() async => stops++;
+
+  @override
+  Future<void> dispose() async {}
+}
+
 /// The MC changes the narrator between matches, from Settings. The list is the
 /// whole surface: pick a voice, rename it, hide it, delete an imported one.
 void main() {
   Future<ProviderContainer> pumpSettings(
     WidgetTester tester, {
     AppSettings settings = const AppSettings(),
+    ClipService? clips,
   }) async {
     tester.view.physicalSize = const Size(1242, 9000);
     tester.view.devicePixelRatio = 3.0;
@@ -65,6 +95,7 @@ void main() {
           initialSettingsProvider.overrideWithValue(settings),
           voicePacksProvider.overrideWith(_FixedVoices.new),
           voiceFilesProvider.overrideWithValue(const _NoFiles()),
+          if (clips != null) clipServiceProvider.overrideWithValue(clips),
         ],
         child: const AvalonApp(),
       ),
@@ -127,6 +158,102 @@ void main() {
       findsOneWidget,
       reason: 'the picker closes back onto settings',
     );
+  });
+
+  testWidgets('the sample button plays the voice in the table language', (
+    tester,
+  ) async {
+    final clips = _RecordingClips();
+    await pumpSettings(tester, clips: clips);
+
+    await tester.tap(find.byKey(const Key('settings_voice_pack')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('voice_pack_sample_classic')));
+    await tester.pumpAndSettle();
+
+    expect(
+      clips.played,
+      ['assets/audio/narration/Dahlia voices/en/night.close_eyes.mp3'],
+      reason: 'the first night line, from the shipped voice',
+    );
+
+    await tester.tap(
+      find.byKey(const Key('voice_pack_sample_voice-of-dahlia')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      clips.played.last,
+      '/data/voices/voice-of-dahlia/en/night.close_eyes.mp3',
+    );
+  });
+
+  testWidgets('a Filipino table samples the Filipino recording', (tester) async {
+    final clips = _RecordingClips();
+    await pumpSettings(
+      tester,
+      clips: clips,
+      settings: const AppSettings(
+        narratorPackId: 'voice-of-dahlia',
+        defaultLanguage: NarrationLanguage.filipino,
+      ),
+    );
+
+    await tester.tap(find.byKey(const Key('settings_voice_pack')));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const Key('voice_pack_sample_voice-of-dahlia')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      clips.played.single,
+      '/data/voices/voice-of-dahlia/fil/night.close_eyes.mp3',
+    );
+  });
+
+  test('a voice with nothing in the table language samples the other', () {
+    const pack = VoicePack(
+      id: 'okley',
+      name: 'Okley',
+      root: '/voices/okley',
+      clips: {
+        'fil': {'night.end'},
+      },
+    );
+
+    expect(
+      samplePathFor(pack, NarrationLanguage.english),
+      '/voices/okley/fil/night.end.mp3',
+    );
+    expect(
+      samplePathFor(pack, NarrationLanguage.filipino),
+      '/voices/okley/fil/night.end.mp3',
+    );
+    expect(
+      samplePathFor(
+        VoicePackCatalogue.classic.copyWith(clips: const {}),
+        NarrationLanguage.english,
+      ),
+      isNull,
+      reason: 'a voice with no recordings cannot be sampled',
+    );
+  });
+
+  testWidgets('closing the picker stops the sample', (tester) async {
+    final clips = _RecordingClips();
+    await pumpSettings(tester, clips: clips);
+
+    await tester.tap(find.byKey(const Key('settings_voice_pack')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('voice_pack_sample_classic')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Done'));
+    await tester.pumpAndSettle();
+
+    expect(clips.stops, greaterThan(0));
   });
 
   testWidgets('a voice can be renamed without touching its files', (

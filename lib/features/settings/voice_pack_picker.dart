@@ -12,6 +12,8 @@ import '../../core/widgets/secondary_button.dart';
 import '../../narration_engine/controllers/voice_packs_controller.dart';
 import '../../narration_engine/models/narration_instruction.dart';
 import '../../narration_engine/models/voice_pack.dart';
+import '../../narration_engine/services/clip_provider.dart';
+import '../../narration_engine/services/clip_service.dart';
 import '../../narration_engine/services/narration_clips.dart';
 import '../../narration_engine/services/voice_files.dart';
 import '../../narration_engine/services/voice_import.dart';
@@ -30,20 +32,44 @@ Future<void> showVoicePackPicker(BuildContext context) {
   );
 }
 
-class VoicePackPickerDialog extends ConsumerWidget {
+class VoicePackPickerDialog extends ConsumerStatefulWidget {
   const VoicePackPickerDialog({super.key, this.showHidden = false});
 
   /// When true, lists the voices the MC took out of the way.
   final bool showHidden;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<VoicePackPickerDialog> createState() =>
+      _VoicePackPickerDialogState();
+}
+
+class _VoicePackPickerDialogState
+    extends ConsumerState<VoicePackPickerDialog> {
+  late final ClipService _clips;
+
+  @override
+  void initState() {
+    super.initState();
+    // Read once, while the element is alive: dispose() cannot touch ref.
+    _clips = ref.read(clipServiceProvider);
+  }
+
+  @override
+  void dispose() {
+    // A sample stops with the list: the phone must not keep talking after the
+    // MC has closed it.
+    _clips.stop();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final packs = ref.watch(voicePacksProvider);
     final selected = ref.watch(settingsProvider).narratorPackId;
-    final list = showHidden ? packs.hidden : packs.visible;
+    final list = widget.showHidden ? packs.hidden : packs.visible;
 
     return AlertDialog(
-      title: Text(showHidden ? 'Hidden voices' : 'Narrator voice'),
+      title: Text(widget.showHidden ? 'Hidden voices' : 'Narrator voice'),
       contentPadding: const EdgeInsets.symmetric(vertical: Space.md),
       content: SizedBox(
         width: 420,
@@ -56,7 +82,7 @@ class VoicePackPickerDialog extends ConsumerWidget {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: Space.md),
                   child: Text(
-                    showHidden
+                    widget.showHidden
                         ? 'No voice is hidden.'
                         : 'No voice is available. The shipped recordings are '
                               'missing from this build, so the phone reads the '
@@ -69,9 +95,9 @@ class VoicePackPickerDialog extends ConsumerWidget {
                   pack: pack,
                   selected: pack.id ==
                       (selected ?? VoicePackCatalogue.classicId),
-                  showHidden: showHidden,
+                  showHidden: widget.showHidden,
                 ),
-              if (!showHidden) ...[
+              if (!widget.showHidden) ...[
                 if (VoiceFiles.supported)
                   ListTile(
                     key: const Key('voice_pack_import'),
@@ -147,31 +173,37 @@ class _VoicePackRow extends ConsumerWidget {
         ref.read(feedbackProvider).tap();
         Navigator.of(context).pop();
       },
-      trailing: PopupMenuButton<String>(
-        key: Key('voice_pack_menu_${pack.id}'),
-        tooltip: 'Voice options',
-        icon: const Icon(
-          Icons.more_vert_rounded,
-          size: 20,
-          color: AppColors.mutedText,
-        ),
-        onSelected: (action) => switch (action) {
-          'rename' => _rename(context, ref),
-          'hide' => _setHidden(context, ref, true),
-          'restore' => _setHidden(context, ref, false),
-          'delete' => _delete(context, ref),
-          _ => null,
-        },
-        itemBuilder: (_) => [
-          if (showHidden)
-            const PopupMenuItem(value: 'restore', child: Text('Restore'))
-          else ...[
-            const PopupMenuItem(value: 'rename', child: Text('Rename…')),
-            if (pack.builtIn)
-              const PopupMenuItem(value: 'hide', child: Text('Hide'))
-            else
-              const PopupMenuItem(value: 'delete', child: Text('Delete')),
-          ],
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _SampleButton(pack: pack),
+          PopupMenuButton<String>(
+            key: Key('voice_pack_menu_${pack.id}'),
+            tooltip: 'Voice options',
+            icon: const Icon(
+              Icons.more_vert_rounded,
+              size: 20,
+              color: AppColors.mutedText,
+            ),
+            onSelected: (action) => switch (action) {
+              'rename' => _rename(context, ref),
+              'hide' => _setHidden(context, ref, true),
+              'restore' => _setHidden(context, ref, false),
+              'delete' => _delete(context, ref),
+              _ => null,
+            },
+            itemBuilder: (_) => [
+              if (showHidden)
+                const PopupMenuItem(value: 'restore', child: Text('Restore'))
+              else ...[
+                const PopupMenuItem(value: 'rename', child: Text('Rename…')),
+                if (pack.builtIn)
+                  const PopupMenuItem(value: 'hide', child: Text('Hide'))
+                else
+                  const PopupMenuItem(value: 'delete', child: Text('Delete')),
+              ],
+            ],
+          ),
         ],
       ),
     );
@@ -219,6 +251,95 @@ class _VoicePackRow extends ConsumerWidget {
 
   bool _isActive(WidgetRef ref) =>
       ref.read(settingsProvider).narratorPackId == pack.id;
+}
+
+/// The line a sample plays: the first night line this voice recorded, in the
+/// table's language, then the other one. Null when the voice has nothing.
+String? samplePathFor(VoicePack pack, NarrationLanguage language) {
+  final languages = [
+    language,
+    ...NarrationLanguage.values.where((value) => value != language),
+  ];
+  for (final candidate in languages) {
+    for (final id in NarrationClips.ids) {
+      final path = pack.pathFor(id, candidate);
+      if (path != null) return path;
+    }
+  }
+  return null;
+}
+
+/// Plays one line of a voice, so the MC can hear it before choosing it.
+///
+/// The button belongs to the row: each voice shows its own state, and a second
+/// tap stops. The dialog stops whatever is playing when it closes.
+class _SampleButton extends ConsumerStatefulWidget {
+  const _SampleButton({required this.pack});
+
+  final VoicePack pack;
+
+  @override
+  ConsumerState<_SampleButton> createState() => _SampleButtonState();
+}
+
+class _SampleButtonState extends ConsumerState<_SampleButton> {
+  late final ClipService _clips;
+  bool _playing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _clips = ref.read(clipServiceProvider);
+  }
+
+  @override
+  void dispose() {
+    if (_playing) _clips.stop();
+    super.dispose();
+  }
+
+  Future<void> _toggle() async {
+    if (_playing) {
+      await _clips.stop();
+      if (mounted) setState(() => _playing = false);
+      return;
+    }
+
+    final settings = ref.read(settingsProvider);
+    final path = samplePathFor(widget.pack, settings.defaultLanguage);
+    if (path == null) return;
+
+    ref.read(feedbackProvider).tap();
+    setState(() => _playing = true);
+    await _clips.play(path, volume: settings.volume);
+    if (mounted) setState(() => _playing = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final language = ref.watch(settingsProvider).defaultLanguage;
+    final path = samplePathFor(widget.pack, language);
+
+    if (path == null) {
+      return IconButton(
+        key: Key('voice_pack_sample_${widget.pack.id}'),
+        tooltip: 'No recording to sample',
+        onPressed: null,
+        icon: const Icon(Icons.volume_off_outlined, size: 20),
+      );
+    }
+
+    return IconButton(
+      key: Key('voice_pack_sample_${widget.pack.id}'),
+      tooltip: _playing ? 'Stop the sample' : 'Play a sample',
+      onPressed: _toggle,
+      icon: Icon(
+        _playing ? Icons.stop_rounded : Icons.play_arrow_rounded,
+        size: 22,
+        color: AppColors.gold,
+      ),
+    );
+  }
 }
 
 /// Picks the zip, asks for the name, and installs the voice.
