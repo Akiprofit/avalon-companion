@@ -3,6 +3,42 @@
 All notable changes to Avalon Companion are recorded here. One entry per completed
 development phase, in the order the plan defines them.
 
+## [1.7.0] — Table safety (2026-11-19)
+
+### Added
+
+- **A step can be taken back.** The proposal you just sent, the vote you just resolved and the
+  quest you just recorded each offer **Undo** until anything else happens in the match. The
+  previous snapshot is restored, the row the step wrote is deleted with its log line, and the
+  previous screen stays exactly as it was — a misheard seat is corrected instead of recounted
+  from the top.
+- **A win can be rewound.** Undoing the quest that ended the match reopens it: the result, the
+  finished timestamp and the winner all go back to the state before that quest. The offer is
+  single-step: resolving a newer vote or quest replaces it, and any other action withdraws it.
+- **The dashboard says what to do next.** One short line under the score names the next table
+  action for the current phase — start the narration, draw the King, choose the team, count the
+  vote, count the cards, or settle the accusation — so a first-time MC never has to guess.
+
+### Changed
+
+- The quest confirmation now says the result **can be undone from the result dialog**, instead
+  of saying it cannot be edited.
+- The old footer hint card is gone; the same guidance now sits at the top of the dashboard body,
+  where it scrolls with the rest of the page at 200% text instead of fighting the fixed bar.
+
+### Verified
+
+| Check | Result |
+| --- | --- |
+| `flutter analyze` | No issues found |
+| `flutter test` | 341 tests pass (328 + 13) |
+| Undo state | `persistence_test.dart` (+6): a proposal, a vote and a quest each restore the previous snapshot; a stale token is refused; any other action clears the offer; a quest that ended the match reopens it; the accusation is never undoable |
+| Undo storage | `game_repository_test.dart` (+3): the newest vote or quest and its event are deleted in one transaction, a proposal-only undo leaves the log intact, and a finished match becomes the match in progress again |
+| Undo UI | `voting_test.dart` (+1) and `quest_resolution_test.dart` (+1): the dialog's Undo returns to the live count with the same tally or cards, and the step can be recorded again; `team_selection_test.dart` (+1): the proposal snackbar undoes the team and the dashboard offers Continue Team Selection |
+| Phase hint | `team_selection_test.dart` (+1): the hint names the narration in Preparation and the quest team in Day |
+| Device pass | **Passed on a Galaxy A36 (SM-A366B) over wireless debugging.** The three integration tests ran in two clean invocations — `app_test.dart` (2) and `clip_playback_test.dart` (1): the settings switch writes to the installed database, a match starts on the real store, no table has a role column, and a recorded night line decodes in English and Filipino |
+| Release APK | Signed **1.7.0+24** built (64.0 MB), zipaligned, verified with the release key, installed on the phone and opened; SHA-256 `66f84332…d1657f06` |
+
 ## [1.6.0] — The manual (2026-11-19)
 
 ### Added

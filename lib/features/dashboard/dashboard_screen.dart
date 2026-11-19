@@ -258,6 +258,63 @@ class DashboardScreen extends ConsumerWidget {
                 Space.xl,
               ),
               children: [
+                // One line of what to do next, right under the score, so an MC
+                // running their first match never has to guess the next step.
+                MedievalCard(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(
+                        Icons.info_outline,
+                        size: 16,
+                        color: AppColors.mutedGold,
+                      ),
+                      const SizedBox(width: Space.xs),
+                      Expanded(
+                        child: Text(
+                          isPaused
+                              ? 'The match is paused. Resume when the table is '
+                                    'ready.'
+                              : finished
+                              ? 'The match is over. Open the result to review '
+                                    'the final summary.'
+                              : switch (game.phase) {
+                                  Phase.preparation =>
+                                    'Read the introduction aloud, then start '
+                                        'the night narration.',
+                                  Phase.night =>
+                                    'Wake the roles in order. The screen shows '
+                                        'the script for each wake-up.',
+                                  Phase.lordSelection =>
+                                    'Draw the King for this round. The wheel '
+                                        'picks the seat at random.',
+                                  Phase.dayDiscussion =>
+                                    'Let the table talk, then tap Choose the '
+                                        'Quest Team.',
+                                  Phase.teamSelection =>
+                                    'Tap the players for this quest, then send '
+                                        'them to the vote.',
+                                  Phase.teamVoting =>
+                                    'Count the hands, then record the vote on '
+                                        'the next screen.',
+                                  Phase.questResolution =>
+                                    'Count the cards that came back from the '
+                                        'quest, then record the result.',
+                                  Phase.assassination =>
+                                    'The assassin names a player. Record only '
+                                        'whether it was Merlin.',
+                                  _ =>
+                                    'The match is waiting for the next step '
+                                        'at the table.',
+                                },
+                          key: const Key('dashboard_next_hint'),
+                          style: AppText.caption,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: Space.lg),
                 const SectionHeader(title: 'The quests'),
                 MedievalCard(child: QuestBoard(game: game)),
                 if (isDiscussion) ...[
@@ -409,46 +466,6 @@ class DashboardScreen extends ConsumerWidget {
                         'Characters in play for this match. The app does not '
                         'know who holds which card.',
                         style: AppText.caption,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: Space.lg),
-                MedievalCard(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(
-                        Icons.info_outline,
-                        size: 16,
-                        color: AppColors.mutedGold,
-                      ),
-                      const SizedBox(width: Space.xs),
-                      Expanded(
-                        child: Text(
-                          isPaused
-                              ? 'The match is paused. Resume to continue.'
-                              : finished
-                              ? 'The match is over. Open the result to review '
-                                    'the final summary.'
-                              : game.phase == Phase.lordSelection
-                              ? 'Draw the King for this round; the wheel picks '
-                                    'the seat at random.'
-                              : isDiscussion
-                              ? 'Talk it through, then choose the quest team.'
-                              : game.phase == Phase.teamVoting
-                              ? 'Count the physical vote, then record it here.'
-                              : game.phase == Phase.questResolution
-                              ? 'Count the cards that came back from the quest.'
-                              : game.phase == Phase.assassination
-                              ? 'The table settles the accusation by hand, '
-                                    'then the outcome is recorded.'
-                              : canOpenNarration
-                              ? 'Run the night narration for this composition.'
-                              : 'The match is waiting for the next step at the '
-                                    'table.',
-                          style: AppText.caption,
-                        ),
                       ),
                     ],
                   ),

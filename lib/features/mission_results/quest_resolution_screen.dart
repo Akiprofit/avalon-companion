@@ -77,7 +77,7 @@ class _QuestResolutionScreenState extends ConsumerState<QuestResolutionScreen> {
           'Quest ${game.questNumber}: $_success success and $_fail '
           '${_fail == 1 ? 'fail card' : 'fail cards'}. '
           '${failed ? 'The quest fails' : 'The quest succeeds'}. '
-          'This result cannot be edited afterwards.',
+          'You can undo it from the result dialog.',
           style: AppText.body,
         ),
         actions: [
@@ -108,6 +108,7 @@ class _QuestResolutionScreenState extends ConsumerState<QuestResolutionScreen> {
       drawLord: settings.kingsDrawnAutomatically,
       voteSkipped: !settings.teamVoteEnabled,
     );
+    final undo = controller.undoOffer;
     final after = ref.read(gameSessionProvider);
     if (!mounted) return;
 
@@ -129,6 +130,7 @@ class _QuestResolutionScreenState extends ConsumerState<QuestResolutionScreen> {
               'draws the King who will lead the round.'
         : 'The leader token returns to the table. $score.';
 
+    var undone = false;
     await showDialog<void>(
       context: context,
       barrierDismissible: false,
@@ -136,6 +138,21 @@ class _QuestResolutionScreenState extends ConsumerState<QuestResolutionScreen> {
         title: Text(title),
         content: Text(message, style: AppText.body),
         actions: [
+          if (undo != null)
+            TextButton(
+              key: const Key('quest_outcome_undo'),
+              onPressed: () {
+                undone = controller.undoLastStep(undo.token);
+                Navigator.of(dialogContext).pop();
+                if (undone && mounted) {
+                  setState(() {
+                    _frozen = null;
+                    _resolving = false;
+                  });
+                }
+              },
+              child: const Text('Undo the result'),
+            ),
           TextButton(
             key: const Key('quest_outcome_continue'),
             onPressed: () => Navigator.of(dialogContext).pop(),
@@ -144,13 +161,12 @@ class _QuestResolutionScreenState extends ConsumerState<QuestResolutionScreen> {
         ],
       ),
     );
-    if (mounted) {
-      context.goNamed(
-        after?.phase == Phase.lordSelection
-            ? RouteNames.lordSelection
-            : RouteNames.dashboard,
-      );
-    }
+    if (!mounted || undone) return;
+    context.goNamed(
+      after?.phase == Phase.lordSelection
+          ? RouteNames.lordSelection
+          : RouteNames.dashboard,
+    );
   }
 
   @override

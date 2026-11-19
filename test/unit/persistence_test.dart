@@ -287,6 +287,182 @@ void main() {
     });
   });
 
+  group('undoing the last step', () {
+    GameSessionController reachTeamSelection(ProviderContainer container) {
+      final controller = startMatch(container);
+      controller.startNight();
+      controller.endNight();
+      controller.chooseLord(1);
+      controller.beginTeamSelection();
+      return controller;
+    }
+
+    test('a proposed team can be undone before the vote', () async {
+      final store = FakeMatchStore();
+      final container = containerWith(store);
+      final controller = reachTeamSelection(container);
+
+      controller.proposeTeam([1, 2]);
+      await controller.writesSettled;
+
+      final offer = controller.undoOffer;
+      expect(offer, isNotNull, reason: 'a fresh proposal is undoable');
+      expect(controller.state!.phase, Phase.teamVoting);
+
+      expect(controller.undoLastStep(offer!.token), isTrue);
+      await controller.writesSettled;
+
+      expect(controller.state!.phase, Phase.teamSelection);
+      expect(controller.state!.currentTeam, isEmpty);
+      expect(controller.undoOffer, isNull, reason: 'one step, once');
+      expect(store.undone.single.phase, Phase.teamSelection);
+      expect(
+        store.events.any((e) => e.startsWith('teamApproved')),
+        isFalse,
+        reason: 'the proposal never reached a vote',
+      );
+    });
+
+    test('only the newest step can be undone', () async {
+      final store = FakeMatchStore();
+      final container = containerWith(store);
+      final controller = reachTeamSelection(container);
+
+      controller.proposeTeam([1, 2]);
+      final proposal = controller.undoOffer!;
+      controller.recordVotes(approve: 2, reject: 3);
+      controller.resolveTeamVote();
+      final vote = controller.undoOffer!;
+
+      expect(vote.token, isNot(proposal.token));
+      expect(
+        controller.undoLastStep(proposal.token),
+        isFalse,
+        reason: 'a stale offer cannot rewind a newer step',
+      );
+      expect(controller.state!.phase, Phase.dayDiscussion);
+
+      expect(controller.undoLastStep(vote.token), isTrue);
+      expect(controller.state!.phase, Phase.teamVoting);
+      expect(controller.state!.leaderSeat, 1, reason: 'the token never moved');
+    });
+
+    test('any other action clears the offer', () async {
+      final store = FakeMatchStore();
+      final container = containerWith(store);
+      final controller = reachTeamSelection(container);
+
+      controller.proposeTeam([1, 2]);
+      final offer = controller.undoOffer!;
+      controller.togglePause();
+
+      expect(controller.undoOffer, isNull);
+      expect(controller.undoLastStep(offer.token), isFalse);
+      expect(controller.state!.phase, Phase.paused);
+    });
+
+    test('undoing a vote removes its row and its log line', () async {
+      final store = FakeMatchStore();
+      final container = containerWith(store);
+      final controller = reachTeamSelection(container);
+
+      controller.proposeTeam([1, 2]);
+      controller.recordVotes(approve: 2, reject: 3);
+      controller.resolveTeamVote();
+      await controller.writesSettled;
+
+      expect(store.proposals, hasLength(1));
+      expect(store.events.any((e) => e.startsWith('teamRejected')), isTrue);
+
+      final offer = controller.undoOffer!;
+      expect(controller.undoLastStep(offer.token), isTrue);
+      await controller.writesSettled;
+
+      expect(store.proposals, isEmpty);
+      expect(
+        store.events.any((e) => e.startsWith('teamRejected')),
+        isFalse,
+        reason: 'the vote never happened',
+      );
+      expect(
+        store.events.any((e) => e.startsWith('lordDrawn')),
+        isTrue,
+        reason: 'older log lines stay',
+      );
+      expect(store.undone.single.phase, Phase.teamVoting);
+      expect(store.undone.single.rejectionCount, 0);
+    });
+
+    test('undoing the quest that ended the match reopens it', () async {
+      final store = FakeMatchStore();
+      final container = containerWith(store);
+      final controller = startMatch(container);
+      controller.startNight();
+      controller.endNight();
+      controller.chooseLord(1);
+      for (var quest = 0; quest < 3; quest++) {
+        controller.beginTeamSelection();
+        final game = controller.state!;
+        controller.proposeTeam([
+          for (var seat = 1; seat <= game.requiredTeamSize; seat++) seat,
+        ]);
+        controller.recordVotes(approve: 5, reject: 0);
+        controller.resolveTeamVote();
+        controller.recordQuest(failCards: 1);
+      }
+      await controller.writesSettled;
+
+      expect(controller.state!.phase, Phase.evilVictory);
+      expect(store.quests, hasLength(3));
+
+      final offer = controller.undoOffer!;
+      expect(controller.undoLastStep(offer.token), isTrue);
+      await controller.writesSettled;
+
+      expect(controller.state!.phase, Phase.questResolution);
+      expect(controller.state!.isFinished, isFalse);
+      expect(controller.state!.questResults, hasLength(2));
+      expect(store.quests, hasLength(2));
+      expect(store.undone.single.isFinished, isFalse);
+      expect(
+        store.events.any(
+          (e) => e.startsWith('questFailed') && e.contains('Quest 3'),
+        ),
+        isFalse,
+        reason: 'the third result was rolled back',
+      );
+    });
+
+    test('the accusation is never offered as undoable', () async {
+      final store = FakeMatchStore();
+      final container = containerWith(store);
+      final controller = startMatch(container);
+      controller.startNight();
+      controller.endNight();
+      controller.chooseLord(1);
+      for (var quest = 0; quest < 3; quest++) {
+        controller.beginTeamSelection();
+        final game = controller.state!;
+        controller.proposeTeam([
+          for (var seat = 1; seat <= game.requiredTeamSize; seat++) seat,
+        ]);
+        controller.recordVotes(approve: 5, reject: 0);
+        controller.resolveTeamVote();
+        controller.recordQuest(failCards: 0);
+      }
+      final questOffer = controller.undoOffer!;
+      expect(controller.state!.phase, Phase.assassination);
+
+      controller.resolveAssassination(merlinIdentified: false);
+      await controller.writesSettled;
+
+      expect(controller.state!.phase, Phase.goodVictory);
+      expect(controller.undoOffer, isNull);
+      expect(controller.undoLastStep(questOffer.token), isFalse);
+      expect(store.quests, hasLength(3), reason: 'the win stands');
+    });
+  });
+
   group('storage is optional', () {
     test('a match runs with no store at all', () async {
       final container = ProviderContainer();

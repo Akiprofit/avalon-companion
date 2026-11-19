@@ -12,7 +12,7 @@
   <a href="https://github.com/Akiprofit/avalon-companion/releases/latest">
     <img alt="Download the Android APK" src="https://img.shields.io/badge/Download-Android%20APK-C5A15B?style=for-the-badge&logo=android&logoColor=0B0E14" />
   </a>
-  <img alt="Version 1.5.0" src="https://img.shields.io/badge/version-1.6.0-0B0E14?style=for-the-badge" />
+  <img alt="Version 1.7.0" src="https://img.shields.io/badge/version-1.7.0-0B0E14?style=for-the-badge" />
   <img alt="Offline first" src="https://img.shields.io/badge/offline-first-3D9B72?style=for-the-badge" />
 </p>
 
@@ -43,7 +43,7 @@ The latest signed Android APK is on the
 
 ### Install on Android
 
-1. Download `Avalon-Companion-1.6.0.apk` from the latest release.
+1. Download `Avalon-Companion-1.7.0.apk` from the latest release.
 2. Open the downloaded APK.
 3. Allow **Install unknown apps** for the browser or file manager you used.
 4. Tap **Install**.
@@ -105,6 +105,12 @@ The latest signed Android APK is on the
   to the quest
 - Record the success and fail cards that come back; the engine applies the
   **quest 4 two-fail rule**, keeps the score and decides when the match is over
+- **A step can be taken back.** The proposal just sent, the vote just resolved
+  and the quest just recorded offer **Undo** until anything else happens. The
+  previous screen returns with its counts intact, and the stored row and its log
+  line go with the step — even a quest that ended the match reopens it
+- **The dashboard says what to do next**, in one line under the score, for
+  whichever phase the table is in
 - The accusation records **whether Merlin was named**, never a person
 - The result screen summarises the match without naming a role, and **Play
   Again** deals the same table a fresh match
@@ -315,6 +321,16 @@ docs/icon.png          the app icon used by this README
 ---
 
 ## Status
+
+**v1.7.0** — Table safety. The proposal, the vote result and the quest result
+can each be undone until anything else happens in the match, restoring the
+previous screen and deleting the stored row with its log line; a quest that
+ended the match reopens it. The dashboard also names the next table action for
+the current phase, so a first-time MC never has to guess.
+
+The signed **1.7.0+24** APK (64.0 MB) was built, installed on the same Galaxy A36
+and opened; all three integration tests pass there. It is published as
+[**v1.7.0**](https://github.com/Akiprofit/avalon-companion/releases/tag/v1.7.0).
 
 **v1.6.0** — The manual. **How to Play** now teaches Avalon itself: the deal,
 the characters, the night order, the round loop, every team size from five to

@@ -199,4 +199,32 @@ void main() {
     expect(find.text('DAY'), findsWidgets);
     expect(find.byKey(const Key('dashboard_choose_team')), findsOneWidget);
   });
+
+  testWidgets('a resolved vote can be undone back to the count', (
+    tester,
+  ) async {
+    await openVote(tester);
+    await mark(tester, {1: true, 2: true, 3: false, 4: false, 5: false});
+
+    await tester.tap(find.byKey(const Key('voting_resolve')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('voting_outcome_undo')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('voting_outcome_undo')));
+    await tester.pumpAndSettle();
+
+    // The screen is live again with the same tally, so a misheard vote can be
+    // corrected without recounting the whole table.
+    expect(find.text('THE VOTE'), findsWidgets);
+    expect(find.text('Approve 2'), findsOneWidget);
+    expect(find.text('This vote rejects the team.'), findsOneWidget);
+    expect(enabled(tester, const Key('voting_resolve')), isTrue);
+
+    await mark(tester, {3: true, 4: true});
+    expect(find.text('This vote approves the team.'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('voting_resolve')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('The team is approved'), findsOneWidget);
+  });
 }

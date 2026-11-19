@@ -192,4 +192,41 @@ void main() {
     expect(find.text('DAY'), findsWidgets);
     expect(find.byKey(const Key('dashboard_choose_team')), findsOneWidget);
   });
+
+  testWidgets('a recorded quest can be undone and counted again', (
+    tester,
+  ) async {
+    await openQuest(tester);
+    await addCards(tester, success: 2, fail: 0);
+
+    await tester.tap(find.byKey(const Key('quest_resolve')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('quest_confirm_save')));
+    await tester.pumpAndSettle();
+    expect(find.text('The quest succeeds'), findsOneWidget);
+    expect(find.byKey(const Key('quest_outcome_undo')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('quest_outcome_undo')));
+    await tester.pumpAndSettle();
+
+    // Still on the quest screen, with the cards that were counted.
+    expect(find.text('QUEST RESOLUTION'), findsWidgets);
+    expect(
+      tester.widget<Text>(find.byKey(const Key('quest_success_value'))).data,
+      '2',
+    );
+    expect(find.text('This quest succeeds.'), findsOneWidget);
+    expect(enabled(tester, const Key('quest_resolve')), isTrue);
+
+    // The score was rolled back, so the same result can be recorded once.
+    await tester.tap(find.byKey(const Key('quest_resolve')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('quest_confirm_save')));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Good 1 — Evil 0'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('quest_outcome_continue')));
+    await tester.pumpAndSettle();
+    expect(find.text('DAY'), findsWidgets);
+  });
 }

@@ -41,12 +41,14 @@ class GameRepository implements MatchStore {
   /// Updates the snapshot after a confirmed action.
   @override
   Future<void> saveState(int gameId, GameState state) {
-    return _db.transaction(() async {
-      await (_db.update(
-        _db.games,
-      )..where((g) => g.id.equals(gameId))).write(_gamesCompanion(state));
-      await _replacePlayers(gameId, state);
-    });
+    return _db.transaction(() => _writeState(gameId, state));
+  }
+
+  Future<void> _writeState(int gameId, GameState state) async {
+    await (_db.update(
+      _db.games,
+    )..where((g) => g.id.equals(gameId))).write(_gamesCompanion(state));
+    await _replacePlayers(gameId, state);
   }
 
   /// Appends a resolved team vote (master plan PART 8, `TeamProposals`).
@@ -122,6 +124,64 @@ class GameRepository implements MatchStore {
   @override
   Future<void> addEvent(int gameId, String type, String description) =>
       _insertEvent(gameId, type, description);
+
+  /// Rewinds the most recent undoable step.
+  ///
+  /// The snapshot is restored whole, including a finished match going back to
+  /// in-progress, and the row the step appended is deleted with its log line.
+  /// Both deletions take the newest row for this match, which is the one that
+  /// step wrote: the controller only accepts an undo for the step it just
+  /// applied, so nothing newer can exist.
+  @override
+  Future<void> undoStep(
+    int gameId,
+    GameState state, {
+    bool removeProposal = false,
+    bool removeQuest = false,
+  }) {
+    return _db.transaction(() async {
+      if (removeProposal) {
+        final row =
+            await (_db.select(_db.teamProposals)
+                  ..where((p) => p.gameId.equals(gameId))
+                  ..orderBy([(p) => OrderingTerm.desc(p.id)])
+                  ..limit(1))
+                .getSingleOrNull();
+        if (row != null) {
+          await (_db.delete(
+            _db.teamProposals,
+          )..where((p) => p.id.equals(row.id))).go();
+        }
+      }
+      if (removeQuest) {
+        final row =
+            await (_db.select(_db.quests)
+                  ..where((q) => q.gameId.equals(gameId))
+                  ..orderBy([(q) => OrderingTerm.desc(q.id)])
+                  ..limit(1))
+                .getSingleOrNull();
+        if (row != null) {
+          await (_db.delete(
+            _db.quests,
+          )..where((q) => q.id.equals(row.id))).go();
+        }
+      }
+      if (removeProposal || removeQuest) {
+        final row =
+            await (_db.select(_db.gameEvents)
+                  ..where((e) => e.gameId.equals(gameId))
+                  ..orderBy([(e) => OrderingTerm.desc(e.id)])
+                  ..limit(1))
+                .getSingleOrNull();
+        if (row != null) {
+          await (_db.delete(
+            _db.gameEvents,
+          )..where((e) => e.id.equals(row.id))).go();
+        }
+      }
+      await _writeState(gameId, state);
+    });
+  }
 
   /// The match to offer as **Continue Game**, if one is still running.
   @override

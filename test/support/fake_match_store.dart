@@ -54,6 +54,9 @@ class FakeMatchStore implements MatchStore {
   final List<FakeQuest> quests = [];
   final List<String> events = [];
 
+  /// Every snapshot restored by [undoStep], oldest first.
+  final List<GameState> undone = [];
+
   /// Row ids marked abandoned, in order.
   final List<int> abandoned = [];
 
@@ -107,6 +110,13 @@ class FakeMatchStore implements MatchStore {
         verdict: verdict,
       ),
     );
+    final sorted = [...seats]..sort();
+    final approved = verdict == TeamVerdict.approved;
+    events.add(
+      '${approved ? 'teamApproved' : 'teamRejected'}: Quest $questNumber: '
+      'seat ${sorted.join(', ')} ($approve approve, $reject reject). '
+      '${approved ? 'Approved' : 'Rejected'}.',
+    );
   }
 
   @override
@@ -127,12 +137,34 @@ class FakeMatchStore implements MatchStore {
         result: result,
       ),
     );
+    final succeeded = result == QuestResult.success;
+    events.add(
+      '${succeeded ? 'questSucceeded' : 'questFailed'}: Quest $questNumber '
+      '${succeeded ? 'succeeded' : 'failed'}: $failCards fail '
+      '${failCards == 1 ? 'card' : 'cards'} out of $requiredPlayers.',
+    );
   }
 
   @override
   Future<void> addEvent(int gameId, String type, String description) async {
     _check();
     events.add('$type: $description');
+  }
+
+  @override
+  Future<void> undoStep(
+    int gameId,
+    GameState state, {
+    bool removeProposal = false,
+    bool removeQuest = false,
+  }) async {
+    _check();
+    if (removeProposal && proposals.isNotEmpty) proposals.removeLast();
+    if (removeQuest && quests.isNotEmpty) quests.removeLast();
+    if ((removeProposal || removeQuest) && events.isNotEmpty) {
+      events.removeLast();
+    }
+    undone.add(state);
   }
 
   @override

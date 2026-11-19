@@ -92,6 +92,7 @@ class _VotingScreenState extends ConsumerState<VotingScreen> {
     final controller = ref.read(gameSessionProvider.notifier);
     controller.recordVotes(approve: approve, reject: reject);
     controller.resolveTeamVote(drawLord: drawLord);
+    final undo = controller.undoOffer;
 
     final after = ref.read(gameSessionProvider);
     if (!mounted) return;
@@ -114,6 +115,7 @@ class _VotingScreenState extends ConsumerState<VotingScreen> {
         ? 'The wheel now draws a new King, who will propose the next team.'
         : 'The leader token passes to $nextLeader. The table discusses again.';
 
+    var undone = false;
     await showDialog<void>(
       context: context,
       barrierDismissible: false,
@@ -121,6 +123,21 @@ class _VotingScreenState extends ConsumerState<VotingScreen> {
         title: Text(title),
         content: Text(message, style: AppText.body),
         actions: [
+          if (undo != null)
+            TextButton(
+              key: const Key('voting_outcome_undo'),
+              onPressed: () {
+                undone = controller.undoLastStep(undo.token);
+                Navigator.of(dialogContext).pop();
+                if (undone && mounted) {
+                  setState(() {
+                    _frozen = null;
+                    _resolving = false;
+                  });
+                }
+              },
+              child: const Text('Undo the vote'),
+            ),
           TextButton(
             key: const Key('voting_outcome_continue'),
             onPressed: () => Navigator.of(dialogContext).pop(),
@@ -129,11 +146,10 @@ class _VotingScreenState extends ConsumerState<VotingScreen> {
         ],
       ),
     );
-    if (mounted) {
-      context.goNamed(
-        drawsKing ? RouteNames.lordSelection : RouteNames.dashboard,
-      );
-    }
+    if (!mounted || undone) return;
+    context.goNamed(
+      drawsKing ? RouteNames.lordSelection : RouteNames.dashboard,
+    );
   }
 
   @override

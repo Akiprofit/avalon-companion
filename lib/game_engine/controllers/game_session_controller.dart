@@ -20,11 +20,25 @@ import '../models/player.dart';
 class GameSessionController extends Notifier<GameState?> {
   int? _gameId;
   Future<void> _writes = Future<void>.value();
+  int _undoSeq = 0;
+  _UndoEntry? _undo;
+
+  /// The step that can still be undone, or null.
+  ///
+  /// Only the most recent confirmable action is kept: resolving another vote or
+  /// quest replaces it, and any other transition clears it. The offer carries a
+  /// token so a stale snackbar cannot undo a newer step.
+  UndoOffer? get undoOffer {
+    final entry = _undo;
+    if (entry == null) return null;
+    return UndoOffer(token: entry.id);
+  }
 
   @override
   GameState? build() {
     final restored = ref.watch(restoredMatchProvider);
     _gameId = restored?.id;
+    _undo = null;
     return restored?.state;
   }
 
@@ -117,7 +131,9 @@ class GameSessionController extends Notifier<GameState?> {
   void proposeTeam(List<int> seats, {bool skipVote = false}) {
     final game = state;
     if (game == null) return;
-    _apply(GameEngine.proposeTeam(game, seats, skipVote: skipVote));
+    final next = GameEngine.proposeTeam(game, seats, skipVote: skipVote);
+    _apply(next);
+    _rememberUndo(game);
   }
 
   /// Records the physical vote. The MC counts hands; the engine refuses totals
@@ -158,6 +174,7 @@ class GameSessionController extends Notifier<GameState?> {
       );
       await store.saveState(id, next);
     });
+    _rememberUndo(game, removeProposal: true);
   }
 
   /// Records the cards played on the approved quest. Only the fail count is
@@ -195,6 +212,7 @@ class GameSessionController extends Notifier<GameState?> {
       );
       await store.saveState(id, next);
     });
+    _rememberUndo(game, removeQuest: true);
   }
 
   /// Records the accusation. Only the outcome is stored: whether Merlin was
@@ -228,6 +246,28 @@ class GameSessionController extends Notifier<GameState?> {
     );
   }
 
+  /// Reverts the step that offered [token].
+  ///
+  /// Returns false when that offer has been superseded, which keeps an old
+  /// snackbar from rewinding a newer vote or quest. The snapshot is restored
+  /// and the row the step wrote is removed; a win the step produced reopens the
+  /// match, because the result it ended on no longer exists.
+  bool undoLastStep(int token) {
+    final entry = _undo;
+    if (entry == null || entry.id != token) return false;
+    _undo = null;
+    state = entry.before;
+    _write(
+      (store, id) => store.undoStep(
+        id,
+        entry.before,
+        removeProposal: entry.removeProposal,
+        removeQuest: entry.removeQuest,
+      ),
+    );
+    return true;
+  }
+
   /// Leaves the match. It stays in the history as abandoned so the table can
   /// see how the evening went; nothing is deleted.
   void abort() {
@@ -235,6 +275,7 @@ class GameSessionController extends Notifier<GameState?> {
     if (id != null) {
       _enqueue((store) => store.markAbandoned(id));
     }
+    _undo = null;
     _gameId = null;
     state = null;
   }
@@ -249,6 +290,7 @@ class GameSessionController extends Notifier<GameState?> {
   /// Applies an engine result and queues the snapshot behind every write that is
   /// still pending, so the newest state always lands last.
   void _apply(GameState next) {
+    _undo = null;
     state = next;
     _write((store, id) => store.saveState(id, next));
   }
@@ -259,8 +301,23 @@ class GameSessionController extends Notifier<GameState?> {
     GameState next,
     Future<void> Function(MatchStore store, int id) write,
   ) {
+    _undo = null;
     state = next;
     _write(write);
+  }
+
+  /// Offers [before] as the undo target for the step just applied.
+  void _rememberUndo(
+    GameState before, {
+    bool removeProposal = false,
+    bool removeQuest = false,
+  }) {
+    _undo = _UndoEntry(
+      id: ++_undoSeq,
+      before: before,
+      removeProposal: removeProposal,
+      removeQuest: removeQuest,
+    );
   }
 
   void _beginNewMatch(GameState next) {
@@ -268,6 +325,7 @@ class GameSessionController extends Notifier<GameState?> {
     // keeps its result, so Play Again never rewrites a victory as an abort.
     final running = state;
     final previous = running != null && !running.isFinished ? _gameId : null;
+    _undo = null;
     _gameId = null;
     state = next;
     _enqueue((store) async {
@@ -296,7 +354,28 @@ class GameSessionController extends Notifier<GameState?> {
   }
 }
 
-final gameSessionProvider =
-    NotifierProvider<GameSessionController, GameState?>(
-      GameSessionController.new,
-    );
+final gameSessionProvider = NotifierProvider<GameSessionController, GameState?>(
+  GameSessionController.new,
+);
+
+/// One undoable step as the UI sees it: the token to pass back.
+class UndoOffer {
+  const UndoOffer({required this.token});
+
+  final int token;
+}
+
+/// The previous snapshot, kept only while its step is the most recent one.
+class _UndoEntry {
+  const _UndoEntry({
+    required this.id,
+    required this.before,
+    this.removeProposal = false,
+    this.removeQuest = false,
+  });
+
+  final int id;
+  final GameState before;
+  final bool removeProposal;
+  final bool removeQuest;
+}

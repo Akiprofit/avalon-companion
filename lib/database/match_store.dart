@@ -107,6 +107,19 @@ abstract interface class MatchStore {
   /// Appends one line of the public log.
   Future<void> addEvent(int gameId, String type, String description);
 
+  /// Restores the snapshot from before the most recent undoable step and
+  /// removes what that step appended: its proposal or quest row, and the log
+  /// line written with it.
+  ///
+  /// The controller only offers this for the step it has just applied, so a
+  /// forgotten undo cannot rewrite an older round.
+  Future<void> undoStep(
+    int gameId,
+    GameState state, {
+    bool removeProposal = false,
+    bool removeQuest = false,
+  });
+
   /// Marks an interrupted match as abandoned, keeping it in the history.
   Future<void> markAbandoned(int gameId);
 

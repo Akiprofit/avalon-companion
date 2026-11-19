@@ -195,6 +195,113 @@ void main() {
     );
   });
 
+  group('undoing the last step', () {
+    test(
+      'a vote is removed with its log line and the snapshot rewinds',
+      () async {
+        final id = await repository.createMatch(newGame());
+        var game = GameEngine.chooseLord(
+          GameEngine.endNight(GameEngine.startNight(newGame())),
+          seat: 1,
+        );
+        game = GameEngine.beginTeamSelection(game);
+        game = GameEngine.proposeTeam(game, [1, 2]);
+        final beforeVote = game;
+        game = GameEngine.recordVotes(game, approve: 2, reject: 3);
+        await repository.saveState(id, game);
+        await repository.recordProposal(
+          gameId: id,
+          questNumber: 1,
+          leaderSeat: 1,
+          seats: [1, 2],
+          approve: 2,
+          reject: 3,
+          verdict: TeamVerdict.rejected,
+        );
+        await repository.saveState(id, GameEngine.resolveTeamVote(game));
+
+        await repository.undoStep(id, beforeVote, removeProposal: true);
+
+        expect(await repository.proposals(id), isEmpty);
+        final events = (await repository.events(id)).map((e) => e.eventType);
+        expect(events, isNot(contains('teamRejected')));
+        expect(
+          events,
+          contains('matchStarted'),
+          reason: 'older log lines stay in the history',
+        );
+        final stored = await repository.findInProgress();
+        expect(stored!.state.phase, Phase.teamVoting);
+        expect(stored.state.currentTeam, [1, 2]);
+        expect(stored.state.rejectionCount, 0);
+      },
+    );
+
+    test('undoing a proposal only rewinds the snapshot', () async {
+      final day = GameEngine.beginTeamSelection(
+        GameEngine.chooseLord(
+          GameEngine.endNight(GameEngine.startNight(newGame())),
+          seat: 1,
+        ),
+      );
+      final id = await repository.createMatch(day);
+      await repository.saveState(id, GameEngine.proposeTeam(day, [1, 2]));
+      final before = await repository.events(id);
+
+      await repository.undoStep(id, day);
+
+      expect(
+        (await repository.events(id)).length,
+        before.length,
+        reason: 'a proposal writes no log line to remove',
+      );
+      final stored = await repository.findInProgress();
+      expect(stored!.state.phase, Phase.teamSelection);
+      expect(stored.state.currentTeam, isEmpty);
+    });
+
+    test('undoing the last quest reopens a finished match', () async {
+      final id = await repository.createMatch(newGame());
+      var game = GameEngine.startNight(newGame());
+      game = GameEngine.endNight(game);
+      game = GameEngine.chooseLord(game, seat: 1);
+      late GameState beforeLastQuest;
+      for (var quest = 0; quest < 3; quest++) {
+        game = GameEngine.beginTeamSelection(game);
+        game = GameEngine.proposeTeam(game, [
+          for (var seat = 1; seat <= game.requiredTeamSize; seat++) seat,
+        ]);
+        game = GameEngine.recordVotes(game, approve: 5, reject: 0);
+        game = GameEngine.resolveTeamVote(game);
+        beforeLastQuest = game;
+        await repository.recordQuest(
+          gameId: id,
+          questNumber: game.questNumber,
+          requiredPlayers: game.currentTeam.length,
+          failCards: 1,
+          result: QuestResult.fail,
+        );
+        game = GameEngine.recordQuest(game, failCards: 1);
+        await repository.saveState(id, game);
+      }
+
+      expect(game.phase, Phase.evilVictory);
+      expect(await repository.findInProgress(), isNull);
+      expect(await repository.quests(id), hasLength(3));
+
+      await repository.undoStep(id, beforeLastQuest, removeQuest: true);
+
+      expect(await repository.quests(id), hasLength(2));
+      final events = (await repository.events(id)).map((e) => e.eventType);
+      expect(events.where((type) => type == 'questFailed'), hasLength(2));
+      final stored = await repository.findInProgress();
+      expect(stored, isNotNull, reason: 'the match is live again');
+      expect(stored!.state.phase, Phase.questResolution);
+      expect(stored.state.isFinished, isFalse);
+      expect(stored.state.questResults, hasLength(2));
+    });
+  });
+
   test('a finished match is not offered as Continue Game', () async {
     final id = await repository.createMatch(newGame());
     await repository.saveState(id, goodVictory());

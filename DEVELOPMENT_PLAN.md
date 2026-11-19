@@ -1139,12 +1139,50 @@ instruction to play Avalon, like a user manual".
 | Release APK | Signed **1.6.0+23** built (63.9 MB), installed over 1.4.0 on the phone, and published as [**v1.6.0**](https://github.com/Akiprofit/avalon-companion/releases/tag/v1.6.0) with `Avalon-Companion-1.6.0.apk`; the uploaded asset's SHA-256 matches the local build |
 | Voice import | **Still unverified on hardware:** no recordings ship, so the picker and zip unpacking were not exercised |
 
+## Table safety — 1.7.0
+
+Requested after 1.6.0: the phone should survive a misheard seat. The three places where a
+mistake is most expensive — a wrong proposal, a wrong vote count, a wrong quest count — are
+each reversible until the next action.
+
+### What changed
+
+- **Single-step undo in `GameSessionController`.** `proposeTeam`, `resolveTeamVote` and
+  `recordQuest` remember the `GameState` they replaced, with a token. `undoOffer` exposes
+  that step; `undoLastStep(token)` restores it only while the token still matches. Any other
+  transition clears the offer, so an old snackbar cannot rewind a newer step.
+- **Storage rolls back in one transaction.** `MatchStore.undoStep(gameId, state,
+  removeProposal:, removeQuest:)` restores the snapshot, deletes the newest proposal or quest
+  row for the match and the newest event, and rewrites the game row. A finished match is
+  written back as in progress, with no winner and no duration.
+- **Where the offer appears:** a snackbar with Undo after a team is sent, and an **Undo the
+  vote** / **Undo the result** action in the outcome dialogs. Undo returns to the live voting
+  or quest screen with the recorded counts and cards still there, so the MC corrects one seat
+  or one card instead of recounting the table.
+- **Not undoable:** the Lord draw, the night, pause/resume, abort and the accusation. They are
+  narration steps or deliberate decisions, not counts that can be misheard.
+- **Phase hint.** The dashboard body opens with one line naming the next action for the
+  current phase; the old footer card that duplicated it was removed, so the hint scrolls and
+  survives a 200% text scale.
+
+### Gate evidence
+
+| Check | Result |
+| --- | --- |
+| `flutter analyze` | No issues found |
+| `flutter test` | 341 tests pass (328 + 13) |
+| Controller | `persistence_test.dart` (+6): proposal, vote and quest undo restore the snapshot; stale tokens and later actions are refused; a finished match reopens; the accusation offers nothing |
+| Storage | `game_repository_test.dart` (+3): the newest row and event are deleted in one transaction, older log lines are kept, and a finished match becomes the match in progress |
+| UI | `voting_test.dart` (+1) and `quest_resolution_test.dart` (+1): the dialog's Undo keeps the tally or the cards and the step can be recorded again; `team_selection_test.dart` (+1): the snackbar undoes the proposal |
+| Hint | `team_selection_test.dart` (+1): the line names the narration in Preparation and the team action in Day |
+| Device pass | **Passed on a Galaxy A36 (SM-A366B) over wireless debugging.** `app_test.dart` (2 tests) and `clip_playback_test.dart` (1) ran on the phone: the settings switch survives the installed database, a match starts on the real store with no role column in any table, and a night line decodes in both languages |
+| Release APK | Signed **1.7.0+24** built (64.0 MB), zipaligned and verified with the release key, installed on the phone and opened; SHA-256 `66f84332…d1657f06` |
+
 ## Next phase
 
-No phase is scheduled: **1.6.0** is the published build (2026-11-19), signed, installed on the
-A36 and passing the device gate; 1.5.0's voice packs ship inside it, and 1.0.0–1.3.1 remain
-verified on the phone. The voice import still needs a real zip and the MC's recordings — none are
-bundled. Work after that is maintenance rather than plan phases — lifting the
-`path_provider_android` pin now that the NDK is installed, split-per-abi APKs if download size
-matters, commissioned artwork to replace the public-domain plates, or a Play Store listing with
-its own upload key.
+No phase is scheduled: **1.7.0** is the current build (2026-11-19). 1.6.0 is the published
+release; 1.5.0's voice packs ship inside it, and 1.0.0–1.3.1 remain verified on the phone. The
+voice import still needs a real zip and the MC's recordings — none are bundled. Work after that
+is maintenance rather than plan phases — lifting the `path_provider_android` pin now that the
+NDK is installed, split-per-abi APKs if download size matters, commissioned artwork to replace
+the public-domain plates, or a Play Store listing with its own upload key.

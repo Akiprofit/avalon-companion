@@ -180,4 +180,43 @@ void main() {
     expect(find.text('TEAM SELECTION'), findsWidgets);
     expect(find.text('Continue Team Selection'), findsOneWidget);
   });
+
+  testWidgets('a wrong proposal can be undone from the snackbar', (
+    tester,
+  ) async {
+    await startMatch(tester);
+    await reachDay(tester);
+    await tester.tap(find.byKey(const Key('dashboard_choose_team')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('team_selection_seat_1')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('team_selection_seat_2')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('team_selection_confirm')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('TEAM VOTING'), findsWidgets);
+    expect(find.byKey(const Key('team_proposal_undo')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('team_proposal_undo')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('TEAM SELECTION'), findsWidgets);
+    expect(find.text('Continue Team Selection'), findsOneWidget);
+    expect(
+      find.text('Team undone. Choose the team again from the table.'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('the dashboard hints the next step of the match', (tester) async {
+    await startMatch(tester);
+    String hint() =>
+        tester.widget<Text>(find.byKey(const Key('dashboard_next_hint'))).data!;
+
+    expect(hint(), contains('start the night narration'));
+
+    await reachDay(tester);
+    expect(hint(), contains('Choose the Quest Team'));
+  });
 }

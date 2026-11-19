@@ -54,9 +54,41 @@ class _TeamSelectionScreenState extends ConsumerState<TeamSelectionScreen> {
     // House rule: with the approval vote off, the team goes straight to the
     // quest. The engine refuses a team of the wrong size either way.
     final skipVote = !ref.read(settingsProvider).teamVoteEnabled;
-    ref
-        .read(gameSessionProvider.notifier)
-        .proposeTeam(seats, skipVote: skipVote);
+    final controller = ref.read(gameSessionProvider.notifier);
+    final messenger = ScaffoldMessenger.of(context);
+    controller.proposeTeam(seats, skipVote: skipVote);
+
+    // The table might spot a wrong seat while the phone is being passed. Keep
+    // the step reversible until anything else happens in the match.
+    final undo = controller.undoOffer;
+    if (undo != null) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            skipVote
+                ? 'Quest team sent to the quest.'
+                : 'Quest team sent to the vote.',
+          ),
+          duration: const Duration(seconds: 8),
+          action: SnackBarAction(
+            key: const Key('team_proposal_undo'),
+            label: 'Undo',
+            onPressed: () {
+              if (controller.undoLastStep(undo.token)) {
+                messenger.showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'Team undone. Choose the team again from the table.',
+                    ),
+                  ),
+                );
+              }
+            },
+          ),
+        ),
+      );
+    }
+
     context.goNamed(
       skipVote ? RouteNames.questResolution : RouteNames.dashboard,
     );
