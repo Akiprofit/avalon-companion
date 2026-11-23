@@ -43,6 +43,20 @@ abstract final class AppColors {
   static const danger = Color(0xFFB84B4B);
   static const divider = Color(0xFF2C3748);
 
+  /// Deep red at the foot of a destructive button, so it reads as a surface
+  /// rather than a flat block.
+  static const dangerDeep = Color(0xFF8F3636);
+
+  /// Hairline drawn on the top edge of a raised surface: a button, a card rim.
+  static const hairline = Color(0x38F1F0EB);
+
+  /// The same hairline at zero alpha, so a shine can fade out at both ends.
+  static const hairlineFade = Color(0x00F1F0EB);
+
+  /// The glow under a gold action, and under a destructive one.
+  static const goldGlow = Color(0x40C5A15B);
+  static const dangerGlow = Color(0x40B84B4B);
+
   /// Text/icon colour appropriate on top of gold surfaces.
   static const onGold = Color(0xFF0B0E14);
 

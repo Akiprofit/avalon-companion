@@ -1179,6 +1179,42 @@ each reversible until the next action.
 | Device pass | **Passed on a Galaxy A36 (SM-A366B) over wireless debugging.** `app_test.dart` (2 tests) and `clip_playback_test.dart` (1) ran on the phone: the settings switch survives the installed database, a match starts on the real store with no role column in any table, and a night line decodes in both languages |
 | Release APK | Signed **1.7.0+24** built (64.0 MB), zipaligned and verified with the release key, installed on the phone and opened; SHA-256 `66f84332…d1657f06` |
 
+## Struck gold — 1.8.2
+
+The app worked; the buttons looked like coloured rectangles. This release is appearance only: no
+new control, no new screen, no change to what any button does.
+
+### What changed
+
+- **One shared surface, `lib/core/widgets/button_frame.dart`.** `PrimaryButton`, `SecondaryButton`
+  and `DangerButton` each choose a gradient, a rim colour, an optional glow and their content; the
+  frame draws the face, the hairline border, the top sheen, the pressed state and the ripple. One
+  place to change the look of every action in the app.
+- **The face is lit, not flat.** A vertical gradient from `lightGold` through `gold` to `mutedGold`
+  (diagonal would run out of light across a wide button), a 1.2-point sheen along the top edge with
+  `AppColors.hairlineFade` at both ends, and a 20-point `goldGlow` shadow under it.
+- **The press is physical.** The face scales to 0.98 and the content steps down 2 points for
+  `Motion.micro`, then settles back.
+- **Metrics.** Height 52 → 56, corner radius `Radii.input` (12) → `Radii.card` (16). `kMinTapTarget`
+  is 48, so the taller face keeps a comfortable margin.
+- **The outline action is filled** — `surfaceRaised` to `surface` with a `mutedGold` rim and a gold
+  icon — so it reads as a button first and a secondary action second.
+- **The destructive action matches** in `danger` to `dangerDeep` with a `dangerGlow`.
+- New tokens in `AppColors`: `dangerDeep`, `hairline`, `hairlineFade`, `goldGlow`, `dangerGlow`.
+  Nothing outside the palette; no inline colours in the widgets.
+- Disabled actions dim to 45% instead of the previous 38–40%, so the label still reads.
+
+### Gate evidence
+
+| Check | Result |
+| --- | --- |
+| `flutter analyze` | No issues found |
+| `flutter test` | 353 tests pass (348 + 5; `test\widget` 108, `test\unit` + `test\database` 245) |
+| Buttons | `buttons_test.dart` (5 tests): the gold action fills the row at 56 and its tap target is the whole face; a compact action sizes itself when the row offers unbounded width; a tap fires and a disabled face refuses it at 45% opacity; a loading action shows a spinner and refuses the tap; the outline and destructive faces share the same height and both fire |
+| Preview | Rendered through a temporary golden with the real Cinzel and Inter fonts at 1080×1500, three iterations (flat gradient → diagonal → vertical + sheen + glow) before the design was settled |
+| Device | **Passed on a Galaxy A36 (SM-A366B) over wireless debugging**: the signed release installed over 1.8.0 and every button was checked on the phone |
+| Release APK | Signed **1.8.2+29** built (66.5 MB), zipaligned and verified with the release key, installed over 1.8.0 on the Galaxy A36 (SM-A366B) and opened; SHA-256 A7B22F8F6539FD3E3E6CE46CF2B700F50E31C5F5B29497659C7E811C8CF5F41E |
+
 ## The bar that would not leave — 1.8.1
 
 The undo offer from 1.7.0 worked, then refused to go away. Confirming a team showed
@@ -1218,8 +1254,8 @@ even when the messenger is poked:
 | `flutter analyze` | No issues found |
 | `flutter test` | 348 tests pass (347 + 1) |
 | Undo bar | `team_selection_test.dart` (8 tests): the offer shows on the vote screen, Undo still returns to team selection with its confirmation, the confirmation clears itself, and the offer is gone nine seconds after it appears |
-| Device | Not claimed: the phone dropped off wireless debugging during the build, so the bar was checked through the widget test |
-| Release APK | Signed **1.8.1+28** built (66.5 MB), zipaligned, verified with the release key; SHA-256  0313985�d4058 |
+| Device | Not claimed for the 1.8.1 build itself: the phone dropped off wireless debugging during it. The same code was walked on the phone in **1.8.2**: the offer appears on the vote screen and is gone twelve seconds later |
+| Release APK | Signed **1.8.1+28** built (66.5 MB), zipaligned, verified with the release key; SHA-256 00313985D57E7E7FE42E70F2C4A7953DD0E3553C863133159A516FBFD01D4058 |
 
 ## Hear it before you pick it — 1.8.0
 
@@ -1310,7 +1346,7 @@ can hold more than one voice without a second folder convention.
 
 ## Next phase
 
-No phase is scheduled: **1.8.1** is the current build (2026-11-23). 1.7.0 is the published
+No phase is scheduled: **1.8.2** is the current build (2026-11-23). 1.7.0 is the published
 release; 1.5.0's voice packs ship inside it, and 1.0.0–1.3.1 remain verified on the phone. The
 voice import still needs a real zip — Okley proves the bundled path, not the import path. Work
 after that

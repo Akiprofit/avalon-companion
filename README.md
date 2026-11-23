@@ -12,7 +12,7 @@
   <a href="https://github.com/Akiprofit/avalon-companion/releases/latest">
     <img alt="Download the Android APK" src="https://img.shields.io/badge/Download-Android%20APK-C5A15B?style=for-the-badge&logo=android&logoColor=0B0E14" />
   </a>
-  <img alt="Version 1.8.1" src="https://img.shields.io/badge/version-1.8.1-0B0E14?style=for-the-badge" />
+  <img alt="Version 1.8.2" src="https://img.shields.io/badge/version-1.8.2-0B0E14?style=for-the-badge" />
   <img alt="Offline first" src="https://img.shields.io/badge/offline-first-3D9B72?style=for-the-badge" />
 </p>
 
@@ -43,7 +43,7 @@ The latest signed Android APK is on the
 
 ### Install on Android
 
-1. Download `Avalon-Companion-1.8.1.apk` from the latest release.
+1. Download `Avalon-Companion-1.8.2.apk` from the latest release.
 2. Open the downloaded APK.
 3. Allow **Install unknown apps** for the browser or file manager you used.
 4. Tap **Install**.
@@ -322,6 +322,13 @@ docs/icon.png          the app icon used by this README
 ---
 
 ## Status
+
+**v1.8.2** — Struck gold. Every button in the app now shares one face: a
+gold gradient lit from above, a hairline along the edge, a catch of light
+across the top, a warm glow that lifts it off the artwork, and a press that
+sinks it a hair under the thumb. The outline action is filled rather than
+hollow, and the destructive one matches in red. Buttons are taller (56) with
+softer corners, so they are easier to hit at a table.
 
 **v1.8.1** — The undo bar leaves. A bar shown just before a route change
 never started its own clock, so "Quest team sent to the vote" with **Undo**

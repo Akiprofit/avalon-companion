@@ -3,8 +3,13 @@ import 'package:material_ui/material_ui.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_metrics.dart';
 import '../theme/app_text.dart';
+import 'button_frame.dart';
 
 /// The single dominant action on a screen — `avalon-ui-system`.
+///
+/// A struck-gold face: light along the top edge, deep at the foot, a hairline
+/// where the light catches it and a warm glow so it lifts off the artwork. It
+/// sinks under the thumb.
 class PrimaryButton extends StatelessWidget {
   const PrimaryButton({
     super.key,
@@ -14,6 +19,15 @@ class PrimaryButton extends StatelessWidget {
     this.isLoading = false,
     this.expand = true,
   });
+
+  static const _face = LinearGradient(
+    colors: [AppColors.lightGold, AppColors.gold, AppColors.mutedGold],
+    stops: [0, 0.46, 1],
+    // Vertical, not diagonal: a wide button lit from above reads as a curved
+    // gold face; a diagonal would run out of light halfway across.
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+  );
 
   final String label;
   final VoidCallback? onPressed;
@@ -25,7 +39,7 @@ class PrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final child = Row(
+    final content = Row(
       mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -54,36 +68,26 @@ class PrimaryButton extends StatelessWidget {
     );
 
     return SizedBox(
-      height: 52,
       width: expand ? double.infinity : null,
       child: Semantics(
         button: true,
         enabled: _enabled,
         label: label,
-        child: Opacity(
-          opacity: _enabled ? 1 : 0.4,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [AppColors.gold, AppColors.mutedGold],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(Radii.input),
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                key: const Key('primary_button_ink'),
-                borderRadius: BorderRadius.circular(Radii.input),
-                onTap: _enabled ? onPressed : null,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: Space.lg),
-                  child: Center(child: child),
-                ),
-              ),
-            ),
+        child: ButtonFrame(
+          inkKey: const Key('primary_button_ink'),
+          onTap: onPressed,
+          enabled: _enabled,
+          gradient: _face,
+          borderColor: AppColors.hairline,
+          glow: AppColors.goldGlow,
+          // The face sinks, and the content steps down with it.
+          pressedPadding: const EdgeInsets.fromLTRB(
+            Space.lg,
+            2,
+            Space.lg,
+            0,
           ),
+          child: content,
         ),
       ),
     );
