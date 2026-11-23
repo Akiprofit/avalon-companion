@@ -2,11 +2,8 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../services/feedback.dart';
-import '../theme/app_metrics.dart';
 import '../theme/app_text.dart';
-import 'danger_button.dart';
-import 'primary_button.dart';
-import 'secondary_button.dart';
+import 'dialog_actions.dart';
 
 /// Destructive confirmation. The confirm label is an explicit verb and the message
 /// restates the consequence — `avalon-ui-system` copy rules.
@@ -34,32 +31,14 @@ class ConfirmationDialog extends StatelessWidget {
         constraints: const BoxConstraints(maxWidth: 420),
         child: Text(message, style: AppText.body),
       ),
-      actionsPadding: const EdgeInsets.fromLTRB(
-        Space.md,
-        0,
-        Space.md,
-        Space.md,
-      ),
+      actionsPadding: dialogActionsPadding,
       actions: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (isDestructive)
-              DangerButton(
-                label: confirmLabel,
-                onPressed: () => Navigator.of(context).pop(true),
-              )
-            else
-              PrimaryButton(
-                label: confirmLabel,
-                onPressed: () => Navigator.of(context).pop(true),
-              ),
-            const SizedBox(height: Space.xs),
-            SecondaryButton(
-              label: cancelLabel,
-              onPressed: () => Navigator.of(context).pop(false),
-            ),
-          ],
+        DialogActions(
+          isDestructive: isDestructive,
+          primaryLabel: confirmLabel,
+          onPrimary: () => Navigator.of(context).pop(true),
+          secondaryLabel: cancelLabel,
+          onSecondary: () => Navigator.of(context).pop(false),
         ),
       ],
     );

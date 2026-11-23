@@ -5,8 +5,7 @@ import '../../features/settings/pin_controller.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_metrics.dart';
 import '../theme/app_text.dart';
-import 'primary_button.dart';
-import 'secondary_button.dart';
+import 'dialog_actions.dart';
 
 /// Asks for the MC PIN and unlocks the session when it is right.
 ///
@@ -121,23 +120,13 @@ class _PinPromptState extends ConsumerState<_PinPrompt> {
           ],
         ),
       ),
-      actionsPadding: const EdgeInsets.fromLTRB(
-        Space.md,
-        0,
-        Space.md,
-        Space.md,
-      ),
+      actionsPadding: dialogActionsPadding,
       actions: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            PrimaryButton(label: widget.confirmLabel, onPressed: _submit),
-            const SizedBox(height: Space.xs),
-            SecondaryButton(
-              label: 'Cancel',
-              onPressed: () => Navigator.of(context).pop(false),
-            ),
-          ],
+        DialogActions(
+          primaryLabel: widget.confirmLabel,
+          onPrimary: _submit,
+          secondaryLabel: 'Cancel',
+          onSecondary: () => Navigator.of(context).pop(false),
         ),
       ],
     );
@@ -226,23 +215,13 @@ class _NewPinPromptState extends State<_NewPinPrompt> {
           ],
         ),
       ),
-      actionsPadding: const EdgeInsets.fromLTRB(
-        Space.md,
-        0,
-        Space.md,
-        Space.md,
-      ),
+      actionsPadding: dialogActionsPadding,
       actions: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            PrimaryButton(label: widget.confirmLabel, onPressed: _submit),
-            const SizedBox(height: Space.xs),
-            SecondaryButton(
-              label: 'Cancel',
-              onPressed: () => Navigator.of(context).pop(),
-            ),
-          ],
+        DialogActions(
+          primaryLabel: widget.confirmLabel,
+          onPrimary: _submit,
+          secondaryLabel: 'Cancel',
+          onSecondary: () => Navigator.of(context).pop(),
         ),
       ],
     );

@@ -127,6 +127,35 @@ void main() {
     expect(taps, 0);
   });
 
+  testWidgets('the face sits in the artwork instead of floating over it', (
+    tester,
+  ) async {
+    await pumpInColumn(
+      tester,
+      PrimaryButton(label: 'Confirm the team', onPressed: () {}),
+    );
+
+    final face = tester.widget<DecoratedBox>(
+      find
+          .descendant(
+            of: find.byType(PrimaryButton),
+            matching: find.byType(DecoratedBox),
+          )
+          .first,
+    );
+    final decoration = face.decoration as BoxDecoration;
+    expect(
+      decoration.boxShadow ?? const <BoxShadow>[],
+      isEmpty,
+      reason: 'no halo: against the plates it cannot be seen and does no work',
+    );
+    expect(
+      decoration.gradient,
+      isNotNull,
+      reason: 'the face is still lit rather than a flat block',
+    );
+  });
+
   testWidgets('the outline and destructive actions share the same face', (
     tester,
   ) async {

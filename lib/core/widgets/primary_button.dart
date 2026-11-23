@@ -7,9 +7,8 @@ import 'button_frame.dart';
 
 /// The single dominant action on a screen — `avalon-ui-system`.
 ///
-/// A struck-gold face: light along the top edge, deep at the foot, a hairline
-/// where the light catches it and a warm glow so it lifts off the artwork. It
-/// sinks under the thumb.
+/// A struck-gold face: light along the top edge, deep at the foot, and a
+/// hairline where the light catches it. It sinks under the thumb.
 class PrimaryButton extends StatelessWidget {
   const PrimaryButton({
     super.key,
@@ -79,7 +78,6 @@ class PrimaryButton extends StatelessWidget {
           enabled: _enabled,
           gradient: _face,
           borderColor: AppColors.hairline,
-          glow: AppColors.goldGlow,
           // The face sinks, and the content steps down with it.
           pressedPadding: const EdgeInsets.fromLTRB(
             Space.lg,

@@ -6,9 +6,13 @@ import '../theme/app_metrics.dart';
 /// The surface shared by every app button.
 ///
 /// One place for the things a button should never get wrong: the gradient
-/// face, the hairline along its edge, the glow that lifts it off the artwork,
-/// and a press that sinks it a hair and ripples in gold. Each button only
-/// chooses its own colours and content.
+/// face, the hairline along its edge, the catch of light on the top edge, and a
+/// press that sinks it a hair and ripples in gold. Each button only chooses its
+/// own colours and content.
+///
+/// There is deliberately no drop shadow. The face is drawn as part of the
+/// artwork rather than floating over it, and a halo that cannot be seen against
+/// the plates is decoration that does no work.
 class ButtonFrame extends StatefulWidget {
   const ButtonFrame({
     super.key,
@@ -17,7 +21,6 @@ class ButtonFrame extends StatefulWidget {
     required this.gradient,
     required this.borderColor,
     this.enabled = true,
-    this.glow,
     this.inkKey,
     this.height = 56,
     this.radius = Radii.card,
@@ -31,9 +34,6 @@ class ButtonFrame extends StatefulWidget {
   final Gradient gradient;
   final Color borderColor;
   final bool enabled;
-
-  /// Colour of the soft shadow under the face. Null for a quiet button.
-  final Color? glow;
 
   /// Key for the tappable layer, so a test can prove the button reacts.
   final Key? inkKey;
@@ -74,14 +74,6 @@ class _ButtonFrameState extends State<ButtonFrame> {
               gradient: widget.gradient,
               borderRadius: corners,
               border: Border.all(color: widget.borderColor),
-              boxShadow: [
-                if (widget.glow != null)
-                  BoxShadow(
-                    color: widget.glow!,
-                    blurRadius: 20,
-                    offset: const Offset(0, 9),
-                  ),
-              ],
             ),
             child: Stack(
               // `passthrough` keeps the face sized by its content when the

@@ -37,7 +37,6 @@ class DangerButton extends StatelessWidget {
         enabled: onPressed != null,
         gradient: _face,
         borderColor: AppColors.hairline,
-        glow: AppColors.dangerGlow,
         // The face sinks, and the content steps down with it.
         pressedPadding: const EdgeInsets.fromLTRB(
           Space.lg,

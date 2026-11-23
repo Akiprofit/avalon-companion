@@ -9,6 +9,7 @@ import '../../core/theme/app_text.dart';
 import '../../core/theme/artwork.dart';
 import '../../core/widgets/avalon_screen.dart';
 import '../../core/widgets/counter_stepper.dart';
+import '../../core/widgets/dialog_actions.dart';
 import '../../core/widgets/game_progress_header.dart';
 import '../../core/widgets/medieval_card.dart';
 import '../../core/widgets/primary_button.dart';
@@ -73,23 +74,25 @@ class _QuestResolutionScreenState extends ConsumerState<QuestResolutionScreen> {
       barrierDismissible: false,
       builder: (dialogContext) => AlertDialog(
         title: Text(failed ? 'Record a failed quest?' : 'Record a success?'),
-        content: Text(
-          'Quest ${game.questNumber}: $_success success and $_fail '
-          '${_fail == 1 ? 'fail card' : 'fail cards'}. '
-          '${failed ? 'The quest fails' : 'The quest succeeds'}. '
-          'You can undo it from the result dialog.',
-          style: AppText.body,
-        ),
-        actions: [
-          TextButton(
-            key: const Key('quest_confirm_cancel'),
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Keep counting'),
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 420),
+          child: Text(
+            'Quest ${game.questNumber}: $_success success and $_fail '
+            '${_fail == 1 ? 'fail card' : 'fail cards'}. '
+            '${failed ? 'The quest fails' : 'The quest succeeds'}. '
+            'You can undo it from the result dialog.',
+            style: AppText.body,
           ),
-          TextButton(
-            key: const Key('quest_confirm_save'),
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Record result'),
+        ),
+        actionsPadding: dialogActionsPadding,
+        actions: [
+          DialogActions(
+            primaryKey: const Key('quest_confirm_save'),
+            primaryLabel: 'Record result',
+            onPrimary: () => Navigator.of(dialogContext).pop(true),
+            secondaryKey: const Key('quest_confirm_cancel'),
+            secondaryLabel: 'Keep counting',
+            onSecondary: () => Navigator.of(dialogContext).pop(false),
           ),
         ],
       ),
@@ -136,27 +139,30 @@ class _QuestResolutionScreenState extends ConsumerState<QuestResolutionScreen> {
       barrierDismissible: false,
       builder: (dialogContext) => AlertDialog(
         title: Text(title),
-        content: Text(message, style: AppText.body),
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 420),
+          child: Text(message, style: AppText.body),
+        ),
+        actionsPadding: dialogActionsPadding,
         actions: [
-          if (undo != null)
-            TextButton(
-              key: const Key('quest_outcome_undo'),
-              onPressed: () {
-                undone = controller.undoLastStep(undo.token);
-                Navigator.of(dialogContext).pop();
-                if (undone && mounted) {
-                  setState(() {
-                    _frozen = null;
-                    _resolving = false;
-                  });
-                }
-              },
-              child: const Text('Undo the result'),
-            ),
-          TextButton(
-            key: const Key('quest_outcome_continue'),
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Back to the table'),
+          DialogActions(
+            primaryKey: const Key('quest_outcome_continue'),
+            primaryLabel: 'Back to the table',
+            onPrimary: () => Navigator.of(dialogContext).pop(),
+            secondaryKey: const Key('quest_outcome_undo'),
+            secondaryLabel: undo == null ? null : 'Undo the result',
+            onSecondary: undo == null
+                ? null
+                : () {
+                    undone = controller.undoLastStep(undo.token);
+                    Navigator.of(dialogContext).pop();
+                    if (undone && mounted) {
+                      setState(() {
+                        _frozen = null;
+                        _resolving = false;
+                      });
+                    }
+                  },
           ),
         ],
       ),

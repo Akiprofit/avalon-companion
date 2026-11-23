@@ -12,6 +12,7 @@ import '../../core/theme/artwork.dart';
 import '../../core/widgets/avalon_bottom_navigation.dart';
 import '../../core/widgets/avalon_screen.dart';
 import '../../core/widgets/confirmation_dialog.dart';
+import '../../core/widgets/dialog_actions.dart';
 import '../../core/widgets/gold_divider.dart';
 import '../../core/widgets/mc_pin_dialog.dart';
 import '../../core/widgets/medieval_card.dart';
@@ -499,15 +500,14 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ],
           ),
+          actionsPadding: dialogActionsPadding,
           actions: [
-            SecondaryButton(
-              label: 'Cancel',
-              onPressed: () => Navigator.of(dialogContext).pop(),
-            ),
-            PrimaryButton(
-              key: const Key('settings_delay_save'),
-              label: 'Save',
-              onPressed: () => Navigator.of(dialogContext).pop(draft),
+            DialogActions(
+              primaryKey: const Key('settings_delay_save'),
+              primaryLabel: 'Save',
+              onPrimary: () => Navigator.of(dialogContext).pop(draft),
+              secondaryLabel: 'Cancel',
+              onSecondary: () => Navigator.of(dialogContext).pop(),
             ),
           ],
         ),

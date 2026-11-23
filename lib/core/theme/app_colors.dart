@@ -53,10 +53,6 @@ abstract final class AppColors {
   /// The same hairline at zero alpha, so a shine can fade out at both ends.
   static const hairlineFade = Color(0x00F1F0EB);
 
-  /// The glow under a gold action, and under a destructive one.
-  static const goldGlow = Color(0x40C5A15B);
-  static const dangerGlow = Color(0x40B84B4B);
-
   /// Text/icon colour appropriate on top of gold surfaces.
   static const onGold = Color(0xFF0B0E14);
 

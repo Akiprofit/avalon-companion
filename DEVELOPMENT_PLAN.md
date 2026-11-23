@@ -1179,6 +1179,48 @@ each reversible until the next action.
 | Device pass | **Passed on a Galaxy A36 (SM-A366B) over wireless debugging.** `app_test.dart` (2 tests) and `clip_playback_test.dart` (1) ran on the phone: the settings switch survives the installed database, a match starts on the real store with no role column in any table, and a night line decodes in both languages |
 | Release APK | Signed **1.7.0+24** built (64.0 MB), zipaligned and verified with the release key, installed on the phone and opened; SHA-256 `66f84332…d1657f06` |
 
+## No halo — 1.8.3
+
+A fair question came back after 1.8.2: does this button look like AI slop? A gradient with a glow
+is exactly the shape that look takes, so the face was audited against the usual signatures instead
+of being defended.
+
+| Signature | Result |
+| --- | --- |
+| Violet/blue gradient | No: one hue family, all existing tokens |
+| Gradient text or shadowed type | No: flat `onGold`, about 8:1 on the mid face |
+| Pill shapes or 24-point radii | No: `Radii.card`, the radius the cards use |
+| Glassmorphism or blur panels | No |
+| Shadow on everything | Only the two action faces — and see below |
+| Motion for its own sake | No: 130 ms tied to the press |
+| Raw colours in widgets | No: the sheen's transparent end is `AppColors.hairlineFade` |
+
+One element failed. The 25% glow under the gold and destructive faces could not be seen against
+the photographic plates at all; a decoration that neither reads nor does work is decoration that
+should not be in the widget. It was removed, along with the two tokens that existed only for it,
+and the face is now the gradient, the hairline and the top sheen. The button sits **in** the
+artwork rather than floating over it.
+
+`buttons_test.dart` gained one test so the halo cannot come back by habit: the button's own
+`BoxDecoration` must have no `boxShadow` and must keep a gradient.
+
+**Dialogs end in the same buttons as the screens.** `lib/core/widgets/dialog_actions.dart` is one
+action block: the dominant action on top, a quiet way out under it, both full width. The vote
+outcome, the quest result, the quest confirm, the voice-name prompt and the custom-delay dialog used
+to end in bare `TextButton`s — or in a row — which read as links next to the gold actions behind
+them. `ConfirmationDialog`, the two PIN prompts and Clear history were folded onto the same block,
+so there is one action layout in the app rather than six near-copies.
+
+### Gate evidence
+
+| Check | Result |
+| --- | --- |
+| `flutter analyze` | No issues found |
+| `flutter test` | 354 tests pass (348 + 6; widget 109, unit and database 245) |
+| Buttons | `buttons_test.dart` (6 tests): geometry and tap target, compact width, disabled and loading states, the outline and destructive faces, and the no-shadow rule |
+| Device | **Galaxy A36 (SM-A366B) over wireless debugging**: installed over 1.8.2 on the phone; the quest record and result dialogs were walked, and Undo the result returned to the count with the cards kept |
+| Release APK | Signed **1.8.3+30** built (66.5 MB), zipaligned and verified with the release key; SHA-256 77CC902BB3C88E1F5AF8CFBC94A4D5FE82D53BFF7026F80CB41BF188016B3958 |
+
 ## Struck gold — 1.8.2
 
 The app worked; the buttons looked like coloured rectangles. This release is appearance only: no
@@ -1346,7 +1388,7 @@ can hold more than one voice without a second folder convention.
 
 ## Next phase
 
-No phase is scheduled: **1.8.2** is the current build (2026-11-23). 1.7.0 is the published
+No phase is scheduled: **1.8.3** is the current build (2026-11-24). 1.7.0 is the published
 release; 1.5.0's voice packs ship inside it, and 1.0.0–1.3.1 remain verified on the phone. The
 voice import still needs a real zip — Okley proves the bundled path, not the import path. Work
 after that

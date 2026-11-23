@@ -3,6 +3,34 @@
 All notable changes to Avalon Companion are recorded here. One entry per completed
 development phase, in the order the plan defines them.
 
+## [1.8.3] — No halo (2026-11-24)
+
+### Changed
+
+- **The buttons no longer cast a glow.** 1.8.2 put a 25% gold halo under the gold and destructive
+  faces. Against the photographic plates it could not be seen: decoration that costs nothing and
+  reads as nothing. The face is now the gradient, the hairline and the catch of light along the top
+  edge only, so a button sits **in** the artwork instead of floating over it.
+- `AppColors.goldGlow` and `AppColors.dangerGlow` are removed with it — no unused tokens left behind.
+- A regression test holds the decision: the button's own `BoxDecoration` must have no `boxShadow`
+  and must keep a gradient.
+- **Dialogs now end in the app's own buttons.** The vote outcome, the quest result, the quest
+  confirm, the voice-name prompt and the custom-delay dialog ended in bare `TextButton`s — or in a
+  row — which read as links beside the gold actions on the screen behind them. One shared
+  `DialogActions` block gives every dialog a dominant action and a quiet way out, stacked full
+  width, with the same faces as the rest of the app. `ConfirmationDialog`, the two PIN prompts and
+  Clear history were folded onto it as well, so six near-copies became one.
+
+### Verified
+
+| Check | Result |
+| --- | --- |
+| `flutter analyze` | No issues found |
+| `flutter test` | 354 tests pass (348 + 6; widget 109, unit and database 245) |
+| Buttons | `buttons_test.dart` (6 tests): the geometry, tap target, disabled and loading states, the outline and destructive faces, and a new test that the face carries no shadow while keeping its gradient |
+| Device | **Galaxy A36 (SM-A366B) over wireless debugging**: installed over 1.8.2 on the phone; the quest record dialog and the quest result dialog were walked, and Undo the result returned to the count with the cards kept |
+| Release APK | Signed **1.8.3+30** built (66.5 MB), zipaligned and verified with the release key; SHA-256 77CC902BB3C88E1F5AF8CFBC94A4D5FE82D53BFF7026F80CB41BF188016B3958 |
+
 ## [1.8.2] — Struck gold (2026-11-23)
 
 ### Changed

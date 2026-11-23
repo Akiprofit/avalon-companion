@@ -4,8 +4,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_metrics.dart';
 import '../../core/theme/app_text.dart';
 import '../../core/widgets/counter_stepper.dart';
-import '../../core/widgets/danger_button.dart';
-import '../../core/widgets/secondary_button.dart';
+import '../../core/widgets/dialog_actions.dart';
 
 /// What the MC chose in [showClearHistoryDialog].
 class ClearHistoryChoice {
@@ -130,28 +129,21 @@ class _ClearHistoryDialogState extends State<_ClearHistoryDialog> {
           ],
         ),
       ),
-      actionsPadding: const EdgeInsets.fromLTRB(Space.md, 0, Space.md, Space.md),
+      actionsPadding: dialogActionsPadding,
       actions: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            DangerButton(
-              key: const Key('history_clear_confirm'),
-              label: _confirmLabel,
-              icon: Icons.delete_outline,
-              onPressed: () => Navigator.of(context).pop(
-                _all
-                    ? const ClearHistoryChoice.everything()
-                    : ClearHistoryChoice.oldest(_count),
-              ),
-            ),
-            const SizedBox(height: Space.xs),
-            SecondaryButton(
-              key: const Key('history_clear_cancel'),
-              label: 'Keep the history',
-              onPressed: () => Navigator.of(context).pop(),
-            ),
-          ],
+        DialogActions(
+          isDestructive: true,
+          primaryKey: const Key('history_clear_confirm'),
+          primaryLabel: _confirmLabel,
+          primaryIcon: Icons.delete_outline,
+          onPrimary: () => Navigator.of(context).pop(
+            _all
+                ? const ClearHistoryChoice.everything()
+                : ClearHistoryChoice.oldest(_count),
+          ),
+          secondaryKey: const Key('history_clear_cancel'),
+          secondaryLabel: 'Keep the history',
+          onSecondary: () => Navigator.of(context).pop(),
         ),
       ],
     );

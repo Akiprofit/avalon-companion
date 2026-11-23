@@ -8,6 +8,7 @@ import '../../core/theme/app_metrics.dart';
 import '../../core/theme/app_text.dart';
 import '../../core/theme/artwork.dart';
 import '../../core/widgets/avalon_screen.dart';
+import '../../core/widgets/dialog_actions.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/game_progress_header.dart';
 import '../../core/widgets/medieval_card.dart';
@@ -121,27 +122,30 @@ class _VotingScreenState extends ConsumerState<VotingScreen> {
       barrierDismissible: false,
       builder: (dialogContext) => AlertDialog(
         title: Text(title),
-        content: Text(message, style: AppText.body),
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 420),
+          child: Text(message, style: AppText.body),
+        ),
+        actionsPadding: dialogActionsPadding,
         actions: [
-          if (undo != null)
-            TextButton(
-              key: const Key('voting_outcome_undo'),
-              onPressed: () {
-                undone = controller.undoLastStep(undo.token);
-                Navigator.of(dialogContext).pop();
-                if (undone && mounted) {
-                  setState(() {
-                    _frozen = null;
-                    _resolving = false;
-                  });
-                }
-              },
-              child: const Text('Undo the vote'),
-            ),
-          TextButton(
-            key: const Key('voting_outcome_continue'),
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Back to the table'),
+          DialogActions(
+            primaryKey: const Key('voting_outcome_continue'),
+            primaryLabel: 'Back to the table',
+            onPrimary: () => Navigator.of(dialogContext).pop(),
+            secondaryKey: const Key('voting_outcome_undo'),
+            secondaryLabel: undo == null ? null : 'Undo the vote',
+            onSecondary: undo == null
+                ? null
+                : () {
+                    undone = controller.undoLastStep(undo.token);
+                    Navigator.of(dialogContext).pop();
+                    if (undone && mounted) {
+                      setState(() {
+                        _frozen = null;
+                        _resolving = false;
+                      });
+                    }
+                  },
           ),
         ],
       ),

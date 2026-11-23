@@ -8,6 +8,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_metrics.dart';
 import '../../core/theme/app_text.dart';
 import '../../core/widgets/confirmation_dialog.dart';
+import '../../core/widgets/dialog_actions.dart';
 import '../../core/widgets/secondary_button.dart';
 import '../../core/widgets/timed_snack_bar.dart';
 import '../../narration_engine/controllers/voice_packs_controller.dart';
@@ -428,15 +429,14 @@ class _NameDialogState extends State<_NameDialog> {
           onSubmitted: (_) => _submit(),
         ),
       ),
+      actionsPadding: dialogActionsPadding,
       actions: [
-        SecondaryButton(
-          label: 'Cancel',
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        TextButton(
-          key: const Key('voice_pack_name_save'),
-          onPressed: _submit,
-          child: const Text('Save'),
+        DialogActions(
+          primaryKey: const Key('voice_pack_name_save'),
+          primaryLabel: 'Save',
+          onPrimary: _submit,
+          secondaryLabel: 'Cancel',
+          onSecondary: () => Navigator.of(context).pop(),
         ),
       ],
     );
