@@ -19,6 +19,7 @@ import '../../core/widgets/loading_state.dart';
 import '../../core/widgets/medieval_card.dart';
 import '../../core/widgets/primary_button.dart';
 import '../../core/widgets/section_header.dart';
+import '../../core/widgets/timed_snack_bar.dart';
 import '../../database/database_provider.dart';
 import '../../database/match_store.dart';
 import '../../game_engine/models/game_state.dart';
@@ -521,8 +522,10 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   }
 
   void _showSnack(String message) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    showTimedSnackBar(
+      ScaffoldMessenger.of(context),
+      SnackBar(content: Text(message)),
+    );
   }
 }
 

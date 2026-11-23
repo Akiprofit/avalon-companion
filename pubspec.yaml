@@ -2,7 +2,7 @@ name: avalon_companion
 description: "Offline Game Master companion for physical games of The Resistance: Avalon."
 publish_to: 'none'
 
-version: 1.8.0+27
+version: 1.8.1+28
 
 environment:
   sdk: ^3.14.0

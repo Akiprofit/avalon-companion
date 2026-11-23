@@ -9,6 +9,7 @@ import '../../core/theme/app_metrics.dart';
 import '../../core/theme/app_text.dart';
 import '../../core/widgets/confirmation_dialog.dart';
 import '../../core/widgets/secondary_button.dart';
+import '../../core/widgets/timed_snack_bar.dart';
 import '../../narration_engine/controllers/voice_packs_controller.dart';
 import '../../narration_engine/models/narration_instruction.dart';
 import '../../narration_engine/models/voice_pack.dart';
@@ -362,12 +363,13 @@ Future<void> _import(BuildContext context, WidgetRef ref) async {
     final pack = await controller.importZip(zipPath: zipPath, name: name);
     ref.read(settingsProvider.notifier).setVoicePack(pack.id);
     ref.read(feedbackProvider).tap();
-    messenger.showSnackBar(
+    showTimedSnackBar(
+      messenger,
       SnackBar(content: Text('${pack.name} is now the narrator.')),
     );
     if (context.mounted) Navigator.of(context).maybePop();
   } on VoiceImportException catch (error) {
-    messenger.showSnackBar(SnackBar(content: Text(error.message)));
+    showTimedSnackBar(messenger, SnackBar(content: Text(error.message)));
   }
 }
 

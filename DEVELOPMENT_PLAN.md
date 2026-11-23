@@ -1179,6 +1179,48 @@ each reversible until the next action.
 | Device pass | **Passed on a Galaxy A36 (SM-A366B) over wireless debugging.** `app_test.dart` (2 tests) and `clip_playback_test.dart` (1) ran on the phone: the settings switch survives the installed database, a match starts on the real store with no role column in any table, and a night line decodes in both languages |
 | Release APK | Signed **1.7.0+24** built (64.0 MB), zipaligned and verified with the release key, installed on the phone and opened; SHA-256 `66f84332…d1657f06` |
 
+## The bar that would not leave — 1.8.1
+
+The undo offer from 1.7.0 worked, then refused to go away. Confirming a team showed
+"Quest team sent to the vote." with **Undo** over the vote count, and it was still there on every
+screen afterwards.
+
+### What caused it
+
+`showSnackBar` is supposed to take a bar down after its duration. Under `MaterialApp.router` it
+does not: the message clock lives in `ScaffoldMessengerState.build`, which is only reached while
+the messenger's own route is current. Changing route means no build, and the clock is never armed —
+so the bar has no timeout at all. A minimal `go_router` repro confirmed it, and that the bar stays
+even when the messenger is poked:
+
+| Variant | Bar after 9 s |
+| --- | --- |
+| SnackBar shown, no navigation | gone |
+| Shown, then `context.go()` | still there |
+| Shown in a post-frame callback after `context.go()` | still there |
+| Own `Timer` calling `hideCurrentSnackBar` | gone |
+
+### What changed
+
+- **`lib/core/widgets/timed_snack_bar.dart`** — `showTimedSnackBar(messenger, bar)` shows the bar
+  and closes it on its own clock. The clock is cancelled when the bar closes early, so an Undo tap
+  or a newer message leaves nothing ticking.
+- It is used by every `showSnackBar` in the app: the team proposal and its undo confirmation, the
+  PIN saved/removed messages, the history delete result and the voice import result. All of them
+  shared the same failure mode; only the proposal bar was loud enough to notice.
+- The team screen passes the messenger it captured before `context.goNamed`, because the undo
+  callback fires after that context is gone.
+
+### Gate evidence
+
+| Check | Result |
+| --- | --- |
+| `flutter analyze` | No issues found |
+| `flutter test` | 348 tests pass (347 + 1) |
+| Undo bar | `team_selection_test.dart` (8 tests): the offer shows on the vote screen, Undo still returns to team selection with its confirmation, the confirmation clears itself, and the offer is gone nine seconds after it appears |
+| Device | Not claimed: the phone dropped off wireless debugging during the build, so the bar was checked through the widget test |
+| Release APK | Signed **1.8.1+28** built (66.5 MB), zipaligned, verified with the release key; SHA-256  0313985�d4058 |
+
 ## Hear it before you pick it — 1.8.0
 
 Choosing a narrator by name alone was guesswork once there were two. Each row in the picker now
@@ -1268,7 +1310,7 @@ can hold more than one voice without a second folder convention.
 
 ## Next phase
 
-No phase is scheduled: **1.8.0** is the current build (2026-11-20). 1.7.0 is the published
+No phase is scheduled: **1.8.1** is the current build (2026-11-23). 1.7.0 is the published
 release; 1.5.0's voice packs ship inside it, and 1.0.0–1.3.1 remain verified on the phone. The
 voice import still needs a real zip — Okley proves the bundled path, not the import path. Work
 after that

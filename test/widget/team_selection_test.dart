@@ -193,13 +193,17 @@ void main() {
     await tester.tap(find.byKey(const Key('team_selection_seat_2')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('team_selection_confirm')));
-    await tester.pumpAndSettle();
+    // The dashboard is still animating in: `pumpAndSettle` would run past the
+    // offer's eight seconds and the bar would be gone before it can be tapped.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 600));
 
     expect(find.text('TEAM VOTING'), findsWidgets);
     expect(find.byKey(const Key('team_proposal_undo')), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('team_proposal_undo')));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 600));
 
     expect(find.text('TEAM SELECTION'), findsWidgets);
     expect(find.text('Continue Team Selection'), findsOneWidget);
@@ -207,6 +211,40 @@ void main() {
       find.text('Team undone. Choose the team again from the table.'),
       findsOneWidget,
     );
+
+    // The confirmation clears itself too, so no clock is left ticking when the
+    // screen closes.
+    await tester.pump(const Duration(seconds: 5));
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(
+      find.text('Team undone. Choose the team again from the table.'),
+      findsNothing,
+    );
+  });
+
+  testWidgets('the undo offer goes away on its own', (tester) async {
+    await startMatch(tester);
+    await reachDay(tester);
+    await tester.tap(find.byKey(const Key('dashboard_choose_team')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('team_selection_seat_1')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('team_selection_seat_2')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('team_selection_confirm')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 600));
+
+    expect(find.byKey(const Key('team_proposal_undo')), findsOneWidget);
+
+    // Eight seconds is the offer's life. A bar that outlives it sits on top of
+    // the vote count for the rest of the quest.
+    await tester.pump(const Duration(seconds: 9));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(find.byKey(const Key('team_proposal_undo')), findsNothing);
+    expect(find.text('Quest team sent to the vote.'), findsNothing);
   });
 
   testWidgets('the dashboard hints the next step of the match', (tester) async {

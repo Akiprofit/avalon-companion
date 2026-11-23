@@ -19,6 +19,7 @@ import '../../core/widgets/primary_button.dart';
 import '../../core/widgets/section_header.dart';
 import '../../core/widgets/secondary_button.dart';
 import '../../core/widgets/settings_tile.dart';
+import '../../core/widgets/timed_snack_bar.dart';
 import '../../narration_engine/models/narration_instruction.dart';
 import '../../narration_engine/services/tts_provider.dart';
 import '../../narration_engine/services/tts_service.dart';
@@ -435,7 +436,8 @@ class SettingsScreen extends ConsumerWidget {
     if (pin == null || !context.mounted) return;
     final saved = await ref.read(pinProvider.notifier).setPin(pin);
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
+    showTimedSnackBar(
+      ScaffoldMessenger.of(context),
       SnackBar(
         content: Text(
           saved
@@ -458,7 +460,8 @@ class SettingsScreen extends ConsumerWidget {
     final cleared = await ref.read(pinProvider.notifier).clear();
     if (!context.mounted) return;
     if (!cleared) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      showTimedSnackBar(
+        ScaffoldMessenger.of(context),
         const SnackBar(content: Text('The PIN could not be removed.')),
       );
     }

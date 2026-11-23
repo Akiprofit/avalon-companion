@@ -13,6 +13,7 @@ import '../../core/widgets/medieval_card.dart';
 import '../../core/widgets/player_tile.dart';
 import '../../core/widgets/primary_button.dart';
 import '../../core/widgets/section_header.dart';
+import '../../core/widgets/timed_snack_bar.dart';
 import '../../game_engine/controllers/game_session_controller.dart';
 import '../settings/settings_controller.dart';
 
@@ -62,7 +63,8 @@ class _TeamSelectionScreenState extends ConsumerState<TeamSelectionScreen> {
     // the step reversible until anything else happens in the match.
     final undo = controller.undoOffer;
     if (undo != null) {
-      messenger.showSnackBar(
+      showTimedSnackBar(
+        messenger,
         SnackBar(
           content: Text(
             skipVote
@@ -75,7 +77,10 @@ class _TeamSelectionScreenState extends ConsumerState<TeamSelectionScreen> {
             label: 'Undo',
             onPressed: () {
               if (controller.undoLastStep(undo.token)) {
-                messenger.showSnackBar(
+                // The screen is gone by now, so the bar goes through the
+                // messenger captured before the route changed.
+                showTimedSnackBar(
+                  messenger,
                   const SnackBar(
                     content: Text(
                       'Team undone. Choose the team again from the table.',

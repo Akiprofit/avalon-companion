@@ -12,7 +12,7 @@
   <a href="https://github.com/Akiprofit/avalon-companion/releases/latest">
     <img alt="Download the Android APK" src="https://img.shields.io/badge/Download-Android%20APK-C5A15B?style=for-the-badge&logo=android&logoColor=0B0E14" />
   </a>
-  <img alt="Version 1.8.0" src="https://img.shields.io/badge/version-1.8.0-0B0E14?style=for-the-badge" />
+  <img alt="Version 1.8.1" src="https://img.shields.io/badge/version-1.8.1-0B0E14?style=for-the-badge" />
   <img alt="Offline first" src="https://img.shields.io/badge/offline-first-3D9B72?style=for-the-badge" />
 </p>
 
@@ -43,7 +43,7 @@ The latest signed Android APK is on the
 
 ### Install on Android
 
-1. Download `Avalon-Companion-1.8.0.apk` from the latest release.
+1. Download `Avalon-Companion-1.8.1.apk` from the latest release.
 2. Open the downloaded APK.
 3. Allow **Install unknown apps** for the browser or file manager you used.
 4. Tap **Install**.
@@ -322,6 +322,11 @@ docs/icon.png          the app icon used by this README
 ---
 
 ## Status
+
+**v1.8.1** — The undo bar leaves. A bar shown just before a route change
+never started its own clock, so "Quest team sent to the vote" with **Undo**
+stayed over the vote count for the rest of the quest. It now closes itself
+after eight seconds, and the same clock covers every other bar in the app.
 
 **v1.8.0** — Hear it before you pick it. Every narrator in
 **Settings → Narrator voice** now has a play button that speaks its first
