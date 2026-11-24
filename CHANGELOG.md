@@ -3,6 +3,49 @@
 All notable changes to Avalon Companion are recorded here. One entry per completed
 development phase, in the order the plan defines them.
 
+## [1.9.0] — The round, spoken (2026-11-25)
+
+### Added
+
+- **The phone speaks the round, not only the night.** Seven recorded lines play by themselves at
+  the moments the table reaches them: the leader names a team, the vote is approved, the vote is
+  rejected, the fourth rejection warns that one more hands the match to Evil, the quest succeeds,
+  the quest fails, and the accusation opens. There is no panel and no tap — the screen the table
+  is already on says the line.
+- **The fourth rejection is called out.** A rejection that leaves one more before Evil wins uses
+  a different line, so the table hears what the next rejected team would cost.
+- Each line follows the night's rule: the chosen narrator's recording first, the phone's voice
+  for a line that voice did not record, silence when the phone has neither. A new announcement
+  replaces the one before it, and no screen waits for a line to finish.
+- The narration panel's language switch now saves the language for the whole match, so the night
+  and the round lines can never disagree about which language the table hears.
+
+### Changed
+
+- **One source for the five-rejection rule.** `AvalonTables.rejectionsBeforeEvil` is read by the
+  engine and by the cue instead of a literal in each.
+- **The classic pack claims all 21 recordings** — the fourteen night lines and the seven round
+  lines — so Dahlia, Grok and Okley all announce the round. A voice that holds only the night
+  falls back to the phone for a round line, exactly as a half-finished pack does for the night.
+- **A phone without text-to-speech no longer blocks a recording.** `stop()` treats a missing
+  engine as nothing to stop; only an engine that is actually running is silenced before a clip.
+- **The margins beside the reading column scroll.** On a landscape tablet the layout is a centred
+  column, and the glass on either side belonged to no scroll view, so a finger there moved nothing
+  while the list in the middle scrolled — the screen read as frozen. Both gutters now drive the
+  page's own scroll position, with the same drag and fling. The phone layout is unchanged.
+
+### Verified
+
+| Check | Result |
+| --- | --- |
+| `flutter analyze` | No issues found |
+| `flutter test` | 370 tests pass (115 widget, 255 unit and database) |
+| Round cues | `round_cues_test.dart` (+2): a proposed team, an approved vote and a recorded quest play their lines, and opening the accusation plays its line |
+| Voice rule | `narration_cues_test.dart` (+11): the recording wins over speech, Filipino uses the `fil` folder, a failed play falls back to speech, a half-recorded voice falls back per line, a phone with neither stays quiet, and only the fourth rejection warns |
+| Tablet gutters | `tablet_layout_test.dart` (+1): a drag that lands on the glass beside the reading column moves the page |
+| Device | **Galaxy A36 (SM-A366B) over USB**: the round cues were walked on the 1.9.0 build — the proposal, the approved vote and the quest success each started a clip, and quests 1 and 2 played through. Locked to landscape on the rebuilt APK: on team selection a drag beside the reading column moved nothing before the fix, and now scrolls the list on either side with the progress header and the action bar pinned |
+| Release APK | Signed **1.9.0+32** built (71.8 MB), zipaligned and verified with the release key; SHA-256 F6B3960576E1639AF3C282BF419B4452AD05142F3F96A3E1CBAC2DC73E6E867F |
+
 ## [1.8.4] — Two minutes (2026-11-25)
 
 ### Added

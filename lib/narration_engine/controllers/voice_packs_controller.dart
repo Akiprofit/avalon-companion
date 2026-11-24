@@ -64,7 +64,7 @@ class VoicePacksController extends Notifier<VoicePacksState> {
   @override
   VoicePacksState build() {
     // Before anything has been read, behave exactly like the shipped app: one
-    // voice, every night line.
+    // voice, every line it recorded.
     return VoicePacksState(packs: [VoicePackCatalogue.classic]);
   }
 

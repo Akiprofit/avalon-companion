@@ -88,7 +88,7 @@ class _VoicePackPickerDialogState
                         ? 'No voice is hidden.'
                         : 'No voice is available. The shipped recordings are '
                               'missing from this build, so the phone reads the '
-                              'night instead.',
+                              'lines instead.',
                     style: AppText.caption,
                   ),
                 ),
@@ -443,7 +443,7 @@ class _NameDialogState extends State<_NameDialog> {
   }
 }
 
-/// "English 14/14 · Filipino 0/14" — how much of the night a voice covers.
+/// "English 21/21 · Filipino 0/21" — how much of the narration a voice covers.
 String coverageLabel(VoicePack pack) {
   final total = NarrationClips.ids.length;
   String part(NarrationLanguage language) {

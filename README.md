@@ -12,7 +12,7 @@
   <a href="https://github.com/Akiprofit/avalon-companion/releases/latest">
     <img alt="Download the Android APK" src="https://img.shields.io/badge/Download-Android%20APK-C5A15B?style=for-the-badge&logo=android&logoColor=0B0E14" />
   </a>
-  <img alt="Version 1.8.4" src="https://img.shields.io/badge/version-1.8.4-0B0E14?style=for-the-badge" />
+  <img alt="Version 1.9.0" src="https://img.shields.io/badge/version-1.9.0-0B0E14?style=for-the-badge" />
   <img alt="Offline first" src="https://img.shields.io/badge/offline-first-3D9B72?style=for-the-badge" />
 </p>
 
@@ -43,7 +43,7 @@ The latest signed Android APK is on the
 
 ### Install on Android
 
-1. Download `Avalon-Companion-1.8.4.apk` from the latest release.
+1. Download `Avalon-Companion-1.9.0.apk` from the latest release.
 2. Open the downloaded APK.
 3. Allow **Install unknown apps** for the browser or file manager you used.
 4. Tap **Install**.
@@ -70,9 +70,14 @@ The latest signed Android APK is on the
 
 ### The night, read aloud
 
-- **28 recorded lines** — every night line exists in **English** and in
-  **Filipino**, bundled inside the APK (2.6 MB, stored uncompressed so
-  `MediaPlayer` can open them)
+- **42 recorded lines** — every night line and every round line exists in
+  **English** and in **Filipino**, bundled inside the APK (stored uncompressed
+  so `MediaPlayer` can open them)
+- **The round lines are spoken too.** A team is named, a vote settles, a quest is
+  recorded, the accusation opens — the phone says each of those in the chosen
+  narrator's voice, at the moment it happens. One line replaces the last, a voice
+  that skipped a line falls back to the phone, and a phone with neither stays
+  quiet. Nothing waits on a line: the table is never blocked
 - The phone's text-to-speech is the **fallback narrator**, used only for a line
   with no recording or a clip that cannot play
 - **Play / pause, next, previous, replay**, in a transport row that keeps the
@@ -83,10 +88,10 @@ The latest signed Android APK is on the
   from the moment the voice stops, so the table has time to move its cards
 - **Narrator voices are packs, not files.** Import a voice as a `.zip` holding
   an `en/` folder, a `fil/` folder, or both; name it — *Voice of Dahlia* — and
-  it reads the night. The shipped narrator can be renamed or hidden, and an
-  imported voice can be deleted again along with its recordings. Any line a
-  voice did not record falls back to the phone, so a half-finished set still
-  works
+  it reads the night and the round. The shipped narrator can be renamed or
+  hidden, and an imported voice can be deleted again along with its recordings.
+  Any line a voice did not record falls back to the phone, so a half-finished
+  set still works
 - A low night ambience can loop under the narration
 - The screen stays on during a live match; confirmed actions tick and vibrate
 
@@ -170,7 +175,8 @@ The latest signed Android APK is on the
 ### Designed for Android
 
 - **Tablet support:** the same layout everywhere, centred in a 600 dp reading
-  column on a wide screen — no stretched cards, no second layout to learn
+  column on a wide screen — no stretched cards, no second layout to learn, and
+  the glass beside the column scrolls the page like the list does
 - Survives a **200% text scale**; honours Android's **reduced-motion** setting
 - Every control is at least **48 dp** tall
 - Safe areas, keyboard-aware setup form, and the system Back button are handled
@@ -326,6 +332,12 @@ docs/icon.png          the app icon used by this README
 ---
 
 ## Status
+
+**v1.9.0** — The round, spoken. The phone no longer goes quiet between quests. Seven recorded
+lines play themselves at the moments the table reaches them: the team named, the vote approved or
+rejected, a warning when one more rejection hands the match to Evil, the quest recorded, the
+accusation opened. Each line takes the narrator's recording first and the phone's voice only for
+what that voice did not record, and nothing waits on a line.
 
 **v1.8.4** - Two minutes. The accusation now has a clock. It starts as soon as
 the screen opens, so the MC never has to touch the phone during an accusation;

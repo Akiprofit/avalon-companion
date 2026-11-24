@@ -214,7 +214,7 @@ abstract final class GameEngine {
     }
 
     final rejections = state.rejectionCount + 1;
-    if (rejections >= 5) {
+    if (rejections >= AvalonTables.rejectionsBeforeEvil) {
       return state.copyWith(
         phase: Phase.evilVictory,
         leaderSeat: nextLeader,

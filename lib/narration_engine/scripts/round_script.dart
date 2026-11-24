@@ -1,8 +1,8 @@
 import '../../game_engine/models/phase.dart';
 import '../models/narration_instruction.dart';
 
-/// Round, quest and endgame lines — the narration engine owns these too, so the
-/// panel can announce them without the features hardcoding strings.
+/// Round, quest and endgame lines — announced by `NarrationCues` the moment the
+/// table reaches them, so the features never hardcode a spoken string.
 abstract final class RoundScript {
   static const proposal = NarrationInstruction(
     id: 'round.proposal',
@@ -68,4 +68,15 @@ abstract final class RoundScript {
         'akusasyon mo.',
     pauseAfter: Duration(milliseconds: 1600),
   );
+
+  /// Every round line, in the order a match meets them.
+  static const all = [
+    proposal,
+    approved,
+    rejected,
+    rejectionWarning,
+    questSuccess,
+    questFail,
+    assassination,
+  ];
 }

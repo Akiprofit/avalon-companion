@@ -118,6 +118,40 @@ void main() {
     }
   });
 
+  testWidgets('a drag on the tablet gutter scrolls the page', (tester) async {
+    await pumpApp(tester, logical: const Size(1280, 800));
+
+    routerOf(tester).goNamed(RouteNames.howToPlay);
+    await tester.pumpAndSettle();
+
+    final scrollable = tester.state<ScrollableState>(
+      find
+          .descendant(
+            of: find.byType(ListView),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+    expect(scrollable.position.pixels, 0, reason: 'the page starts at the top');
+
+    final gutter = column(tester).left;
+    expect(
+      gutter,
+      greaterThan(100),
+      reason: 'a landscape tablet has glass beside the reading column',
+    );
+
+    // The finger lands on the background, not on the list.
+    await tester.dragFrom(Offset(gutter / 2, 500), const Offset(0, -300));
+    await tester.pumpAndSettle();
+
+    expect(
+      scrollable.position.pixels,
+      greaterThan(0),
+      reason: 'the side of the screen scrolls the page',
+    );
+  });
+
   testWidgets('a ten-player dashboard keeps its action column on a landscape '
       'tablet', (tester) async {
     await pumpApp(tester, logical: const Size(1280, 800));

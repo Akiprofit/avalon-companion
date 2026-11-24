@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -16,6 +18,8 @@ import '../../core/widgets/secondary_button.dart';
 import '../../core/widgets/section_header.dart';
 import '../../game_engine/controllers/game_session_controller.dart';
 import '../../game_engine/models/phase.dart';
+import '../../narration_engine/scripts/round_script.dart';
+import '../../narration_engine/services/narration_cues.dart';
 import '../settings/settings_controller.dart';
 import 'accusation_clock.dart';
 
@@ -34,6 +38,15 @@ class AssassinationScreen extends ConsumerStatefulWidget {
 
 class _AssassinationScreenState extends ConsumerState<AssassinationScreen> {
   bool _recording = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // The screen opening is the cue: the assassin has woken.
+    unawaited(
+      ref.read(narrationCuesProvider).play(RoundScript.assassination),
+    );
+  }
 
   Future<void> _record({required bool merlinIdentified}) async {
     if (_recording) return;

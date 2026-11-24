@@ -155,6 +155,8 @@ class AndroidTtsService implements TtsService {
       await _channel.invokeMethod<void>('stop');
     } on PlatformException {
       // Nothing to stop.
+    } on MissingPluginException {
+      // No engine in this build.
     }
   }
 

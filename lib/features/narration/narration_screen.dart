@@ -188,11 +188,15 @@ class _NarrationScreenState extends ConsumerState<NarrationScreen>
             : () => unawaited(controller.next()),
         onReplay: () => unawaited(controller.replay()),
         onToggleAutoPlay: () => unawaited(controller.toggleAutoPlay()),
-        onLanguageChanged: (isFilipino) => unawaited(
-          controller.setLanguage(
-            isFilipino ? NarrationLanguage.filipino : NarrationLanguage.english,
-          ),
-        ),
+        onLanguageChanged: (isFilipino) {
+          final language = isFilipino
+              ? NarrationLanguage.filipino
+              : NarrationLanguage.english;
+          // The panel and the round announcements must not disagree: the
+          // language picked here is the language the table hears.
+          ref.read(settingsProvider.notifier).setLanguage(language);
+          unawaited(controller.setLanguage(language));
+        },
         notice: state.voiceNotice,
       ),
     );

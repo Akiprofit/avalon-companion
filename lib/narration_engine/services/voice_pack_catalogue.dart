@@ -40,7 +40,7 @@ abstract final class VoicePackCatalogue {
   /// The shipped narrator, described without reading the bundle.
   ///
   /// Used before the manifest has loaded and in tests, where it must behave
-  /// exactly like today's app: every night line, in both languages.
+  /// exactly like today's app: every line it recorded, in both languages.
   static VoicePack get classic => VoicePack(
     id: classicId,
     name: classicName,

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -17,6 +19,8 @@ import '../../core/widgets/section_header.dart';
 import '../../game_engine/controllers/game_session_controller.dart';
 import '../../game_engine/models/game_state.dart';
 import '../../game_engine/models/phase.dart';
+import '../../narration_engine/scripts/round_script.dart';
+import '../../narration_engine/services/narration_cues.dart';
 import '../settings/settings_controller.dart';
 
 /// Screen 09 — the MC records the two cards played on the quest.
@@ -114,6 +118,12 @@ class _QuestResolutionScreenState extends ConsumerState<QuestResolutionScreen> {
     final undo = controller.undoOffer;
     final after = ref.read(gameSessionProvider);
     if (!mounted) return;
+
+    unawaited(
+      ref
+          .read(narrationCuesProvider)
+          .play(failed ? RoundScript.questFail : RoundScript.questSuccess),
+    );
 
     final title = after?.phase == Phase.evilVictory
         ? 'Evil wins the match'

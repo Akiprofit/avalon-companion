@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -15,6 +17,8 @@ import '../../core/widgets/primary_button.dart';
 import '../../core/widgets/section_header.dart';
 import '../../core/widgets/timed_snack_bar.dart';
 import '../../game_engine/controllers/game_session_controller.dart';
+import '../../narration_engine/scripts/round_script.dart';
+import '../../narration_engine/services/narration_cues.dart';
 import '../settings/settings_controller.dart';
 
 /// Screen 11 — the MC picks the quest team from the table.
@@ -58,6 +62,9 @@ class _TeamSelectionScreenState extends ConsumerState<TeamSelectionScreen> {
     final controller = ref.read(gameSessionProvider.notifier);
     final messenger = ScaffoldMessenger.of(context);
     controller.proposeTeam(seats, skipVote: skipVote);
+    unawaited(
+      ref.read(narrationCuesProvider).play(RoundScript.proposal),
+    );
 
     // The table might spot a wrong seat while the phone is being passed. Keep
     // the step reversible until anything else happens in the match.

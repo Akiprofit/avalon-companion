@@ -126,7 +126,7 @@ void main() {
     expect(find.text('Narrator voice'), findsOneWidget);
     expect(find.text('Voice of Dahlia'), findsOneWidget);
     expect(
-      find.text('English 2/14 · Filipino 1/14'),
+      find.text('English 2/21 · Filipino 1/21'),
       findsOneWidget,
       reason: 'a partial voice is allowed, so the counts are shown',
     );

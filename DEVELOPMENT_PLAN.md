@@ -1179,6 +1179,49 @@ each reversible until the next action.
 | Device pass | **Passed on a Galaxy A36 (SM-A366B) over wireless debugging.** `app_test.dart` (2 tests) and `clip_playback_test.dart` (1) ran on the phone: the settings switch survives the installed database, a match starts on the real store with no role column in any table, and a night line decodes in both languages |
 | Release APK | Signed **1.7.0+24** built (64.0 MB), zipaligned and verified with the release key, installed on the phone and opened; SHA-256 `66f84332…d1657f06` |
 
+## The round, spoken — 1.9.0
+
+The night was the only part of a match the narrator played. Seven recorded round lines sat in every
+voice folder, unused: between quests the phone went quiet while the table worked out what had just
+happened. This release plays them.
+
+The design question was where a line belongs — the narration panel or the event itself. The panel
+was the obvious place and the wrong one: the MC would have to open it mid-round, leaving the table
+and the screen that shows the state. Each line is attached to the action that causes it instead:
+confirming a team announces the proposal, resolving the vote announces the outcome, recording a
+quest announces the result, opening the accusation announces that the assassin is awake.
+
+That also settled the fourth rejection. The table needs to hear that one more rejected team hands
+the match to Evil, and that is only known once the count settles, so it is a separate line chosen
+by `NarrationCues.voteOutcome` rather than a fixed sentence.
+
+One line at a time. A new cue stops the previous clip — or the phone's voice — and starts itself; a
+voice with no recording falls through to the platform voice, and a phone with neither simply stays
+quiet. No screen awaits a cue, so a silent phone cannot slow the table, and a failure to play never
+becomes an error dialog over the board.
+
+The language switch in the narration panel used to change the panel only. With round lines reading
+`AppSettings.defaultLanguage`, that would have let the night speak Filipino while the round spoke
+English. The panel now writes the setting as well, so there is one answer to "which language is the
+table hearing".
+
+| Check | Result |
+| --- | --- |
+| `flutter analyze` | No issues found |
+| `flutter test` | 370 tests pass (115 widget, 255 unit and database) |
+| Round cues | `round_cues_test.dart` (+2): a proposed team, an approved vote and a recorded quest each play their line, and opening the accusation plays its own |
+| Voice rule | `narration_cues_test.dart` (+11): the recording wins over speech, Filipino reads the `fil` folder, a failed play falls back to speech, a half-recorded voice falls back per line, a phone with neither stays quiet, and only the fourth rejection warns |
+| Tablet gutters | `tablet_layout_test.dart` (+1): a drag that lands beside the reading column moves the page |
+| Device | **Galaxy A36 (SM-A366B) over USB**: the round cues were walked on the 1.9.0 build — the proposal, the approved vote and the quest success each started a clip, and quests 1 and 2 played through. Locked to landscape on the rebuilt APK: on team selection a drag beside the reading column moved nothing before the fix, and now scrolls the list on either side with the progress header and the action bar pinned |
+| Release APK | Signed **1.9.0+32** built (71.8 MB), zipaligned and verified with the release key; SHA-256 F6B3960576E1639AF3C282BF419B4452AD05142F3F96A3E1CBAC2DC73E6E867F |
+
+The release walk also caught a landscape-tablet dead zone. The reading column is centred at 600
+points, so on a wide screen most of the glass is beside it, and that glass belonged to no scroll
+view: a finger there moved nothing while the list under the middle of the screen scrolled, which
+reads as a frozen app. Both gutters now start a real drag on the page's own scroll position, so a
+finger anywhere on the screen scrolls and flings. The phone layout is untouched — there the column
+is the screen, and no gutter exists.
+
 ## Two minutes — 1.8.4
 
 The accusation was the one screen with no clock. Three quests are won, the assassin wakes, and the
@@ -1416,7 +1459,7 @@ can hold more than one voice without a second folder convention.
 
 ## Next phase
 
-No phase is scheduled: **1.8.4** is the current build (2026-11-25). 1.7.0 is the published
+No phase is scheduled: **1.9.0** is the current build (2026-11-25). 1.9.0 is the published
 release; 1.5.0's voice packs ship inside it, and 1.0.0–1.3.1 remain verified on the phone. The
 voice import still needs a real zip — Okley proves the bundled path, not the import path. Work
 after that is maintenance rather than plan phases — lifting the `path_provider_android` pin now

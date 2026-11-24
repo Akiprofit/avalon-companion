@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -19,6 +21,7 @@ import '../../game_engine/controllers/game_session_controller.dart';
 import '../../game_engine/models/game_state.dart';
 import '../../game_engine/models/phase.dart';
 import '../../game_engine/rules/avalon_tables.dart';
+import '../../narration_engine/services/narration_cues.dart';
 import '../settings/settings_controller.dart';
 
 /// Screen 07 — the MC records the physical vote.
@@ -97,6 +100,17 @@ class _VotingScreenState extends ConsumerState<VotingScreen> {
 
     final after = ref.read(gameSessionProvider);
     if (!mounted) return;
+
+    unawaited(
+      ref
+          .read(narrationCuesProvider)
+          .play(
+            NarrationCues.voteOutcome(
+              approved: approved,
+              rejectionCount: after?.rejectionCount ?? 0,
+            ),
+          ),
+    );
 
     final evilWins = after?.phase == Phase.evilVictory;
     final drawsKing = after?.phase == Phase.lordSelection;

@@ -54,6 +54,10 @@ abstract final class AvalonTables {
   static int failsRequired(int playerCount, int questNumber) =>
       (questNumber == 4 && playerCount >= 7) ? 2 : 1;
 
+  /// Rejected teams in a row that hand the match to Evil — §5.4. A table is
+  /// told when one more would do it.
+  static const rejectionsBeforeEvil = 5;
+
   /// Strict majority; a tie is rejected — §5.4.
   static bool isApproved(int approve, int reject) =>
       approve > (approve + reject) / 2;

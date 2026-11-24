@@ -15,7 +15,7 @@ import '../models/narration_instruction.dart';
 ///
 /// Keep this set in step with the files: `test/unit/narration_clips_test.dart`
 /// fails when a recording is missing, and when an id here has no matching line
-/// in [NightScript].
+/// in [NightScript] or [RoundScript].
 abstract final class NarrationClips {
   /// The folder this app bundles as its narrator, inside [narratorDirectory].
   static const voice = 'Dahlia voices';
@@ -24,7 +24,8 @@ abstract final class NarrationClips {
 
   static const directory = '$narratorDirectory/$voice';
 
-  /// Every night line that has a recording in both languages.
+  /// Every line the narrator speaks — the fourteen night lines and the seven
+  /// round lines — recorded in both languages.
   static const ids = <String>{
     'night.close_eyes',
     'night.evil.wake',
@@ -40,6 +41,13 @@ abstract final class NarrationClips {
     'night.percival.look_alone',
     'night.percival.sleep',
     'night.end',
+    'round.proposal',
+    'vote.approved',
+    'vote.rejected',
+    'vote.rejection_warning',
+    'quest.success',
+    'quest.fail',
+    'assassination.begin',
   };
 
   static bool has(String id) => ids.contains(id);
