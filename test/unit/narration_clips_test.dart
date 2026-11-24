@@ -52,7 +52,9 @@ void main() {
     );
   });
 
-  test('no round line has a recording yet', () {
+  test('the round lines are recorded but not yet registered', () {
+    // Files for these may sit in a voice folder — the MC has recorded them —
+    // but the registry above must not claim them until the app plays them.
     for (final id in const [
       'round.proposal',
       'vote.approved',

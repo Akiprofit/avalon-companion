@@ -3,6 +3,45 @@
 All notable changes to Avalon Companion are recorded here. One entry per completed
 development phase, in the order the plan defines them.
 
+## [1.8.4] — Two minutes (2026-11-25)
+
+### Added
+
+- **The accusation has a clock.** Two minutes, on the screen where the table argues over who
+  Merlin is. It starts as soon as the screen opens, so the MC never has to touch the phone to
+  begin it; the ring pauses and resumes it, and the restart button gives the table another two
+  minutes.
+- **The last ten seconds are visible and audible.** The numerals and the ring turn red and one
+  quiet tick fires at ten seconds, then two heavy taps at zero — a phone lying face down still
+  says the time is up.
+- **It is a nudge, not a rule.** At zero the screen says "Time's up" and nothing else changes:
+  both outcome buttons still work, and the outcome is recorded exactly as the table decided it.
+  A table that needs longer is not blocked.
+- The accusation screen's copy now says the table has two minutes.
+
+### Changed
+
+- **A bundled voice folder may be capitalised.** Folder names were validated as lowercase, so a
+  folder such as `assets/audio/voices/Grok/` was silently skipped — no line played and the picker
+  never showed it. Names now accept capitals; the guard that keeps a folder from naming a path
+  outside its own directory is unchanged. `Grok` is listed in `pubspec.yaml` and appears in the
+  voice picker.
+- **A voice may hold more recordings than the app plays.** The bundled-voice test now requires at
+  least the fourteen night lines instead of exactly them, so the seven round-line recordings can
+  sit in a pack unused instead of failing the build. The registry still does not claim them: the
+  app plays the night only.
+
+### Verified
+
+| Check | Result |
+| --- | --- |
+| `flutter analyze` | No issues found |
+| `flutter test` | 358 tests pass (112 widget, 246 unit and database) |
+| Clock | `endgame_test.dart` (+3): 2:00 down to 0:00 with the last ten seconds red, the ring pauses and resumes, restart returns to 2:00, and the outcome can still be recorded at zero |
+| Voices | `voice_packs_test.dart` (+1): a capitalised folder is a voice, and every bundled folder is listed in `pubspec.yaml` |
+| Device | **Galaxy A36 (SM-A366B) over USB**: installed over 1.8.3 and kept the saved match; the clock started itself at 2:00, ticked down, paused and resumed from the ring, reached 0:00 in red with **Time's up**, and **Merlin survived** still opened its confirmation at zero |
+| Release APK | Signed **1.8.4+31** built (71.8 MB), zipaligned and verified with the release key; SHA-256 F85B043968DE6C25704063187B9D805536D5A2C2F4CF81EC69AFAF9CB0D43FBD |
+
 ## [1.8.3] — No halo (2026-11-24)
 
 ### Changed

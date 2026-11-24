@@ -76,8 +76,24 @@ void main() {
       expect(packs.map((pack) => pack.id), ['classic']);
     });
 
-    test('a pack missing a language falls back for that language only', () {
+    test('a capitalised folder name is still a voice', () {
       final packs = VoicePackCatalogue.fromAssets(const [
+        'assets/audio/narration/Dahlia voices/en/night.end.mp3',
+        'assets/audio/voices/Grok/en/night.end.mp3',
+        'assets/audio/voices/Grok/fil/night.end.mp3',
+      ]);
+
+      expect(packs.map((pack) => pack.id), ['classic', 'Grok']);
+      final grok = packs.last;
+      expect(grok.name, 'Grok');
+      expect(grok.hasClip('night.end', NarrationLanguage.filipino), isTrue);
+      expect(
+        grok.pathFor('night.end', NarrationLanguage.english),
+        'assets/audio/voices/Grok/en/night.end.mp3',
+      );
+    });
+
+    test('a pack missing a language falls back for that language only', () {      final packs = VoicePackCatalogue.fromAssets(const [
         'assets/audio/narration/Dahlia voices/en/night.end.mp3',
         'assets/audio/voices/dahlia/en/night.end.mp3',
       ]);
@@ -361,8 +377,9 @@ void main() {
     for (final language in NarrationLanguage.values) {
       expect(
         pack.clips[NarrationClips.folderFor(language)],
-        NarrationClips.ids,
-        reason: 'a complete set, so no line falls back to the phone',
+        containsAll(NarrationClips.ids),
+        reason: 'a complete set, so no line falls back to the phone — extra '
+            'recordings for round lines are allowed and simply unused',
       );
     }
   });

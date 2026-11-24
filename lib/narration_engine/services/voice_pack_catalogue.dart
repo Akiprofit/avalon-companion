@@ -174,12 +174,15 @@ abstract final class VoicePackCatalogue {
     return out.join(' ');
   }
 
-  /// Folder and line ids are lowercase with dots, dashes and underscores only.
+  /// Folder and line ids are letters, digits, dots, dashes and underscores.
   ///
   /// This is what keeps a pack from naming a path that climbs out of its own
   /// directory, so the same rule guards bundled folders and imported zips.
+  /// Capitals are allowed because a bundled folder is named by hand: `Grok/`
+  /// is an ordinary folder name, and refusing it would hide the voice from the
+  /// picker without saying why.
   static bool isValidId(String id) =>
-      id.isNotEmpty && RegExp(r'^[a-z0-9][a-z0-9._-]*$').hasMatch(id);
+      id.isNotEmpty && RegExp(r'^[A-Za-z0-9][A-Za-z0-9._-]*$').hasMatch(id);
 
   static void _record(
     Map<String, Map<String, Set<String>>> clips,

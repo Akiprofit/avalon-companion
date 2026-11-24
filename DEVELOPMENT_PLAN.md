@@ -1179,6 +1179,34 @@ each reversible until the next action.
 | Device pass | **Passed on a Galaxy A36 (SM-A366B) over wireless debugging.** `app_test.dart` (2 tests) and `clip_playback_test.dart` (1) ran on the phone: the settings switch survives the installed database, a match starts on the real store with no role column in any table, and a night line decodes in both languages |
 | Release APK | Signed **1.7.0+24** built (64.0 MB), zipaligned and verified with the release key, installed on the phone and opened; SHA-256 `66f84332…d1657f06` |
 
+## Two minutes — 1.8.4
+
+The accusation was the one screen with no clock. Three quests are won, the assassin wakes, and the
+table has as long as it likes to argue. Everything else in the app already had a ring that starts,
+pauses and restarts on tap; this release gives the accusation the same one, at two minutes.
+
+The design question was whether the clock should be a rule. It is not: the table still records what
+happened, even after zero. Blocking the outcome would make the app the referee of a social
+conversation, and a table that needs a third minute would be stuck holding a phone that refuses to
+listen. So zero says "Time's up", double-taps, and gets out of the way.
+
+It starts itself when the screen opens. The screen already tells the MC not to touch the phone
+during an accusation, so asking for a tap to start the clock would contradict its own copy — and a
+clock nobody starts is a clock that silently does nothing.
+
+| Check | Result |
+| --- | --- |
+| `flutter analyze` | No issues found |
+| `flutter test` | 358 tests pass (112 widget, 246 unit and database) |
+| Clock | `endgame_test.dart` (+3): 2:00 down to 0:00 with the last ten seconds red, the ring pauses and resumes, restart returns to 2:00, and the outcome can still be recorded at zero |
+| Voices | `voice_packs_test.dart` (+1): a capitalised folder is a voice, and every bundled folder is listed in `pubspec.yaml` |
+| Device | **Galaxy A36 (SM-A366B) over USB**: installed over 1.8.3 and kept the saved match; the clock started itself at 2:00, paused and resumed from the ring, and reached 0:00 in red with **Time's up** while **Merlin survived** still opened its confirmation; the picker now lists **Dahlia**, **Grok** and **Okley**, each English 21/21 · Filipino 21/21 |
+| Release APK | Signed **1.8.4+31** built (71.8 MB), zipaligned and verified with the release key; SHA-256 F85B043968DE6C25704063187B9D805536D5A2C2F4CF81EC69AFAF9CB0D43FBD |
+
+A voice folder named `Grok` was invisible: bundled folder names were validated as lowercase, so the
+manifest listed it, the catalogue dropped it, and nothing said why. Capitals are now accepted, and
+the test that every bundled folder is in `pubspec.yaml` catches the other half of that mistake.
+
 ## No halo — 1.8.3
 
 A fair question came back after 1.8.2: does this button look like AI slop? A gradient with a glow
@@ -1388,10 +1416,9 @@ can hold more than one voice without a second folder convention.
 
 ## Next phase
 
-No phase is scheduled: **1.8.3** is the current build (2026-11-24). 1.7.0 is the published
+No phase is scheduled: **1.8.4** is the current build (2026-11-25). 1.7.0 is the published
 release; 1.5.0's voice packs ship inside it, and 1.0.0–1.3.1 remain verified on the phone. The
 voice import still needs a real zip — Okley proves the bundled path, not the import path. Work
-after that
-is maintenance rather than plan phases — lifting the `path_provider_android` pin now that the
-NDK is installed, split-per-abi APKs if download size matters, commissioned artwork to replace
-the public-domain plates, or a Play Store listing with its own upload key.
+after that is maintenance rather than plan phases — lifting the `path_provider_android` pin now
+that the NDK is installed, split-per-abi APKs if download size matters, commissioned artwork to
+replace the public-domain plates, or a Play Store listing with its own upload key.

@@ -74,6 +74,24 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  /// Opens the accusation without letting its clock run itself out: the ring
+  /// ticks every second, so `pumpAndSettle` would pump until the two minutes
+  /// were gone.
+  Future<void> openAccusation(WidgetTester tester) async {
+    await tester.tap(find.byKey(const Key('dashboard_open_assassination')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+  }
+
+  /// Reaches three successful quests, the only route to the accusation.
+  ProviderContainer reachTheAccusation(WidgetTester tester) {
+    final container = startMatch(tester);
+    playQuest(container, teamSize: 2, fails: 0);
+    playQuest(container, teamSize: 3, fails: 0);
+    playQuest(container, teamSize: 2, fails: 0);
+    return container;
+  }
+
   testWidgets('three successful quests open the assassination', (tester) async {
     await pumpApp(tester);
     final container = startMatch(tester);
@@ -246,5 +264,81 @@ void main() {
     await tester.tap(find.byKey(const Key('home_continue_game')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('dashboard_open_results')), findsOneWidget);
+  });
+
+  testWidgets('the accusation clock starts at two minutes and runs down', (
+    tester,
+  ) async {
+    await pumpApp(tester);
+    reachTheAccusation(tester);
+    await openDashboard(tester);
+    await openAccusation(tester);
+
+    expect(find.text('THE ACCUSATION CLOCK'), findsOneWidget);
+    expect(find.text('Running'), findsOneWidget);
+    expect(find.text('2:00'), findsOneWidget);
+
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('1:59'), findsOneWidget);
+
+    await tester.pump(const Duration(seconds: 60));
+    expect(find.text('0:59'), findsOneWidget);
+
+    // The last ten seconds are the point of a countdown: they say so.
+    await tester.pump(const Duration(seconds: 49));
+    expect(find.text('0:10'), findsOneWidget);
+
+    await tester.pump(const Duration(seconds: 10));
+    expect(find.text('0:00'), findsOneWidget);
+    expect(find.text("Time's up"), findsWidgets);
+    // Let the two-tap alarm finish before the test ends.
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(find.text('Two minutes to accuse'), findsNothing);
+    // The clock is a nudge, not a rule: recording still works.
+    await tester.tap(find.byKey(const Key('assassination_survived')));
+    await tester.pumpAndSettle();
+    expect(find.text("Record Merlin's escape?"), findsOneWidget);
+  });
+
+  testWidgets('the accusation clock pauses and resumes from the ring', (
+    tester,
+  ) async {
+    await pumpApp(tester);
+    reachTheAccusation(tester);
+    await openDashboard(tester);
+    await openAccusation(tester);
+
+    await tester.pump(const Duration(seconds: 5));
+    expect(find.text('1:55'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('accusation_ring')));
+    await tester.pump();
+    expect(find.text('Clock paused'), findsOneWidget);
+
+    await tester.pump(const Duration(seconds: 30));
+    expect(find.text('1:55'), findsOneWidget, reason: 'a paused clock holds');
+
+    await tester.tap(find.byKey(const Key('accusation_ring')));
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('1:54'), findsOneWidget);
+    expect(find.text('Running'), findsOneWidget);
+  });
+
+  testWidgets('the accusation clock restarts at two minutes', (tester) async {
+    await pumpApp(tester);
+    reachTheAccusation(tester);
+    await openDashboard(tester);
+    await openAccusation(tester);
+
+    await tester.pump(const Duration(seconds: 20));
+    expect(find.text('1:40'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('accusation_restart')));
+    await tester.pump();
+    expect(find.text('2:00'), findsOneWidget);
+
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('1:59'), findsOneWidget);
   });
 }

@@ -17,6 +17,7 @@ import '../../core/widgets/section_header.dart';
 import '../../game_engine/controllers/game_session_controller.dart';
 import '../../game_engine/models/phase.dart';
 import '../settings/settings_controller.dart';
+import 'accusation_clock.dart';
 
 /// Screen 11 — the assassination.
 ///
@@ -165,14 +166,17 @@ class _AssassinationScreenState extends ConsumerState<AssassinationScreen> {
                       ),
                       const SizedBox(height: Space.sm),
                       Text(
-                        'The assassin now wakes and names one player. Do not '
-                        'touch this phone until the name has been spoken and '
-                        "that player's character card has been turned over.",
+                        'The assassin now wakes and names one player. The '
+                        'table has two minutes. Do not touch this phone until '
+                        'the name has been spoken and that player\'s character '
+                        'card has been turned over.',
                         style: AppText.body,
                       ),
                     ],
                   ),
                 ),
+                const SizedBox(height: Space.lg),
+                const AccusationClock(),
                 const SizedBox(height: Space.lg),
                 const SectionHeader(title: 'How the accusation runs'),
                 MedievalCard(

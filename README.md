@@ -12,7 +12,7 @@
   <a href="https://github.com/Akiprofit/avalon-companion/releases/latest">
     <img alt="Download the Android APK" src="https://img.shields.io/badge/Download-Android%20APK-C5A15B?style=for-the-badge&logo=android&logoColor=0B0E14" />
   </a>
-  <img alt="Version 1.8.3" src="https://img.shields.io/badge/version-1.8.3-0B0E14?style=for-the-badge" />
+  <img alt="Version 1.8.4" src="https://img.shields.io/badge/version-1.8.4-0B0E14?style=for-the-badge" />
   <img alt="Offline first" src="https://img.shields.io/badge/offline-first-3D9B72?style=for-the-badge" />
 </p>
 
@@ -43,7 +43,7 @@ The latest signed Android APK is on the
 
 ### Install on Android
 
-1. Download `Avalon-Companion-1.8.3.apk` from the latest release.
+1. Download `Avalon-Companion-1.8.4.apk` from the latest release.
 2. Open the downloaded APK.
 3. Allow **Install unknown apps** for the browser or file manager you used.
 4. Tap **Install**.
@@ -111,6 +111,10 @@ The latest signed Android APK is on the
   line go with the step — even a quest that ended the match reopens it
 - **The dashboard says what to do next**, in one line under the score, for
   whichever phase the table is in
+- A **two-minute clock** runs on the accusation screen: it starts with the
+  screen, pauses and restarts on tap, turns red and clicks at ten seconds, and
+  double-taps at zero. It blocks nothing — the outcome is recorded exactly as
+  the table reached it
 - The accusation records **whether Merlin was named**, never a person
 - The result screen summarises the match without naming a role, and **Play
   Again** deals the same table a fresh match
@@ -323,7 +327,14 @@ docs/icon.png          the app icon used by this README
 
 ## Status
 
-**v1.8.3** — No halo. The gold buttons no longer cast a glow: against the
+**v1.8.4** - Two minutes. The accusation now has a clock. It starts as soon as
+the screen opens, so the MC never has to touch the phone during an accusation;
+the ring pauses and resumes it, and one button gives the table another two
+minutes. The last ten seconds turn red and click, and zero double-taps. When it
+runs out it says so and changes nothing else - the outcome is still recorded
+exactly as the table decided it.
+
+**v1.8.3** - No halo. The gold buttons no longer cast a glow: against the
 photographic plates it could not be seen, so it was decoration doing no work.
 What is left is the face itself — a vertical gold gradient, a hairline where the
 edge turns, a catch of light along the top, and a press that sinks it a hair.
