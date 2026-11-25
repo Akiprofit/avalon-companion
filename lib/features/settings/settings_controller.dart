@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/models/app_settings.dart';
 import '../../database/database_provider.dart';
+import '../../game_engine/rules/avalon_tables.dart';
 import '../../narration_engine/models/narration_instruction.dart';
 
 export '../../core/models/app_settings.dart';
@@ -41,8 +42,30 @@ class SettingsController extends Notifier<AppSettings> {
   void setDiscussionSeconds(int seconds) =>
       update((s) => s.copyWith(discussionSeconds: seconds.clamp(60, 1800)));
 
-  void setDefaultPlayerCount(int count) =>
-      update((s) => s.copyWith(defaultPlayerCount: count.clamp(5, 10)));
+  void setDefaultPlayerCount(int count) => update(
+    (s) => s.copyWith(
+      defaultPlayerCount: count.clamp(
+        AvalonTables.minPlayers,
+        AvalonTables.maxPlayersFor(bigTable: s.bigTable),
+      ),
+    ),
+  );
+
+  /// Unlocks the 11–14 player house tables in setup.
+  ///
+  /// Turning it off brings a stored default back inside the rulebook's ceiling,
+  /// so the next setup cannot seed a count the app no longer offers.
+  void setBigTable(bool enabled) => update(
+    (s) => s.copyWith(
+      bigTable: enabled,
+      defaultPlayerCount: enabled
+          ? s.defaultPlayerCount
+          : s.defaultPlayerCount.clamp(
+              AvalonTables.minPlayers,
+              AvalonTables.officialMaxPlayers,
+            ),
+    ),
+  );
 
   void setKingSelectionMode(KingSelectionMode mode) =>
       update((s) => s.copyWith(kingSelectionMode: mode));

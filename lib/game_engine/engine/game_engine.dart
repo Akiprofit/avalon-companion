@@ -32,8 +32,9 @@ abstract final class GameEngine {
     DateTime? startedAt,
   }) {
     if (!AvalonTables.isValidPlayerCount(players.length)) {
-      throw const GameRuleException(
-        'Avalon is played with 5 to 10 players.',
+      throw GameRuleException(
+        'Avalon is played with ${AvalonTables.minPlayers} to '
+        '${AvalonTables.maxPlayers} players.',
       );
     }
     if (composition.playerCount != players.length) {

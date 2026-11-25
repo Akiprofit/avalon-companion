@@ -49,6 +49,7 @@ class AppSettings {
     this.defaultPlayerCount = 5,
     this.kingSelectionMode = KingSelectionMode.manual,
     this.teamVoteEnabled = true,
+    this.bigTable = false,
   });
 
   final NarrationLanguage defaultLanguage;
@@ -86,6 +87,13 @@ class AppSettings {
   /// be switched off without touching anything else in the match.
   final bool teamVoteEnabled;
 
+  /// Whether setup offers the house tables above ten players.
+  ///
+  /// Avalon is a five to ten player game; eleven to fourteen is a house rule for
+  /// a table that cannot fit everyone into the official sizes. Off on a fresh
+  /// install, so the app never presents those sizes as standard.
+  final bool bigTable;
+
   bool get kingsDrawnAutomatically =>
       kingSelectionMode == KingSelectionMode.automatic;
 
@@ -109,6 +117,7 @@ class AppSettings {
     int? defaultPlayerCount,
     KingSelectionMode? kingSelectionMode,
     bool? teamVoteEnabled,
+    bool? bigTable,
   }) {
     return AppSettings(
       defaultLanguage: defaultLanguage ?? this.defaultLanguage,
@@ -132,6 +141,7 @@ class AppSettings {
       defaultPlayerCount: defaultPlayerCount ?? this.defaultPlayerCount,
       kingSelectionMode: kingSelectionMode ?? this.kingSelectionMode,
       teamVoteEnabled: teamVoteEnabled ?? this.teamVoteEnabled,
+      bigTable: bigTable ?? this.bigTable,
     );
   }
 }

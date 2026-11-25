@@ -169,6 +169,10 @@ class Settings extends Table {
   BoolColumn get teamVoteEnabled =>
       boolean().withDefault(const Constant(true))();
 
+  /// Whether setup offers the 11–14 player house tables. Off by default.
+  BoolColumn get bigTableEnabled =>
+      boolean().withDefault(const Constant(false))();
+
   /// The narrator voice the MC chose. Null means the recordings that ship with
   /// the app, so an untouched install needs no row value.
   TextColumn get voicePackId => text().nullable()();
@@ -224,7 +228,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -257,6 +261,11 @@ class AppDatabase extends _$AppDatabase {
       if (from < 7) {
         await m.createTable(voicePacks);
         await m.addColumn(settings, settings.voicePackId);
+      }
+      // v8 added the Big table switch for the 11–14 player house sizes.
+      // Existing installs keep the rulebook ceiling of ten until it is turned on.
+      if (from < 8) {
+        await m.addColumn(settings, settings.bigTableEnabled);
       }
     },
     beforeOpen: (details) async {

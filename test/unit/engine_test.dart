@@ -120,7 +120,7 @@ void main() {
           throwsA(isA<UnsupportedError>()));
     });
 
-    test('rejects fewer than 5 or more than 10 players', () {
+    test('rejects fewer than 5 or more than 14 players', () {
       expect(
         () => GameEngine.create(
           players: _seats(4),
@@ -130,10 +130,25 @@ void main() {
       );
       expect(
         () => GameEngine.create(
-          players: _seats(11),
-          composition: _defaultComposition(10),
+          players: _seats(15),
+          composition: _defaultComposition(14),
         ),
         throwsA(isA<GameRuleException>()),
+      );
+    });
+
+    test('a 14 player house table starts with the bigger quest teams', () {
+      final game = _newGame(players: 14);
+      expect(game.playerCount, 14);
+      expect(
+        AvalonTables.teamSize(game.playerCount, 1),
+        5,
+        reason: 'the first quest asks for five cards',
+      );
+      expect(
+        game.composition.evilTotal,
+        5,
+        reason: 'the fifth Evil seat is filled by a Minion',
       );
     });
 

@@ -293,10 +293,12 @@ void main() {
       );
       await before.close();
 
-      // Wind the file back to v6: no table, no chosen-voice column.
+      // Wind the file back to v6: no table, no chosen-voice column, and no v8
+      // Big table switch.
       sqlite3.open(file.path)
         ..execute('DROP TABLE voice_packs')
         ..execute('ALTER TABLE settings DROP COLUMN voice_pack_id')
+        ..execute('ALTER TABLE settings DROP COLUMN big_table_enabled')
         ..execute('PRAGMA user_version = 6')
         ..close();
 

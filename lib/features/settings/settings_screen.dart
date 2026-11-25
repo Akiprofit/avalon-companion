@@ -21,6 +21,7 @@ import '../../core/widgets/section_header.dart';
 import '../../core/widgets/secondary_button.dart';
 import '../../core/widgets/settings_tile.dart';
 import '../../core/widgets/timed_snack_bar.dart';
+import '../../game_engine/rules/avalon_tables.dart';
 import '../../narration_engine/models/narration_instruction.dart';
 import '../../narration_engine/services/tts_provider.dart';
 import '../../narration_engine/services/tts_service.dart';
@@ -302,12 +303,31 @@ class SettingsScreen extends ConsumerWidget {
                   onChanged: controller.setTeamVoteEnabled,
                 ),
                 const SizedBox(height: Space.md),
+                SettingsTile.toggle(
+                  key: const Key('settings_big_table'),
+                  label: 'Big table (11–14 players)',
+                  description: settings.bigTable
+                      ? 'Setup offers 11 to 14 players. Those sizes are a house '
+                            'rule: Avalon is officially five to ten, and your '
+                            'cards have to cover the roster.'
+                      : 'Not enough room at the table? Unlocks seats 11 to 14 in '
+                            'setup. Avalon is officially five to ten, so those '
+                            'sizes are a house rule.',
+                  value: settings.bigTable,
+                  onChanged: controller.setBigTable,
+                ),
+                const SizedBox(height: Space.md),
                 Text('Default player count', style: AppText.bodyStrong),
                 const SizedBox(height: Space.xs),
                 Wrap(
                   spacing: Space.xs,
                   children: [
-                    for (var count = 5; count <= 10; count++)
+                    for (
+                      var count = AvalonTables.minPlayers;
+                      count <=
+                          AvalonTables.maxPlayersFor(bigTable: settings.bigTable);
+                      count++
+                    )
                       ChoiceChip(
                         key: Key('settings_default_count_$count'),
                         label: Text('$count'),

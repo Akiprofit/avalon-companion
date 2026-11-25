@@ -2976,6 +2976,21 @@ class $SettingsTable extends Settings
     ),
     defaultValue: const Constant(true),
   );
+  static const VerificationMeta _bigTableEnabledMeta = const VerificationMeta(
+    'bigTableEnabled',
+  );
+  @override
+  late final GeneratedColumn<bool> bigTableEnabled = GeneratedColumn<bool>(
+    'big_table_enabled',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("big_table_enabled" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _voicePackIdMeta = const VerificationMeta(
     'voicePackId',
   );
@@ -3008,6 +3023,7 @@ class $SettingsTable extends Settings
     kingSelection,
     narratorExtraDelayMs,
     teamVoteEnabled,
+    bigTableEnabled,
     voicePackId,
   ];
   @override
@@ -3177,6 +3193,15 @@ class $SettingsTable extends Settings
         ),
       );
     }
+    if (data.containsKey('big_table_enabled')) {
+      context.handle(
+        _bigTableEnabledMeta,
+        bigTableEnabled.isAcceptableOrUnknown(
+          data['big_table_enabled']!,
+          _bigTableEnabledMeta,
+        ),
+      );
+    }
     if (data.containsKey('voice_pack_id')) {
       context.handle(
         _voicePackIdMeta,
@@ -3271,6 +3296,10 @@ class $SettingsTable extends Settings
         DriftSqlType.bool,
         data['${effectivePrefix}team_vote_enabled'],
       )!,
+      bigTableEnabled: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}big_table_enabled'],
+      )!,
       voicePackId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}voice_pack_id'],
@@ -3318,6 +3347,9 @@ class SettingsRecord extends DataClass implements Insertable<SettingsRecord> {
   /// chosen team goes straight to the quest and rejections never count.
   final bool teamVoteEnabled;
 
+  /// Whether setup offers the 11–14 player house tables. Off by default.
+  final bool bigTableEnabled;
+
   /// The narrator voice the MC chose. Null means the recordings that ship with
   /// the app, so an untouched install needs no row value.
   final String? voicePackId;
@@ -3341,6 +3373,7 @@ class SettingsRecord extends DataClass implements Insertable<SettingsRecord> {
     required this.kingSelection,
     required this.narratorExtraDelayMs,
     required this.teamVoteEnabled,
+    required this.bigTableEnabled,
     this.voicePackId,
   });
   @override
@@ -3369,6 +3402,7 @@ class SettingsRecord extends DataClass implements Insertable<SettingsRecord> {
     map['king_selection'] = Variable<String>(kingSelection);
     map['narrator_extra_delay_ms'] = Variable<int>(narratorExtraDelayMs);
     map['team_vote_enabled'] = Variable<bool>(teamVoteEnabled);
+    map['big_table_enabled'] = Variable<bool>(bigTableEnabled);
     if (!nullToAbsent || voicePackId != null) {
       map['voice_pack_id'] = Variable<String>(voicePackId);
     }
@@ -3400,6 +3434,7 @@ class SettingsRecord extends DataClass implements Insertable<SettingsRecord> {
       kingSelection: Value(kingSelection),
       narratorExtraDelayMs: Value(narratorExtraDelayMs),
       teamVoteEnabled: Value(teamVoteEnabled),
+      bigTableEnabled: Value(bigTableEnabled),
       voicePackId: voicePackId == null && nullToAbsent
           ? const Value.absent()
           : Value(voicePackId),
@@ -3435,6 +3470,7 @@ class SettingsRecord extends DataClass implements Insertable<SettingsRecord> {
         json['narratorExtraDelayMs'],
       ),
       teamVoteEnabled: serializer.fromJson<bool>(json['teamVoteEnabled']),
+      bigTableEnabled: serializer.fromJson<bool>(json['bigTableEnabled']),
       voicePackId: serializer.fromJson<String?>(json['voicePackId']),
     );
   }
@@ -3461,6 +3497,7 @@ class SettingsRecord extends DataClass implements Insertable<SettingsRecord> {
       'kingSelection': serializer.toJson<String>(kingSelection),
       'narratorExtraDelayMs': serializer.toJson<int>(narratorExtraDelayMs),
       'teamVoteEnabled': serializer.toJson<bool>(teamVoteEnabled),
+      'bigTableEnabled': serializer.toJson<bool>(bigTableEnabled),
       'voicePackId': serializer.toJson<String?>(voicePackId),
     };
   }
@@ -3485,6 +3522,7 @@ class SettingsRecord extends DataClass implements Insertable<SettingsRecord> {
     String? kingSelection,
     int? narratorExtraDelayMs,
     bool? teamVoteEnabled,
+    bool? bigTableEnabled,
     Value<String?> voicePackId = const Value.absent(),
   }) => SettingsRecord(
     id: id ?? this.id,
@@ -3506,6 +3544,7 @@ class SettingsRecord extends DataClass implements Insertable<SettingsRecord> {
     kingSelection: kingSelection ?? this.kingSelection,
     narratorExtraDelayMs: narratorExtraDelayMs ?? this.narratorExtraDelayMs,
     teamVoteEnabled: teamVoteEnabled ?? this.teamVoteEnabled,
+    bigTableEnabled: bigTableEnabled ?? this.bigTableEnabled,
     voicePackId: voicePackId.present ? voicePackId.value : this.voicePackId,
   );
   SettingsRecord copyWithCompanion(SettingsCompanion data) {
@@ -3557,6 +3596,9 @@ class SettingsRecord extends DataClass implements Insertable<SettingsRecord> {
       teamVoteEnabled: data.teamVoteEnabled.present
           ? data.teamVoteEnabled.value
           : this.teamVoteEnabled,
+      bigTableEnabled: data.bigTableEnabled.present
+          ? data.bigTableEnabled.value
+          : this.bigTableEnabled,
       voicePackId: data.voicePackId.present
           ? data.voicePackId.value
           : this.voicePackId,
@@ -3585,13 +3627,14 @@ class SettingsRecord extends DataClass implements Insertable<SettingsRecord> {
           ..write('kingSelection: $kingSelection, ')
           ..write('narratorExtraDelayMs: $narratorExtraDelayMs, ')
           ..write('teamVoteEnabled: $teamVoteEnabled, ')
+          ..write('bigTableEnabled: $bigTableEnabled, ')
           ..write('voicePackId: $voicePackId')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     narrationLanguage,
     narrationSpeed,
@@ -3611,8 +3654,9 @@ class SettingsRecord extends DataClass implements Insertable<SettingsRecord> {
     kingSelection,
     narratorExtraDelayMs,
     teamVoteEnabled,
+    bigTableEnabled,
     voicePackId,
-  );
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -3636,6 +3680,7 @@ class SettingsRecord extends DataClass implements Insertable<SettingsRecord> {
           other.kingSelection == this.kingSelection &&
           other.narratorExtraDelayMs == this.narratorExtraDelayMs &&
           other.teamVoteEnabled == this.teamVoteEnabled &&
+          other.bigTableEnabled == this.bigTableEnabled &&
           other.voicePackId == this.voicePackId);
 }
 
@@ -3659,6 +3704,7 @@ class SettingsCompanion extends UpdateCompanion<SettingsRecord> {
   final Value<String> kingSelection;
   final Value<int> narratorExtraDelayMs;
   final Value<bool> teamVoteEnabled;
+  final Value<bool> bigTableEnabled;
   final Value<String?> voicePackId;
   final Value<int> rowid;
   const SettingsCompanion({
@@ -3681,6 +3727,7 @@ class SettingsCompanion extends UpdateCompanion<SettingsRecord> {
     this.kingSelection = const Value.absent(),
     this.narratorExtraDelayMs = const Value.absent(),
     this.teamVoteEnabled = const Value.absent(),
+    this.bigTableEnabled = const Value.absent(),
     this.voicePackId = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -3704,6 +3751,7 @@ class SettingsCompanion extends UpdateCompanion<SettingsRecord> {
     this.kingSelection = const Value.absent(),
     this.narratorExtraDelayMs = const Value.absent(),
     this.teamVoteEnabled = const Value.absent(),
+    this.bigTableEnabled = const Value.absent(),
     this.voicePackId = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id);
@@ -3727,6 +3775,7 @@ class SettingsCompanion extends UpdateCompanion<SettingsRecord> {
     Expression<String>? kingSelection,
     Expression<int>? narratorExtraDelayMs,
     Expression<bool>? teamVoteEnabled,
+    Expression<bool>? bigTableEnabled,
     Expression<String>? voicePackId,
     Expression<int>? rowid,
   }) {
@@ -3753,6 +3802,7 @@ class SettingsCompanion extends UpdateCompanion<SettingsRecord> {
       if (narratorExtraDelayMs != null)
         'narrator_extra_delay_ms': narratorExtraDelayMs,
       if (teamVoteEnabled != null) 'team_vote_enabled': teamVoteEnabled,
+      if (bigTableEnabled != null) 'big_table_enabled': bigTableEnabled,
       if (voicePackId != null) 'voice_pack_id': voicePackId,
       if (rowid != null) 'rowid': rowid,
     });
@@ -3778,6 +3828,7 @@ class SettingsCompanion extends UpdateCompanion<SettingsRecord> {
     Value<String>? kingSelection,
     Value<int>? narratorExtraDelayMs,
     Value<bool>? teamVoteEnabled,
+    Value<bool>? bigTableEnabled,
     Value<String?>? voicePackId,
     Value<int>? rowid,
   }) {
@@ -3801,6 +3852,7 @@ class SettingsCompanion extends UpdateCompanion<SettingsRecord> {
       kingSelection: kingSelection ?? this.kingSelection,
       narratorExtraDelayMs: narratorExtraDelayMs ?? this.narratorExtraDelayMs,
       teamVoteEnabled: teamVoteEnabled ?? this.teamVoteEnabled,
+      bigTableEnabled: bigTableEnabled ?? this.bigTableEnabled,
       voicePackId: voicePackId ?? this.voicePackId,
       rowid: rowid ?? this.rowid,
     );
@@ -3868,6 +3920,9 @@ class SettingsCompanion extends UpdateCompanion<SettingsRecord> {
     if (teamVoteEnabled.present) {
       map['team_vote_enabled'] = Variable<bool>(teamVoteEnabled.value);
     }
+    if (bigTableEnabled.present) {
+      map['big_table_enabled'] = Variable<bool>(bigTableEnabled.value);
+    }
     if (voicePackId.present) {
       map['voice_pack_id'] = Variable<String>(voicePackId.value);
     }
@@ -3899,6 +3954,7 @@ class SettingsCompanion extends UpdateCompanion<SettingsRecord> {
           ..write('kingSelection: $kingSelection, ')
           ..write('narratorExtraDelayMs: $narratorExtraDelayMs, ')
           ..write('teamVoteEnabled: $teamVoteEnabled, ')
+          ..write('bigTableEnabled: $bigTableEnabled, ')
           ..write('voicePackId: $voicePackId, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -6648,6 +6704,7 @@ typedef $$SettingsTableCreateCompanionBuilder = SettingsCompanion Function({
   Value<String> kingSelection,
   Value<int> narratorExtraDelayMs,
   Value<bool> teamVoteEnabled,
+  Value<bool> bigTableEnabled,
   Value<String?> voicePackId,
   Value<int> rowid,
 });
@@ -6671,6 +6728,7 @@ typedef $$SettingsTableUpdateCompanionBuilder = SettingsCompanion Function({
   Value<String> kingSelection,
   Value<int> narratorExtraDelayMs,
   Value<bool> teamVoteEnabled,
+  Value<bool> bigTableEnabled,
   Value<String?> voicePackId,
   Value<int> rowid,
 });
@@ -6776,6 +6834,11 @@ class $$SettingsTableFilterComposer
 
   ColumnFilters<bool> get teamVoteEnabled => $composableBuilder(
     column: $table.teamVoteEnabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get bigTableEnabled => $composableBuilder(
+    column: $table.bigTableEnabled,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -6889,6 +6952,11 @@ class $$SettingsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get bigTableEnabled => $composableBuilder(
+    column: $table.bigTableEnabled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get voicePackId => $composableBuilder(
     column: $table.voicePackId,
     builder: (column) => ColumnOrderings(column),
@@ -6989,6 +7057,11 @@ class $$SettingsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<bool> get bigTableEnabled => $composableBuilder(
+    column: $table.bigTableEnabled,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get voicePackId => $composableBuilder(
     column: $table.voicePackId,
     builder: (column) => column,
@@ -7045,6 +7118,7 @@ class $$SettingsTableTableManager
                 Value<String> kingSelection = const Value.absent(),
                 Value<int> narratorExtraDelayMs = const Value.absent(),
                 Value<bool> teamVoteEnabled = const Value.absent(),
+                Value<bool> bigTableEnabled = const Value.absent(),
                 Value<String?> voicePackId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SettingsCompanion(
@@ -7067,6 +7141,7 @@ class $$SettingsTableTableManager
                 kingSelection: kingSelection,
                 narratorExtraDelayMs: narratorExtraDelayMs,
                 teamVoteEnabled: teamVoteEnabled,
+                bigTableEnabled: bigTableEnabled,
                 voicePackId: voicePackId,
                 rowid: rowid,
               ),
@@ -7091,6 +7166,7 @@ class $$SettingsTableTableManager
                 Value<String> kingSelection = const Value.absent(),
                 Value<int> narratorExtraDelayMs = const Value.absent(),
                 Value<bool> teamVoteEnabled = const Value.absent(),
+                Value<bool> bigTableEnabled = const Value.absent(),
                 Value<String?> voicePackId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SettingsCompanion.insert(
@@ -7113,6 +7189,7 @@ class $$SettingsTableTableManager
                 kingSelection: kingSelection,
                 narratorExtraDelayMs: narratorExtraDelayMs,
                 teamVoteEnabled: teamVoteEnabled,
+                bigTableEnabled: bigTableEnabled,
                 voicePackId: voicePackId,
                 rowid: rowid,
               ),

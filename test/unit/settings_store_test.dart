@@ -26,6 +26,7 @@ void main() {
     String kingSelection = 'manual',
     int extraDelayMs = 0,
     bool teamVote = true,
+    bool bigTable = false,
     String? pack,
   }) {
     return SettingsRecord(
@@ -48,6 +49,7 @@ void main() {
       kingSelection: kingSelection,
       narratorExtraDelayMs: extraDelayMs,
       teamVoteEnabled: teamVote,
+      bigTableEnabled: bigTable,
       voicePackId: pack,
     );
   }
@@ -71,6 +73,7 @@ void main() {
       defaultPlayerCount: 8,
       kingSelectionMode: KingSelectionMode.automatic,
       teamVoteEnabled: false,
+      bigTable: true,
     );
 
     final companion = SettingsRepository.encode(saved);
@@ -91,6 +94,7 @@ void main() {
     expect(companion.kingSelection.value, 'automatic');
     expect(companion.narratorExtraDelayMs.value, 7000);
     expect(companion.teamVoteEnabled.value, false);
+    expect(companion.bigTableEnabled.value, true);
     expect(companion.voicePackId.value, 'voice-of-dahlia');
 
     final decoded = SettingsRepository.decode(
@@ -110,6 +114,7 @@ void main() {
         kingSelection: 'automatic',
         extraDelayMs: 7000,
         teamVote: false,
+        bigTable: true,
         pack: 'voice-of-dahlia',
       ),
     );
@@ -129,6 +134,7 @@ void main() {
     expect(decoded.kingSelectionMode, KingSelectionMode.automatic);
     expect(decoded.narratorExtraDelay, const Duration(seconds: 7));
     expect(decoded.teamVoteEnabled, isFalse);
+    expect(decoded.bigTable, isTrue);
     expect(
       decoded.narratorPackId,
       'voice-of-dahlia',
@@ -179,6 +185,11 @@ void main() {
       isTrue,
       reason: 'the base game votes unless the MC turns it off',
     );
+    expect(
+      defaults.bigTable,
+      isFalse,
+      reason: 'a fresh install offers only the rulebook sizes',
+    );
   });
 
   test('a version 4 database gains the vote switch, switched on', () async {
@@ -189,7 +200,7 @@ void main() {
     if (await file.exists()) await file.delete();
 
     // Build a real database with the current schema, write a row, then wind it
-    // back to v4: drop the columns and the table v5–v7 added and reset the
+    // back to v4: drop the columns and the table v5–v8 added and reset the
     // version stamp. Reopening it is what runs the migration, exactly as an
     // upgraded install does.
     final before = AppDatabase(NativeDatabase(file));
@@ -204,6 +215,7 @@ void main() {
 
     sqlite3.open(file.path)
       ..execute('ALTER TABLE settings DROP COLUMN team_vote_enabled')
+      ..execute('ALTER TABLE settings DROP COLUMN big_table_enabled')
       ..execute('ALTER TABLE games DROP COLUMN quest_teams')
       ..execute('ALTER TABLE settings DROP COLUMN voice_pack_id')
       ..execute('DROP TABLE voice_packs')
@@ -226,6 +238,11 @@ void main() {
       migrated.discussionSeconds,
       420,
       reason: 'the rest of the saved row is untouched',
+    );
+    expect(
+      migrated.bigTable,
+      isFalse,
+      reason: 'an upgraded install keeps the rulebook ceiling until asked',
     );
   });
 }

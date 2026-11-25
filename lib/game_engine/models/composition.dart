@@ -68,9 +68,10 @@ class Composition {
 
     if (!AvalonTables.isValidPlayerCount(playerCount)) {
       issues.add(
-        const CompositionIssue(
+        CompositionIssue(
           IssueSeverity.error,
-          'Choose between 5 and 10 players.',
+          'Choose between ${AvalonTables.minPlayers} and '
+          '${AvalonTables.maxPlayers} players.',
         ),
       );
       return issues;

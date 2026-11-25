@@ -3,6 +3,47 @@
 All notable changes to Avalon Companion are recorded here. One entry per completed
 development phase, in the order the plan defines them.
 
+## [1.10.0] — The big table (2026-11-25)
+
+### Added
+
+- **Eleven to fourteen players, behind a switch.** Avalon is officially a five to ten player game,
+  and a table that cannot fit is the one case the app could not serve. **Settings → Game → Big
+  table (11–14 players)** unlocks seats eleven to fourteen in setup. It is off on a fresh install
+  and off for every install that upgrades, so the app keeps offering the rulebook's five to ten
+  until the MC asks for more.
+- **Setup says what it is.** While the switch is on, a line under the player-count chips names the
+  sizes as a house rule and warns that one box may not hold enough cards. The manual gains the same
+  paragraph and points at the setting.
+- **The roster grows with the table.** Eleven and twelve add loyal servants; a fifth Evil seat at
+  thirteen and fourteen is a Minion of Mordred, because the four named Evil are already in play.
+- Turning the switch off brings a stored default player count back to ten, and **Use the last
+  table** is hidden when the stored roster is larger than the app currently offers.
+
+### Changed
+
+- **`AvalonTables` separates the rulebook's ceiling from the app's.** `officialMaxPlayers` stays
+  ten — the How to Play team-size table and the copy still describe only the official sizes — while
+  `maxPlayers` is fourteen. The house rows are marked with `isHouseTable`, so nothing quietly
+  presents them as standard.
+- The database moves to v8 for the switch; an existing row is kept and the switch reads as off.
+- **The About panel reports the real version again.** It had been left at 1.8.3 through 1.9.0; a
+  test now reads `pubspec.yaml` so a release cannot drift from what the app says it is.
+
+### Verified
+
+| Check | Result |
+| --- | --- |
+| `flutter analyze` | No issues found |
+| `flutter test` | 393 tests pass (120 widget, 273 unit and database) |
+| House tables | `rules_test.dart` (+12): good/evil and team sizes for 11–14, the house-table marking, a 14-seat roster whose fifth Evil is a Minion, and the Evil share held between 30% and 40% |
+| Engine | `engine_test.dart` (+1): a 14-seat match starts with five-card first quests, and 15 seats are rejected |
+| Setting | `big_table_setting_test.dart` (+5): off by default in Settings and setup, turning it on unlocks 11–14 with the house note, a 14-seat match is set up and started on a phone, a 12-seat last table is only offered when the switch is on, and a stored 13 falls back to 10 when it goes off |
+| Storage | `settings_store_test.dart`: the switch round-trips and a v4 row gains it switched off; `voice_packs_test.dart` still migrates a v6 file |
+| Version | `app_info_test.dart` (+1): the About panel's version matches `pubspec.yaml` |
+| Device | **Galaxy A36 over USB**: 1.10.0+33 installed and launched. Settings showed **Big table (11–14 players)** off on the fresh install with its house-rule description, and the default player count offered only 5–10. The phone dropped off USB before the switch could be turned on, so the 11–14 setup path was checked by `big_table_setting_test.dart` and not on hardware |
+| Release APK | Signed **1.10.0+33** release build (71.8 MB, `arm64-v8a`, `armeabi-v7a`, `x86_64`); SHA-256 C9F73993968A409133AB61AF019DE42AC2A33DC3AAD30949D03E65289FA994FA. A forced Dart recompile from the current tree produced the same digest, so the tested build and the shipped file are the same bytes |
+
 ## [1.9.0] — The round, spoken (2026-11-25)
 
 ### Added

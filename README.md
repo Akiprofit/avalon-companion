@@ -12,7 +12,7 @@
   <a href="https://github.com/Akiprofit/avalon-companion/releases/latest">
     <img alt="Download the Android APK" src="https://img.shields.io/badge/Download-Android%20APK-C5A15B?style=for-the-badge&logo=android&logoColor=0B0E14" />
   </a>
-  <img alt="Version 1.9.0" src="https://img.shields.io/badge/version-1.9.0-0B0E14?style=for-the-badge" />
+  <img alt="Version 1.10.0" src="https://img.shields.io/badge/version-1.10.0-0B0E14?style=for-the-badge" />
   <img alt="Offline first" src="https://img.shields.io/badge/offline-first-3D9B72?style=for-the-badge" />
 </p>
 
@@ -43,7 +43,7 @@ The latest signed Android APK is on the
 
 ### Install on Android
 
-1. Download `Avalon-Companion-1.9.0.apk` from the latest release.
+1. Download `Avalon-Companion-1.10.0.apk` from the latest release.
 2. Open the downloaded APK.
 3. Allow **Install unknown apps** for the browser or file manager you used.
 4. Tap **Install**.
@@ -98,6 +98,10 @@ The latest signed Android APK is on the
 ### The match
 
 - Create a match for **5–10 players** with physical cards at the table
+- **Big table (11–14 players)** in Settings unlocks the house sizes for a group that
+  cannot fit the official ones. It is off until asked for, and setup says plainly
+  that the sizes and rosters above ten are ours, not the rulebook's — and that
+  one box may not hold enough cards for them
 - The **wheel** draws the first Lord; with the automatic King mode it draws the
   King of every round — never the same player twice in a row while others can
   lead, or only when the MC asks
@@ -147,9 +151,9 @@ The latest signed Android APK is on the
 
 - **How to Play is the actual game**, not a help page for the app: seating and
   dealing, every character, the night in order, the round loop, the team size
-  for every player count, and the rules that decide close games — a strict
-  majority, five rejected proposals, quest 4 needing two fails, and the final
-  accusation
+  for every official player count, and the rules that decide close games — a
+  strict majority, five rejected proposals, quest 4 needing two fails, and the
+  final accusation
 - **It says who does what.** The table plays the cards; the MC follows the same
   page to know which app action comes next, from **Begin the match** to
   **See the Result**
@@ -167,6 +171,9 @@ The latest signed Android APK is on the
 - **Automatic narration** and **ambient audio** beneath it
 - **King selection mode:** automatic every round, or only when the MC asks
 - **Team approval vote** on or off
+- **Big table (11–14 players)** — off by default, for a table that needs more seats
+  than the rulebook allows; the house sizes are labelled as such everywhere they
+  appear
 - **Default player count** and **discussion timer** length
 - **Keep screen awake**, **confirmation dialogs**, **haptic feedback** and
   **sound effects**
@@ -332,6 +339,13 @@ docs/icon.png          the app icon used by this README
 ---
 
 ## Status
+
+**v1.10.0** — The big table. Avalon stops at ten players and the app stopped there with it, which
+left a table of eleven with nowhere to go. Settings → Game → **Big table** now unlocks eleven to
+fourteen seats. It is off on a fresh install and off for every upgrade, and both setup and the
+manual say plainly that those sizes, their rosters and their quest teams are a house rule — the
+How to Play table still lists only the official counts. A fifth Evil seat is a Minion of Mordred,
+and the app warns that one box may not hold enough cards for the larger tables.
 
 **v1.9.0** — The round, spoken. The phone no longer goes quiet between quests. Seven recorded
 lines play themselves at the moments the table reaches them: the team named, the vote approved or

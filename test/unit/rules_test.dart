@@ -5,6 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('team composition table', () {
+    // 5–10 is the rulebook. 11–14 are the Big table house sizes, so these rows
+    // are what the app promises when the MC turns that setting on.
     const expected = {
       5: (3, 2),
       6: (4, 2),
@@ -12,6 +14,10 @@ void main() {
       8: (5, 3),
       9: (6, 3),
       10: (6, 4),
+      11: (7, 4),
+      12: (8, 4),
+      13: (8, 5),
+      14: (9, 5),
     };
 
     for (final entry in expected.entries) {
@@ -22,11 +28,27 @@ void main() {
       });
     }
 
-    test('player counts outside 5..10 are rejected', () {
+    test('player counts outside 5..14 are rejected', () {
       expect(AvalonTables.isValidPlayerCount(4), isFalse);
-      expect(AvalonTables.isValidPlayerCount(11), isFalse);
-      expect(AvalonTables.isValidPlayerCount(5), isTrue);
-      expect(AvalonTables.isValidPlayerCount(10), isTrue);
+      expect(AvalonTables.isValidPlayerCount(15), isFalse);
+      for (var count = 5; count <= 14; count++) {
+        expect(AvalonTables.isValidPlayerCount(count), isTrue, reason: '$count');
+      }
+    });
+
+    test('only 5..10 is offered unless the Big table setting is on', () {
+      expect(AvalonTables.maxPlayersFor(bigTable: false), 10);
+      expect(AvalonTables.maxPlayersFor(bigTable: true), 14);
+      expect(AvalonTables.officialMaxPlayers, 10);
+    });
+
+    test('sizes above ten are marked as house tables', () {
+      for (var count = 5; count <= 10; count++) {
+        expect(AvalonTables.isHouseTable(count), isFalse, reason: '$count');
+      }
+      for (var count = 11; count <= 14; count++) {
+        expect(AvalonTables.isHouseTable(count), isTrue, reason: '$count');
+      }
     });
   });
 
@@ -38,6 +60,10 @@ void main() {
       8: [3, 4, 4, 5, 5],
       9: [3, 4, 4, 5, 5],
       10: [3, 4, 4, 5, 5],
+      11: [4, 5, 5, 6, 6],
+      12: [4, 5, 5, 6, 6],
+      13: [5, 6, 6, 7, 7],
+      14: [5, 6, 6, 7, 7],
     };
 
     for (final entry in expected.entries) {
@@ -55,7 +81,7 @@ void main() {
 
   group('quest failure threshold', () {
     test('quest 4 needs two fails with seven or more players', () {
-      for (final count in [7, 8, 9, 10]) {
+      for (var count = 7; count <= 14; count++) {
         expect(AvalonTables.failsRequired(count, 4), 2, reason: '$count players');
       }
     });
@@ -67,7 +93,7 @@ void main() {
     });
 
     test('every other quest needs one fail', () {
-      for (final count in [5, 6, 7, 8, 9, 10]) {
+      for (var count = 5; count <= 14; count++) {
         for (final quest in [1, 2, 3, 5]) {
           expect(AvalonTables.failsRequired(count, quest), 1);
         }
@@ -103,7 +129,7 @@ void main() {
       return Composition(playerCount: playerCount, counts: counts);
     }
 
-    for (final count in [5, 6, 7, 8, 9, 10]) {
+    for (var count = 5; count <= 14; count++) {
       test('the default $count player roster is valid', () {
         final composition = compositionFor(count);
         expect(composition.errors, isEmpty);
@@ -112,6 +138,21 @@ void main() {
         expect(composition.evilTotal, AvalonTables.evilCount(count));
       });
     }
+
+    test('a fifth Evil seat is a Minion of Mordred', () {
+      final defaults = AvalonTables.defaultComposition(14);
+      expect(defaults['Minion of Mordred'], 1);
+      expect(defaults['Oberon'], 1, reason: 'the four named Evil come first');
+      expect(defaults['Loyal Servant of Arthur'], 7);
+    });
+
+    test('the house sizes stay near the official Evil share', () {
+      for (var count = 11; count <= 14; count++) {
+        final share = AvalonTables.evilCount(count) / count;
+        expect(share, greaterThan(0.3), reason: '$count players');
+        expect(share, lessThan(0.4), reason: '$count players');
+      }
+    });
 
     test('a wrong good/evil split is an error', () {
       final composition = Composition(

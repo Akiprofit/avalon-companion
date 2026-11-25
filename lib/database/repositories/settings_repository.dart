@@ -59,6 +59,7 @@ class SettingsRepository {
       kingSelection: Value(settings.kingSelectionMode.name),
       narratorExtraDelayMs: Value(settings.narratorExtraDelay.inMilliseconds),
       teamVoteEnabled: Value(settings.teamVoteEnabled),
+      bigTableEnabled: Value(settings.bigTable),
     );
   }
 
@@ -87,6 +88,7 @@ class SettingsRepository {
         milliseconds: row.narratorExtraDelayMs.clamp(0, 30000),
       ),
       teamVoteEnabled: row.teamVoteEnabled,
+      bigTable: row.bigTableEnabled,
     );
   }
 }

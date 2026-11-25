@@ -47,6 +47,12 @@ class HowToPlayScreen extends StatelessWidget {
           'The table plays the game. Cards stay physical, claims may be lies, '
           'and only what the whole table saw goes into the app.',
         ),
+        _ManualEntry(
+          'More than ten at the table? Settings → Game → Big table unlocks '
+          'house sizes up to fourteen. Those sizes are ours, not the rulebook\'s: '
+          'the quest teams and role counts above ten are invented, and one box '
+          'may not hold enough cards for them.',
+        ),
       ],
     ),
     _ManualSection(
@@ -54,9 +60,9 @@ class HowToPlayScreen extends StatelessWidget {
       intro: 'Do this once, in this order, before the first night.',
       entries: [
         _ManualEntry(
-          'Seat five to ten players in a circle in a fixed order. Seat 1 is '
-          'the first leader; after that the leader token moves one seat '
-          'clockwise.',
+          'Seat five to ten players in a circle in a fixed order — up to '
+          'fourteen when Settings → Game → Big table is on. Seat 1 is the '
+          'first leader; after that the leader token moves one seat clockwise.',
           number: 1,
         ),
         _ManualEntry(
@@ -236,7 +242,9 @@ class HowToPlayScreen extends StatelessWidget {
       title: 'Team size',
       intro:
           'The leader\'s team grows with the quest. The app shows these numbers '
-          'on the Preparation screen and when a team is chosen.',
+          'on the Preparation screen and when a team is chosen. The Big table '
+          'setting adds 11 to 14 seats, with larger teams the app shows the '
+          'same way.',
       table: _QuestSizeTable(),
     ),
     _ManualSection(
@@ -532,7 +540,7 @@ class _QuestSizeTable extends StatelessWidget {
         ),
         for (
           var players = AvalonTables.minPlayers;
-          players <= AvalonTables.maxPlayers;
+          players <= AvalonTables.officialMaxPlayers;
           players++
         )
           TableRow(

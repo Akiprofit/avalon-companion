@@ -13,6 +13,7 @@ import '../../core/widgets/primary_button.dart';
 import '../../core/widgets/section_header.dart';
 import '../../game_engine/models/character.dart';
 import '../../game_engine/rules/avalon_tables.dart';
+import '../settings/settings_controller.dart';
 import 'setup_controller.dart';
 
 /// Screen 03 — player count, names and character composition.
@@ -77,7 +78,11 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
     final requiredEvil = AvalonTables.evilCount(draft.playerCount);
     final lastRoster =
         ref.watch(lastRosterProvider).asData?.value ?? const <String>[];
-    final canReuseTable = AvalonTables.isValidPlayerCount(lastRoster.length);
+    final bigTable = ref.watch(settingsProvider.select((s) => s.bigTable));
+    final maxPlayers = AvalonTables.maxPlayersFor(bigTable: bigTable);
+    final canReuseTable =
+        AvalonTables.isValidPlayerCount(lastRoster.length) &&
+        lastRoster.length <= maxPlayers;
 
     return AvalonScreen(
       showBackButton: true,
@@ -122,7 +127,7 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
                   children: [
                     for (
                       var count = AvalonTables.minPlayers;
-                      count <= AvalonTables.maxPlayers;
+                      count <= maxPlayers;
                       count++
                     )
                       _CountChip(
@@ -143,6 +148,16 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
                       ),
                   ],
                 ),
+                if (bigTable) ...[
+                  const SizedBox(height: Space.sm),
+                  Text(
+                    'House table: 11 to 14 players. Avalon is officially five to '
+                    'ten, so the quest sizes and roles above ten are ours, and '
+                    'you may need more cards than the box holds.',
+                    key: const Key('setup_house_table_note'),
+                    style: AppText.caption.copyWith(color: AppColors.mutedGold),
+                  ),
+                ],
                 const SizedBox(height: Space.sm),
                 if (canReuseTable) ...[
                   Align(

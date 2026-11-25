@@ -1179,6 +1179,46 @@ each reversible until the next action.
 | Device pass | **Passed on a Galaxy A36 (SM-A366B) over wireless debugging.** `app_test.dart` (2 tests) and `clip_playback_test.dart` (1) ran on the phone: the settings switch survives the installed database, a match starts on the real store with no role column in any table, and a night line decodes in both languages |
 | Release APK | Signed **1.7.0+24** built (64.0 MB), zipaligned and verified with the release key, installed on the phone and opened; SHA-256 `66f84332…d1657f06` |
 
+## The big table — 1.10.0
+
+Avalon stops at ten players, and the app stopped there with it: the setup stepper was built from
+`AvalonTables.maxPlayers`, and the three rule tables had no row for eleven. A table of eleven was
+the one request the app could not answer.
+
+The question was not whether the app can count to fourteen — it can — but whether it should pretend
+the rulebook does. It should not. Eleven to fourteen is a house rule: there is no published
+composition, no agreed quest sizes, and the balance drifts as the seats grow. So the sizes sit
+behind a switch, off on a fresh install and off for every upgraded one, and both setup and the
+manual say plainly whose numbers they are. `AvalonTables` now keeps `officialMaxPlayers` (ten) apart
+from `maxPlayers` (fourteen), and the How to Play team-size table still lists only the official
+rows.
+
+The house rows keep the Evil share near the official 33–40%: 7/4 at eleven, 8/4 at twelve, 8/5 at
+thirteen and 9/5 at fourteen, with quest teams one card larger than ten's from the first quest.
+Quest four still needs two fails, and five rejections still hand the match to Evil. A fifth Evil
+seat is a Minion of Mordred, because the four named Evil are already in play.
+
+The card pool is the honest limit. The box holds fourteen character cards and a ten-player game
+already uses ten of them, so eleven fits only if the box has five plain Servants; twelve and up may
+need proxies. The app can track fourteen seats, but it cannot deal cards it does not have, and the
+house-table line in setup says so.
+
+Turning the switch off also clamps a stored default player count back to ten and hides **Use the
+last table** for a roster the app no longer offers, so a table cannot fall back into a size setup
+will not show.
+
+| Check | Result |
+| --- | --- |
+| `flutter analyze` | No issues found |
+| `flutter test` | 393 tests pass (120 widget, 273 unit and database) |
+| House tables | `rules_test.dart` (+12): good/evil and team sizes for 11–14, the house-table marking, a 14-seat roster whose fifth Evil is a Minion, and the Evil share held between 30% and 40% |
+| Engine | `engine_test.dart` (+1): a 14-seat match starts with five-card first quests, and 15 seats are rejected |
+| Setting | `big_table_setting_test.dart` (+5): off by default in Settings and setup, turning it on unlocks 11–14 with the house note, a 14-seat match is set up and started on a phone, a 12-seat last table is only offered when the switch is on, and a stored 13 falls back to 10 when it goes off |
+| Storage | `settings_store_test.dart`: the switch round-trips and a v4 row gains it switched off; `voice_packs_test.dart` still migrates a v6 file |
+| Version | `app_info_test.dart` (+1): the About panel's version matches `pubspec.yaml` |
+| Device | **Galaxy A36 over USB**: 1.10.0+33 installed and launched. Settings showed **Big table (11-14 players)** off on the fresh install with its house-rule description, and the default player count offered only 5-10. The phone dropped off USB before the switch could be turned on, so the 11-14 setup path was checked by `big_table_setting_test.dart` and not on hardware |
+| Release APK | Signed **1.10.0+33** release build (71.8 MB, `arm64-v8a`, `armeabi-v7a`, `x86_64`); SHA-256 C9F73993968A409133AB61AF019DE42AC2A33DC3AAD30949D03E65289FA994FA. A forced Dart recompile from the current tree produced the same digest, so the tested build and the shipped file are the same bytes |
+
 ## The round, spoken — 1.9.0
 
 The night was the only part of a match the narrator played. Seven recorded round lines sat in every
@@ -1459,8 +1499,9 @@ can hold more than one voice without a second folder convention.
 
 ## Next phase
 
-No phase is scheduled: **1.9.0** is the current build (2026-11-25). 1.9.0 is the published
-release; 1.5.0's voice packs ship inside it, and 1.0.0–1.3.1 remain verified on the phone. The
+No phase is scheduled: **1.10.0** is the current build (2026-11-25). 1.10.0 is the published
+release; 1.9.0's round cues and 1.5.0's voice packs ship inside it, and 1.0.0–1.3.1 remain
+verified on the phone. The
 voice import still needs a real zip — Okley proves the bundled path, not the import path. Work
 after that is maintenance rather than plan phases — lifting the `path_provider_android` pin now
 that the NDK is installed, split-per-abi APKs if download size matters, commissioned artwork to
