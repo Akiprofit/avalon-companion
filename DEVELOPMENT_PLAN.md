@@ -1499,8 +1499,8 @@ can hold more than one voice without a second folder convention.
 
 ## Next phase
 
-No phase is scheduled: **1.10.0** is the current build (2026-11-25). 1.10.0 is the published
-release; 1.9.0's round cues and 1.5.0's voice packs ship inside it, and 1.0.0–1.3.1 remain
+No phase is scheduled: **1.10.1** is the current build (2026-11-25). 1.10.1 is the published
+release; 1.10.0's big table, 1.9.0's round cues and 1.5.0's voice packs ship inside it, and 1.0.0–1.3.1 remain
 verified on the phone. The
 voice import still needs a real zip — Okley proves the bundled path, not the import path. Work
 after that is maintenance rather than plan phases — lifting the `path_provider_android` pin now

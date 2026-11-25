@@ -427,7 +427,7 @@ class SettingsScreen extends ConsumerWidget {
                       child: Text('Version', style: AppText.caption),
                     ),
                     Text(
-                      '${AppInfo.version} · ${AppInfo.buildPhase}',
+                      AppInfo.version,
                       style: AppText.bodyStrong.copyWith(fontSize: 13),
                     ),
                   ],

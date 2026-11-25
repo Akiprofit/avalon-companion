@@ -1,8 +1,7 @@
 /// Static app metadata shown on the About section and the home footer.
 abstract final class AppInfo {
   static const name = 'Avalon Companion';
-  static const version = '1.10.0';
-  static const buildPhase = 'Phase 12';
+  static const version = '1.10.1';
   static const disclaimer =
       'Unofficial fan-made companion for The Resistance: Avalon. '
       'Not affiliated with or endorsed by the game\'s publisher.';
@@ -11,7 +10,7 @@ abstract final class AppInfo {
       'information, because it never receives any: the physical cards hold the '
       'secret roles. Match history never contains role data.';
   static const credits =
-      'Design and build: Avalon Companion project. '
+      'Design and build: Akiprofit. '
       'Typography: Cinzel (Natanael Gama) and Inter (Rasmus Andersson), '
       'both under the SIL Open Font License.';
 }

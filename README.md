@@ -12,7 +12,7 @@
   <a href="https://github.com/Akiprofit/avalon-companion/releases/latest">
     <img alt="Download the Android APK" src="https://img.shields.io/badge/Download-Android%20APK-C5A15B?style=for-the-badge&logo=android&logoColor=0B0E14" />
   </a>
-  <img alt="Version 1.10.0" src="https://img.shields.io/badge/version-1.10.0-0B0E14?style=for-the-badge" />
+  <img alt="Version 1.10.1" src="https://img.shields.io/badge/version-1.10.1-0B0E14?style=for-the-badge" />
   <img alt="Offline first" src="https://img.shields.io/badge/offline-first-3D9B72?style=for-the-badge" />
 </p>
 
@@ -43,7 +43,7 @@ The latest signed Android APK is on the
 
 ### Install on Android
 
-1. Download `Avalon-Companion-1.10.0.apk` from the latest release.
+1. Download `Avalon-Companion-1.10.1.apk` from the latest release.
 2. Open the downloaded APK.
 3. Allow **Install unknown apps** for the browser or file manager you used.
 4. Tap **Install**.
@@ -339,6 +339,10 @@ docs/icon.png          the app icon used by this README
 ---
 
 ## Status
+
+**v1.10.1** — Signed, dated. The About panel now credits the person who built the app, and the
+version line is the version alone: the "Phase 12" suffix it carried since 1.0.0 is gone, because it
+told a player nothing and had been stale for ten releases.
 
 **v1.10.0** — The big table. Avalon stops at ten players and the app stopped there with it, which
 left a table of eleven with nowhere to go. Settings → Game → **Big table** now unlocks eleven to

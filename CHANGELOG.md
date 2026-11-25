@@ -3,6 +3,27 @@
 All notable changes to Avalon Companion are recorded here. One entry per completed
 development phase, in the order the plan defines them.
 
+## [1.10.1] — Signed, dated (2026-11-25)
+
+### Changed
+
+- **The About panel names who made the app.** Credits read "Design and build: Akiprofit"; the
+  project line they replace said "Avalon Companion project", which named nobody. The typography
+  acknowledgement is unchanged.
+- **The version line is just the version.** It used to append a development phase — "1.10.0 ·
+  Phase 12" — which meant nothing to a player opening Settings and had been frozen at Phase 12
+  since 1.0.0. `AppInfo.buildPhase` is gone rather than left unreferenced.
+
+### Verified
+
+| Check | Result |
+| --- | --- |
+| `flutter analyze` | No issues found |
+| `flutter test` | 393 tests pass (120 widget, 273 unit and database) |
+| Version | `app_info_test.dart` still matches `AppInfo.version` to `pubspec.yaml` (1.10.1) |
+| Device | **Galaxy A36 (SM-A366B) over USB**: 1.10.1+34 installed over 1.10.0; Settings → About reads **1.10.1** with no phase suffix, and Credits read "Design and build: Akiprofit" |
+| Release APK | Signed **1.10.1+34** release build (71.8 MB); SHA-256 673644FBDA6DA6DF3317C08ECACCD4C01E6DC49F3CD503E269D640BF3B10293D |
+
 ## [1.10.0] — The big table (2026-11-25)
 
 ### Added
