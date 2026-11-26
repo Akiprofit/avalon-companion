@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:avalon_companion/core/constants/app_info.dart';
+
 /// Phase 1 rehearsal of the rule the deal will have to follow: a seat is a
 /// number, a name and a presence flag, and nothing on the board can render a
 /// character because nothing on the board ever learns one.
@@ -115,6 +117,15 @@ void main() {
     final keys = RegExp(r"'(\w+)':").allMatches(source).map((m) => m[1]).toList();
 
     expect(keys, ['seat', 'name', 'connected']);
+  });
+
+  test('the About copy admits the local network instead of claiming none', () {
+    // The app used to say it "works entirely offline". Table Mode makes that a
+    // lie the moment a player reads it next to a "Join a Game" button, and the
+    // honest sentence is the one that says what leaves the device: nothing.
+    expect(AppInfo.privacy.contains('Table Mode'), isTrue);
+    expect(AppInfo.privacy.contains('entirely offline'), isFalse);
+    expect(AppInfo.privacy.contains('Wi-Fi'), isTrue);
   });
 
   test('Table Mode opens no network when it is not asked to', () {

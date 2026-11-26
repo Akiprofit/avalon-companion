@@ -867,10 +867,11 @@ Known limits:
   digest sits in the one `Settings` row. It is not encryption of the database, and anyone with
   the unlocked phone and developer tools can read the matches — there is nothing secret in them
   to read. Unlocking lasts the app session; closing the app locks it again.
-- `build/` is a junction to `%LOCALAPPDATA%\Temp\avalon_build` because this project lives in a
-  OneDrive folder and the sync client kept a handle on `build\app\intermediates`, failing the
-  Android build with "Unable to delete directory". Anything that deletes `build/` should keep the
-  junction (or recreate it with `mklink /J build %LOCALAPPDATA%\Temp\avalon_build`).
+- `build/` used to be a junction to `%LOCALAPPDATA%\Temp\avalon_build`, because the project lived
+  in a OneDrive folder and the sync client kept a handle on `build\app\intermediates`, failing the
+  Android build with "Unable to delete directory". The project now lives at `C:\avalon-companion`,
+  outside OneDrive, and `build/` is an ordinary directory again; the junction and its note are
+  retired. If the project is ever moved back under a synced folder, expect the same failure.
 - The bundled plates are public-domain paintings, not commissioned art: they were chosen for
   mood and composition, so a few are only loosely on-subject (the Excalibur plate is
   Waterhouse's *Magic Circle*). Replacing them with commissioned plates only requires new
@@ -1497,12 +1498,103 @@ can hold more than one voice without a second folder convention.
 | Device | `clip_playback_test.dart` passes on the Galaxy A36 (SM-A366B): the English and Filipino lines decode from `Dahlia%20voices` in the APK |
 | Release APK | Signed **1.7.1+25** built (64.0 MB), zipaligned, verified with the release key and installed over 1.7.0 on the Galaxy A36; SHA-256 `d22b36cc…74b6b57` |
 
+## At the table - 1.11.0
+
+Phase 1 of the Table Mode proposal in **`docs/table-mode.md`**, and only Phase 1:
+a room, a code, a QR, names, live seats and reconnect. No characters are dealt,
+nothing is voted on, and the solo game is untouched.
+
+The device on the table opens a room and shows a six-character code with a QR.
+Every other phone types the code — or scans it — gives a name, and takes the
+lowest free seat. The board lists who is at the table and whether they are still
+connected. A phone that loses Wi-Fi comes back to its own seat, with its name,
+when the network returns; a phone that leaves gives the seat up at once.
+
+Two apps, one protocol. Phase 1 forced that decision: a host has to work on a
+phone as well as a tablet, and the solo app carries a database, voice packs and
+settings that a board has no use for. The board is now its own small app,
+**Virtual Avalon** (`com.virtualavalon.app`), and this app keeps the player side.
+Its own host screens still work and are still tested, but they are superseded
+and are scheduled for removal once the split has been used on real hardware.
+
+| Decision | Choice |
+| --- | --- |
+| Platform | **Android only**: two APKs, no iOS build, no web client, no store |
+| Player client | This app, in player mode. The board is `Virtual Avalon` |
+| Publishing | GitHub releases only |
+| Host device | A phone or a tablet. Desktop boards are out of scope |
+| Seats | Join order, no accounts |
+| Characters | Not in Phase 1 at all. A seat is a number, a name and a presence flag |
+| Engine | `GameState` gained no field. Table Mode never imports the match engine |
+
+Phases, each with a stop condition:
+
+| Phase | Content | Stop if |
+| --- | --- | --- |
+| 1 | **Shipped.** Room: host, Join, QR, name, live seats, reconnect. No characters | Joining takes longer than ~15 s per player, or a phone cannot reach the host |
+| 2 | Cast picker, sealed deal, hold-to-reveal hand | A character reaches the board, the history file or a log |
+| 3 | Approve / reject from phones | A vote needs the board touched |
+| 4 | Secret quest cards, Assassin from their phone | A match needs the board touched |
+| 5 | Board skin, narration on the host | It still reads as a settings page |
+
+| Check | Result |
+| --- | --- |
+| `flutter analyze` | No issues found |
+| `flutter test` | 511 tests pass (130 widget, 381 unit and database); 393 before Table Mode |
+| Privacy | `table_privacy_test.dart` reads the source: no Table Mode file names a character, a role or an allegiance, no seat carries more than seat/name/connected, and the board screen never sees a token |
+| Probe, loopback | 8 synthetic phones: slowest join 722 ms, a dropped phone back at its seat in 11–28 ms, 8 of 8 still seated after a minute |
+| Device | **Galaxy A36 (SM-A366B) over USB, real Wi-Fi**: this app on the phone joined a board on the PC by typing its address — seat 1, name MARC, CONNECTED. Wi-Fi off → "Lost the board — reconnecting (3)…"; Wi-Fi on → the same seat 1 on a new TCP socket. Leave → seat released, socket closed |
+| Discovery | **Not working against a PC board**: "Nothing on this Wi-Fi answered for ABC234". Windows Firewall drops the UDP announcement, and the typed address is the fallback that carried the run. Phone-to-phone discovery is still untested |
+| Release APK | Signed **1.11.0+35** (89.2 MB, up from 71.8 MB because the camera scanner bundles ML Kit); SHA-256 `1C6F19C825287B1B23821F2D8DE068A0DC7D5454D2D212A1CFCBC56447D880DC`; permissions `INTERNET`, `CAMERA`, `ACCESS_NETWORK_STATE`, with `android.hardware.camera` marked not required |
+
+Not tested, and said plainly: no camera scan (a phone cannot point its camera at
+its own screen), no second physical phone, no tablet. Seats 2–14 are covered by
+the synthetic clients, not by people.
+
+Traps worth keeping:
+
+- A developer machine with `http_proxy` set sends Dart's socket through it and a
+  LAN room answers 502. Both probes build their own `HttpClient` with
+  `findProxy = 'DIRECT'`.
+- A machine with a VirtualBox adapter advertises that adapter's address instead
+  of Wi-Fi unless the interface matcher knows the Windows name `Wi-Fi`.
+- `TableClient.dispose()` closes the socket **before** cancelling the incoming
+  subscription; cancelling first tears down TCP and loses the leave frame, and
+  the board keeps a seat nobody is sitting in.
+
+## Signed, dated - 1.10.1
+
+Two lines in the About panel were saying the wrong thing.
+
+The first named nobody: "Design and build: Avalon Companion project". A project is not an author, and
+the one person who wrote every screen had no line in their own app. It now reads "Design and build:
+Akiprofit", with the Cinzel and Inter acknowledgment left as it was.
+
+The second said too much. The version row read "1.10.0 · Phase 12", and the phase had been frozen
+since 1.0.0 ten releases earlier. A phase number is a build-plan coordinate; it means nothing to a
+player who opened Settings to check which APK they installed, and a stale one is worse than none. The
+row is now the version alone, and `AppInfo.buildPhase` is deleted rather than left as a constant
+nothing reads.
+
+| Check | Result |
+| --- | --- |
+| `flutter analyze` | No issues found |
+| `flutter test` | 393 tests pass (120 widget, 273 unit and database) |
+| Version | `app_info_test.dart` still matches `AppInfo.version` to `pubspec.yaml` (1.10.1) |
+| Device | **Galaxy A36 (SM-A366B) over USB**: 1.10.1+34 installed over 1.10.0; Settings → About reads **1.10.1** with no phase suffix, and Credits read "Design and build: Akiprofit" |
+| Release APK | Signed **1.10.1+34** release build (71.8 MB); SHA-256 673644FBDA6DA6DF3317C08ECACCD4C01E6DC49F3CD503E269D640BF3B10293D. A stray 216 KB PDF that had appeared in `assets/audio/voices/Grok/fil/` was moved out before this build, so the asset tree holds only the voice recordings again |
+
 ## Next phase
 
-No phase is scheduled: **1.10.1** is the current build (2026-11-25). 1.10.1 is the published
-release; 1.10.0's big table, 1.9.0's round cues and 1.5.0's voice packs ship inside it, and 1.0.0–1.3.1 remain
+No phase is scheduled: **1.11.0** is the current build (2026-11-26). It adds Phase 1
+of Table Mode — a room, a code, a QR and live seats, with no characters — and with
+it the two-app split: the board is now its own app, `Virtual Avalon`. Phases 2–5
+(cast picker, sealed deal, votes, quest cards, board skin) are not built and are
+not scheduled. The 1.10.1 About-panel fix, 1.10.0's big table, 1.9.0's round cues
+and 1.5.0's voice packs ship inside it, and 1.0.0–1.3.1 remain
 verified on the phone. The
 voice import still needs a real zip — Okley proves the bundled path, not the import path. Work
 after that is maintenance rather than plan phases — lifting the `path_provider_android` pin now
-that the NDK is installed, split-per-abi APKs if download size matters, commissioned artwork to
+that the NDK is installed, split-per-abi APKs if download size matters (the camera scanner took the
+universal APK from 71.8 MB to 89.2 MB), commissioned artwork to
 replace the public-domain plates, or a Play Store listing with its own upload key.

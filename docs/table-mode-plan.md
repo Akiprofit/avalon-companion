@@ -547,9 +547,31 @@ done in that run and are still to do.
 
 ### B. The A36 is a phone (real client, real camera)
 
+**Run on 2026-11-26, real Wi-Fi.** The board ran on the PC as
+`tool/table_board_probe.dart --bind=lan --address=192.168.1.7 --serve=1500` (code
+`ABC234`), and the A36 ran Avalon Companion 1.11.0+35. What happened:
+
+- **Typed code did not find the board.** "Nothing on this Wi-Fi answered for
+  ABC234" — the UDP announcement is dropped by Windows Firewall on the PC. The
+  address fallback ("Enter the board's address instead") connected at once, so
+  the run used `192.168.1.7:8787`.
+- **Join:** seat **1**, name **MARC**, CONNECTED, on the first attempt.
+- **Wi-Fi drop:** `adb shell cmd wifi set-wifi-enabled disabled`; the phone showed
+  "Lost the board — reconnecting (3)…" while the PC still held a half-dead socket.
+- **Reconnect:** `enabled`; the same seat 1 with the same name came back on a
+  **new** TCP socket (`:43518` → `:53688`), which is the reconnect path, not a
+  reused connection.
+- **Leave:** confirmation dialog → Home; `netstat` showed no established socket,
+  so the leave frame arrived and the seat was released.
+- **Not done:** the camera scan (a phone cannot scan its own screen), a second
+  phone, and phone-to-phone discovery.
+
 1. On the PC: `dart run tool\table_board_probe.dart --bind=lan --serve=300` in
    the Virtual Avalon repo — it prints the code and the Wi-Fi address, and keeps
    the room open. There is no QR on the console; use the typed code here.
+   Add `--address=<ip>` if the machine advertises the wrong adapter (a VirtualBox
+   or VPN interface), and expect the typed code to need the address fallback when
+   the PC's firewall drops the UDP announcement.
 2. On the A36: open **Avalon Companion** → **Join a Game** → type the code →
    name → **Take a seat**.
 3. For the camera path, the board must be the other app on a device with a
@@ -574,14 +596,16 @@ proportions, and the report will say exactly that — it is not a tablet.
 
 Say it plainly, in the CHANGELOG and in the chat:
 
-- **Verified on hardware:** one real Android phone running the board app as
-  host and the companion as client, over real Wi-Fi; real camera scan; real
-  Wi-Fi drop and same-seat return.
-- **Verified without a second phone:** eight concurrent clients, the ten-minute
+- **Verified on hardware:** one real Android phone (Galaxy A36) running the
+  companion as client against a board on the PC, over real Wi-Fi; typed address,
+  seat 1, real Wi-Fi drop and same-seat return, and a clean leave. Separately, the
+  board app ran on the A36 as host against eight synthetic clients over Wi-Fi.
+- **Verified without a second phone:** eight concurrent clients, the one-minute
   soak, presence and reconnect, driven by `tool/table_client_probe.dart` over the
   same network against the real board.
-- **Not verified:** eight physical phones, two phones scanning at once, and a real
-  tablet. Those lines are written as "not tested" — never implied.
+- **Not verified:** eight physical phones, two phones scanning at once, the camera
+  scan at all, phone-to-phone discovery, and a real tablet. Those lines are
+  written as "not tested" — never implied.
 - The stop condition is still measured on what exists: if a single real phone
   cannot reach the board, or takes more than 15 s to join, Phase 1 stops there.
 

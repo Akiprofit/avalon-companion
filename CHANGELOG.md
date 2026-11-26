@@ -3,6 +3,50 @@
 All notable changes to Avalon Companion are recorded here. One entry per completed
 development phase, in the order the plan defines them.
 
+## [1.11.0] — At the table (2026-11-26)
+
+### Added
+
+- **Table Mode, Phase 1.** One device opens a room and shows a six-character code with a QR; every
+  other phone types or scans it, gives a name and takes the lowest free seat. The board lists who is
+  at the table and whether they are still connected. A phone that loses Wi-Fi returns to its own seat
+  with its name; a phone that leaves gives the seat up at once.
+- **Two new entries on Home**, under "At the table": **Tablet Mode** (this device becomes the board)
+  and **Join a Game**. A device that remembers being a board stops offering "Join a Game", and a
+  phone stops offering "Tablet Mode".
+- **A second app, Virtual Avalon** (`com.virtualavalon.app`). The board lives there, because hosting
+  has to work on a phone as well as a tablet and a board needs none of the solo app's database, voice
+  packs or settings. This app keeps the player side; its own host screens are superseded and still
+  tested until the split has been used on real hardware.
+
+### Changed
+
+- **The About panel no longer claims the app never touches a network.** It said "works entirely
+  offline", which stopped being true the moment Home offered "Join a Game". It now names the one
+  exception: Table Mode talks to the other devices at the table over their own Wi-Fi and carries
+  names, seats and connection state only.
+- **The app asks for `INTERNET` and `CAMERA`.** Both are declared by the features that use them;
+  `android.hardware.camera` is marked not required, so a phone without a camera can still install
+  and play solo. The universal APK grows from 71.8 MB to 89.2 MB because the scanner bundles ML Kit.
+- **Solo mode is untouched.** `New Game` and `Continue Game` still open no socket, ask for no
+  permission and behave exactly as they did in 1.10.1.
+
+### Verified
+
+| Check | Result |
+| --- | --- |
+| `flutter analyze` | No issues found |
+| `flutter test` | 511 tests pass (130 widget, 381 unit and database); 393 before this release |
+| Privacy | `table_privacy_test.dart` reads the source: no Table Mode file names a character, a role or an allegiance; a seat serialises exactly seat/name/connected; the board screen never sees a token; `GameState` gained no field |
+| Probe, loopback | 8 synthetic phones: slowest join 722 ms against the 15 000 ms budget, a dropped phone back at its seat in 11–28 ms, 8 of 8 still seated after a minute, every seat released on leave |
+| Device | **Galaxy A36 (SM-A366B), real Wi-Fi, board on the PC**: typed the address, joined as seat 1 (MARC, CONNECTED). Wi-Fi off → "Lost the board — reconnecting (3)…"; Wi-Fi on → same seat 1 on a new TCP socket. Leave → seat released, socket closed |
+| Discovery | **Did not work against a PC board** — "Nothing on this Wi-Fi answered for ABC234". Windows Firewall drops the UDP announcement; the typed address carried the run. Phone-to-phone discovery is untested |
+| Release APK | Signed **1.11.0+35** (93 517 551 bytes, 89.2 MB); SHA-256 `1C6F19C825287B1B23821F2D8DE068A0DC7D5454D2D212A1CFCBC56447D880DC`; installed in place over 1.10.1+34 |
+
+Not tested: no camera scan (a phone cannot scan its own screen), no second physical phone, no
+tablet. Seats 2–14 are proven by synthetic clients, not by people. Phases 2–5 of Table Mode —
+cast, deal, votes, quest cards, board skin — are not built.
+
 ## [1.10.1] — Signed, dated (2026-11-25)
 
 ### Changed
