@@ -9,6 +9,31 @@ privately to each phone.
 
 **Platform:** Android only. No iOS build, no `.ipa`, no web client, no store.
 
+> **Decision update (2026-11-26): the board is its own app.** Everything below
+> about the room, the protocol, the seat projection and the phases still holds.
+> What changed is §3: the board no longer ships inside Avalon Companion. It is
+> **Virtual Avalon**, a separate project and repository
+> (`C:\Virtual Avalon`, application id `com.virtualavalon.app`), documented in
+> that repo's `docs/board-app.md`.
+>
+> Why: a board binary that contains no character data, no database and no
+> settings row cannot leak a role, and that is a structural guarantee rather
+> than a code-review habit. It also removes the per-device role switch from the
+> companion, which keeps the solo app a solo app.
+>
+> Consequences for this document:
+>
+> - The board has no Home screen and no router; launching it opens a room.
+> - The board is host-capable on any device, phone or tablet. On a phone the
+>   lobby is one column with a smaller QR; nothing is tablet-only.
+> - Avalon Companion keeps the player side only: join by code or QR, take a
+>   seat, reconnect to the same seat.
+> - The `table_role` setting in the companion (`solo` / `board` / `player`) is
+>   now only a way to reach the player screens; a phone that hosts runs the
+>   other app.
+> - §3's "install at the table" APK-serving idea is still unimplemented and
+>   still optional.
+
 ---
 
 ## 1. Why this is a separate mode

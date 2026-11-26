@@ -323,7 +323,15 @@ phone never promises a character. The one sentence the README must carry:
 
 ## 6. File-by-file change list
 
-### New — pure Dart, no Flutter import (so a PC probe can drive them)
+> **Superseded in part (2026-11-26):** the board moved to its own app,
+> Virtual Avalon. The host files listed below (`table_host_server`,
+> `table_announcer`, `table_room`, `table_session`, the board screen and the
+> lobby widgets) were extracted into that repository and are documented there
+> in `docs/board-app.md`. The protocol, model and IO files are shared verbatim.
+> The companion's copies remain until the phone flow is verified on hardware,
+> then they are removed so the solo app carries no board code.
+
+### New - pure Dart, no Flutter import (so a PC probe can drive them)
 
 | File | Lines | Contents |
 | --- | --- | --- |
@@ -377,14 +385,27 @@ phone never promises a character. The one sentence the README must carry:
 
 ### New — dev tools (not in the APK)
 
-| File | Lines | Purpose |
+| File | Where | Purpose |
 | --- | --- | --- |
-| `tool/table_host_probe.dart` | ~150 | runs a real host on the PC with a fixed code; `--qr` writes an SVG the phone can scan off the monitor |
-| `tool/table_client_probe.dart` | ~170 | N synthetic phones, join-latency report, drop-and-rejoin, 10-minute soak |
+| `tool/table_board_probe.dart` | Virtual Avalon | runs a real host on the PC: N synthetic phones, join-latency report, `--soak` minutes, `--bind=lan` to serve a real Wi-Fi address, `--serve` to leave the room open for a phone |
+| `tool/table_client_probe.dart` | this repo | N synthetic phones against any board: join-latency report, `--drop <n>` to lose a phone and win its seat back by token, `--minutes` soak with pings |
 
 These exist because the stop condition is "eight phones for ten minutes" and
 there is one Android device in the room. They drive the same `TableRoom` and
 `TableClient` classes the app uses, over real sockets.
+
+Measured on the development PC on 2026-11-26 (loopback, not Wi-Fi):
+
+| Run | Result |
+| --- | --- |
+| 8 phones, fresh room | slowest join 358 ms against a 15 000 ms budget |
+| 8 phones, 1 minute soak, pings every 10 s | 8 of 8 still connected, 8 seats held |
+| 8 phones, drop phone 3 | back at seat 3 in 11–28 ms, same token |
+| 1 phone, 8-client board, leave | all seats released on leave |
+
+The loopback numbers say the room is not the slow part. The number that decides
+the stop condition is a phone on the same hotspot, and that needs a second
+device.
 
 ### New — tests
 
@@ -490,22 +511,34 @@ pending a cable.
 
 ### Setup
 
+Two APKs, two apps: the board is Virtual Avalon, the phone is Avalon Companion.
+
 ```powershell
 $ADB = "C:\Users\Marc\AppData\Local\Android\Sdk\platform-tools\adb.exe"
 & $ADB devices
+& $ADB install -r "C:\Virtual Avalon\build\app\outputs\flutter-apk\app-release.apk"
 & $ADB install -r build\app\outputs\flutter-apk\app-release.apk
 ```
 
 ### A. The A36 is the board (real host, eight synthetic phones)
 
+**Run on 2026-11-26, home router `192.168.1.0/24`, A36 at `192.168.1.3`, PC at
+`192.168.1.7`.** The board opened on launch with code `ALY5DJ` and printed
+`192.168.1.3:8787`; eight synthetic phones joined over Wi-Fi in a slowest
+**513 ms**, a dropped phone 3 returned to seat 3 in **83 ms** with its token, a
+one-minute soak left **8 of 8 seated**, and every seat was released on leave.
+Steps 6 and 7 (ten minutes, battery, temperature, screenshot pair) were not
+done in that run and are still to do.
+
 1. Put the PC on the same Wi-Fi as the A36 (the A36's hotspot, or one router).
-2. On the A36: Home → **Tablet Mode**. Record the code, the address and the port.
-3. On the PC: `dart run tool\table_client_probe.dart --code <CODE> --clients 8 --minutes 10`.
+2. On the A36: open **Virtual Avalon**. It opens a room by itself; record the
+   code, the address and the port.
+3. On the PC: `dart run tool\table_client_probe.dart --host <ADDRESS> --port <PORT> --code <CODE> --clients=8 --minutes=10`.
 4. Check on the board: 8 rows, seats 1–8 in join order, all "Connected".
    Check the probe: per-phone join latency (target well under 15 s; expect < 1 s).
-5. Drop phone 3 (`--drop 3`), watch the board show "Away" within a second, then
-   watch the probe reconnect with its token. The board must still show 8 rows and
-   seat 3 must keep its name.
+5. Drop phone 3 (`--drop=3`), watch the board show "Away", then watch the probe
+   reconnect with its token. The board must still show 8 rows and seat 3 must
+   keep its name.
 6. Ten minutes: no crash, `adb logcat` clean of the app, address unchanged,
    battery and temperature recorded.
 7. Screenshot: `adb shell screencap -p /sdcard/board.png` then `adb pull`.
@@ -514,17 +547,20 @@ $ADB = "C:\Users\Marc\AppData\Local\Android\Sdk\platform-tools\adb.exe"
 
 ### B. The A36 is a phone (real client, real camera)
 
-1. On the PC: `dart run tool\table_host_probe.dart --qr` — prints the code and
-   writes an SVG QR to `build\table-qr.svg`, opened on the monitor.
-2. On the A36: Home → **Join a Game** → **Scan the board's code** → point it at
-   the monitor. The code fills in; name; **Take a seat**.
-3. Second run: skip the camera and **type** the code. Discovery must find the PC.
+1. On the PC: `dart run tool\table_board_probe.dart --bind=lan --serve=300` in
+   the Virtual Avalon repo — it prints the code and the Wi-Fi address, and keeps
+   the room open. There is no QR on the console; use the typed code here.
+2. On the A36: open **Avalon Companion** → **Join a Game** → type the code →
+   name → **Take a seat**.
+3. For the camera path, the board must be the other app on a device with a
+   screen: scan the QR from the A36's lobby with a second phone, or run the
+   board on the A36 and scan it with the companion on a second device.
 4. Wi-Fi drop, three ways, in order, until one works:
    - `adb shell cmd wifi set-wifi-enabled disabled` … `enabled`
    - `adb shell svc wifi disable` … `enable`
    - `adb shell cmd connectivity airplane-mode enable` … `disable`
    - if all three are refused: turn Wi-Fi off by hand, and say so in the report.
-5. After the drop: the phone returns to **seat 1**, not seat 2, and the PC host
+5. After the drop: the phone returns to **seat 1**, not seat 2, and the board
    still reports one seat. Screenshot the reconnecting state and the recovered one.
 
 ### C. Tablet proportions without a tablet
@@ -538,8 +574,9 @@ proportions, and the report will say exactly that — it is not a tablet.
 
 Say it plainly, in the CHANGELOG and in the chat:
 
-- **Verified on hardware:** one real Android phone, both as host and as client,
-  over real Wi-Fi; real camera scan; real Wi-Fi drop and same-seat return.
+- **Verified on hardware:** one real Android phone running the board app as
+  host and the companion as client, over real Wi-Fi; real camera scan; real
+  Wi-Fi drop and same-seat return.
 - **Verified without a second phone:** eight concurrent clients, the ten-minute
   soak, presence and reconnect, driven by `tool/table_client_probe.dart` over the
   same network against the real board.
@@ -611,9 +648,14 @@ Only after §7 and §8 pass:
 | 3 | Hotspot or venue router? | **Either; the venue router preferred, the tablet hotspot as the fallback** | §2 stands: bind `anyIPv4`, report the served address. The device checklist covers a router first, then the hotspot. |
 | 4 | How many phones must Phase 1 hold? | **Cap 14, verified with 8** | `kTableCapacity = 14`; the stop condition is measured with 8 clients, and the release notes claim only the tested number. |
 | 5 | Commit the docs now? | **Commit `docs/table-mode.md` and this plan; hold the DEVELOPMENT_PLAN chapter until the build is real** | One `docs:` commit. `DEVELOPMENT_PLAN.md` stays modified and uncommitted until the Phase 1 build exists. |
+| 6 | One app with a device role, or two apps? | **Two apps** (answered after the plan was written): the board is Virtual Avalon, its own project and repository | The board screens, the host controller and the lobby move to the new app; the companion keeps the player side. The protocol, room rules, seat projection and tests are shared unchanged. See the decision update at the top of `docs/table-mode.md`. |
 
-Nothing in these answers moves a file, a route, a message or a test in §6 and §7.
-The plan as written is the plan to build.
+Nothing in these answers moves a file, a route, a message or a test in §6 and §7
+of the companion. Answer 6 is the exception by design: it moves the board out of
+this repository, so §6's board files and §7's board widget tests now live in
+`C:\Virtual Avalon` (documented in that repo's `docs/board-app.md`), and the
+companion's Phase 1 scope is the phone: join by code or QR, take a seat,
+reconnect.
 
 ---
 

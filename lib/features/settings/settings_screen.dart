@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/constants/app_info.dart';
 import '../../core/constants/routes.dart';
+import '../../core/models/table_role.dart';
 import '../../core/services/feedback.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_metrics.dart';
@@ -347,6 +348,54 @@ class SettingsScreen extends ConsumerWidget {
                   divisions: 14,
                   onChanged: (value) =>
                       controller.setDiscussionSeconds(value.round()),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: Space.lg),
+          const SectionHeader(title: 'Table Mode'),
+          MedievalCard(
+            key: const Key('settings_table_role'),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('What is this device?', style: AppText.bodyStrong),
+                const SizedBox(height: Space.xxs),
+                Text(
+                  'Table Mode lets the table play together: one device becomes '
+                  'the board, the rest join it. This choice only decides which '
+                  'button Home shows.',
+                  style: AppText.caption,
+                ),
+                const SizedBox(height: Space.xs),
+                Wrap(
+                  spacing: Space.xs,
+                  runSpacing: Space.xxs,
+                  children: [
+                    for (final role in TableRole.values)
+                      ChoiceChip(
+                        key: Key('settings_table_role_${role.name}'),
+                        label: Text(role.label),
+                        selected: settings.tableRole == role,
+                        onSelected: (_) => controller.setTableRole(role),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: Space.xs),
+                Text(
+                  switch (settings.tableRole) {
+                    TableRole.solo =>
+                      'Home shows both table buttons. Nothing changes until you '
+                          'tap one, and no network is opened.',
+                    TableRole.board =>
+                      'Home shows Tablet Mode only. This device hosts the room '
+                          'and shows the board; it never takes a seat.',
+                    TableRole.player =>
+                      'Home shows Join a Game only. This phone takes one seat '
+                          'and never hosts.',
+                  },
+                  key: const Key('settings_table_role_description'),
+                  style: AppText.caption.copyWith(color: AppColors.mutedGold),
                 ),
               ],
             ),

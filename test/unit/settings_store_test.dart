@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:avalon_companion/core/models/app_settings.dart';
+import 'package:avalon_companion/core/models/table_role.dart';
 import 'package:avalon_companion/database/app_database.dart';
 import 'package:avalon_companion/database/repositories/settings_repository.dart';
 import 'package:avalon_companion/narration_engine/models/narration_instruction.dart';
@@ -27,6 +28,7 @@ void main() {
     int extraDelayMs = 0,
     bool teamVote = true,
     bool bigTable = false,
+    String tableRole = 'solo',
     String? pack,
   }) {
     return SettingsRecord(
@@ -50,6 +52,7 @@ void main() {
       narratorExtraDelayMs: extraDelayMs,
       teamVoteEnabled: teamVote,
       bigTableEnabled: bigTable,
+      tableRole: tableRole,
       voicePackId: pack,
     );
   }
@@ -74,6 +77,7 @@ void main() {
       kingSelectionMode: KingSelectionMode.automatic,
       teamVoteEnabled: false,
       bigTable: true,
+      tableRole: TableRole.board,
     );
 
     final companion = SettingsRepository.encode(saved);
@@ -95,6 +99,7 @@ void main() {
     expect(companion.narratorExtraDelayMs.value, 7000);
     expect(companion.teamVoteEnabled.value, false);
     expect(companion.bigTableEnabled.value, true);
+    expect(companion.tableRole.value, 'board');
     expect(companion.voicePackId.value, 'voice-of-dahlia');
 
     final decoded = SettingsRepository.decode(
@@ -115,6 +120,7 @@ void main() {
         extraDelayMs: 7000,
         teamVote: false,
         bigTable: true,
+        tableRole: 'board',
         pack: 'voice-of-dahlia',
       ),
     );
@@ -135,6 +141,7 @@ void main() {
     expect(decoded.narratorExtraDelay, const Duration(seconds: 7));
     expect(decoded.teamVoteEnabled, isFalse);
     expect(decoded.bigTable, isTrue);
+    expect(decoded.tableRole, TableRole.board);
     expect(
       decoded.narratorPackId,
       'voice-of-dahlia',
@@ -190,6 +197,11 @@ void main() {
       isFalse,
       reason: 'a fresh install offers only the rulebook sizes',
     );
+    expect(
+      defaults.tableRole,
+      TableRole.solo,
+      reason: 'an install that never touches Table Mode looks unchanged',
+    );
   });
 
   test('a version 4 database gains the vote switch, switched on', () async {
@@ -216,6 +228,7 @@ void main() {
     sqlite3.open(file.path)
       ..execute('ALTER TABLE settings DROP COLUMN team_vote_enabled')
       ..execute('ALTER TABLE settings DROP COLUMN big_table_enabled')
+      ..execute('ALTER TABLE settings DROP COLUMN table_role')
       ..execute('ALTER TABLE games DROP COLUMN quest_teams')
       ..execute('ALTER TABLE settings DROP COLUMN voice_pack_id')
       ..execute('DROP TABLE voice_packs')

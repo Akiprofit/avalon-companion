@@ -22,6 +22,10 @@ dependencies:
   # Reading a narrator voice pack handed to the app as a .zip. Pure Dart: the
   # archive is unpacked on the device, never uploaded.
   archive: ^3.6.1
+  # Table Mode only. The board draws a QR with pure Dart; a phone scans it with
+  # the camera. Both stay on the local network — see docs/table-mode-plan.md §1.
+  qr: ^4.0.1
+  mobile_scanner: ^7.5.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

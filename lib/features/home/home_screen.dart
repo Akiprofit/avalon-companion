@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/constants/app_info.dart';
 import '../../core/constants/routes.dart';
+import '../../core/models/table_role.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_metrics.dart';
 import '../../core/theme/app_text.dart';
@@ -18,6 +19,7 @@ import '../../core/widgets/section_header.dart';
 import '../../game_engine/controllers/game_session_controller.dart';
 import '../../game_engine/models/game_state.dart';
 import '../../game_engine/models/phase.dart';
+import '../settings/settings_controller.dart';
 import '../setup/setup_controller.dart';
 
 /// Screen 02 — entry point. New Game is the dominant action.
@@ -140,6 +142,8 @@ class HomeScreen extends ConsumerWidget {
               subtitle: 'Roles, quests, voting and victory',
               onTap: () => context.pushNamed(RouteNames.howToPlay),
             ),
+            const SizedBox(height: Space.sm),
+            _TableModeSection(role: ref.watch(settingsProvider).tableRole),
             const SizedBox(height: Space.xxl),
             Text(
               AppInfo.disclaimer,
@@ -298,6 +302,54 @@ class _HomeAction extends StatelessWidget {
           const Icon(Icons.chevron_right, size: 20, color: AppColors.mutedText),
         ],
       ),
+    );
+  }
+}
+
+/// The two Table Mode entries, filtered by this device's remembered role.
+///
+/// `solo` shows both, so an MC can open either without visiting Settings first.
+/// A device that has chosen `board` never sees "Join a Game", and a phone never
+/// sees "Tablet Mode": the wrong button on the wrong device is a support call.
+class _TableModeSection extends StatelessWidget {
+  const _TableModeSection({required this.role});
+
+  final TableRole role;
+
+  @override
+  Widget build(BuildContext context) {
+    final showHost = role != TableRole.player;
+    final showJoin = role != TableRole.board;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: Space.md),
+        const SectionHeader(title: 'At the table'),
+        Text(
+          'Everyone keeps their own device. The board shows the code; each '
+          'phone takes a seat.',
+          style: AppText.caption,
+        ),
+        const SizedBox(height: Space.sm),
+        if (showHost)
+          _HomeAction(
+            key: const Key('home_table_host'),
+            icon: Icons.tablet_android_outlined,
+            title: 'Tablet Mode',
+            subtitle: 'This device becomes the board',
+            onTap: () => context.goNamed(RouteNames.tableHost),
+          ),
+        if (showHost && showJoin) const SizedBox(height: Space.xs),
+        if (showJoin)
+          _HomeAction(
+            key: const Key('home_join'),
+            icon: Icons.qr_code_scanner,
+            title: 'Join a Game',
+            subtitle: 'Scan the board and take a seat',
+            onTap: () => context.goNamed(RouteNames.join),
+          ),
+      ],
     );
   }
 }

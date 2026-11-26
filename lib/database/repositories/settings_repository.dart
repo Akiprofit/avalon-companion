@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 
+import '../../core/models/table_role.dart';
 import '../../features/settings/settings_controller.dart';
 import '../../narration_engine/models/narration_instruction.dart';
 import '../app_database.dart';
@@ -60,6 +61,7 @@ class SettingsRepository {
       narratorExtraDelayMs: Value(settings.narratorExtraDelay.inMilliseconds),
       teamVoteEnabled: Value(settings.teamVoteEnabled),
       bigTableEnabled: Value(settings.bigTable),
+      tableRole: Value(settings.tableRole.name),
     );
   }
 
@@ -89,6 +91,7 @@ class SettingsRepository {
       ),
       teamVoteEnabled: row.teamVoteEnabled,
       bigTable: row.bigTableEnabled,
+      tableRole: TableRole.fromStorage(row.tableRole),
     );
   }
 }

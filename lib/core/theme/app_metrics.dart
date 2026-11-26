@@ -36,3 +36,16 @@ const double kMinTapTarget = 48;
 /// across the glass. 600 dp leaves 560 dp of text after the screen padding —
 /// roughly 70 characters, which is still comfortable to read aloud from.
 const double kMaxContentWidth = 600;
+
+/// The board's measure.
+///
+/// A board is read from across a table, not held, so it gets a wider column than
+/// the solo screens: the QR and the code sit on one side, the seats on the other.
+const double kBoardContentWidth = 900;
+
+/// At or above this width the board lays out in two columns.
+const double kBoardBreakpoint = 720;
+
+/// The board's QR, and the larger one drawn on a wide board.
+const double kJoinQrSize = 220;
+const double kJoinQrSizeLarge = 320;

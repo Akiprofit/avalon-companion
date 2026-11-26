@@ -173,6 +173,13 @@ class Settings extends Table {
   BoolColumn get bigTableEnabled =>
       boolean().withDefault(const Constant(false))();
 
+  /// Which job this device has in Table Mode: `solo`, `board` or `player`.
+  ///
+  /// A remembered role, not a game fact: it only decides which entries Home
+  /// shows. Solo by default, so an install that never opens Table Mode behaves
+  /// exactly as it did before.
+  TextColumn get tableRole => text().withDefault(const Constant('solo'))();
+
   /// The narrator voice the MC chose. Null means the recordings that ship with
   /// the app, so an untouched install needs no row value.
   TextColumn get voicePackId => text().nullable()();
@@ -228,7 +235,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -266,6 +273,11 @@ class AppDatabase extends _$AppDatabase {
       // Existing installs keep the rulebook ceiling of ten until it is turned on.
       if (from < 8) {
         await m.addColumn(settings, settings.bigTableEnabled);
+      }
+      // v9 remembered which job this device has in Table Mode. Existing
+      // installs are solo, which is exactly the behaviour they already had.
+      if (from < 9) {
+        await m.addColumn(settings, settings.tableRole);
       }
     },
     beforeOpen: (details) async {

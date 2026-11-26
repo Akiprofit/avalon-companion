@@ -26,10 +26,17 @@ class AvalonScreen extends StatelessWidget {
     this.backgroundDecoration = true,
     this.backgroundImage,
     this.capBottom = true,
+    this.contentWidth = maxContentWidth,
   });
 
   /// The reading measure on a wide screen, from `app_metrics.dart`.
   static const double maxContentWidth = kMaxContentWidth;
+
+  /// The width this screen's column may reach.
+  ///
+  /// Solo screens keep the 600 dp reading measure. The board widens it, because
+  /// it is read from across a table rather than held.
+  final double contentWidth;
 
   /// The bounded body, so a layout test can prove the column never grows past
   /// [maxContentWidth] no matter how wide the window is.
@@ -100,10 +107,10 @@ class AvalonScreen extends StatelessWidget {
                           child: child,
                         )
                       : child;
-                  if (constraints.maxWidth <= maxContentWidth) {
+                  if (constraints.maxWidth <= contentWidth) {
                     return KeyedSubtree(key: contentKey, child: content);
                   }
-                  final gutter = (constraints.maxWidth - maxContentWidth) / 2;
+                  final gutter = (constraints.maxWidth - contentWidth) / 2;
                   return Stack(
                     children: [
                       Positioned.fill(
@@ -111,14 +118,12 @@ class AvalonScreen extends StatelessWidget {
                           alignment: Alignment.topCenter,
                           child: ConstrainedBox(
                             key: contentKey,
-                            constraints: const BoxConstraints(
-                              maxWidth: maxContentWidth,
-                            ),
+                            constraints: BoxConstraints(maxWidth: contentWidth),
                             child: content,
                           ),
                         ),
                       ),
-                      // The reading column stops at [maxContentWidth], so the
+                      // The reading column stops at [contentWidth], so the
                       // glass beside it belongs to no scroll view. A finger
                       // that lands there would move nothing on a tablet, which
                       // reads as a frozen screen. Both gutters drive the
@@ -151,7 +156,7 @@ class AvalonScreen extends StatelessWidget {
                       ? bottom!
                       : LayoutBuilder(
                           builder: (context, constraints) {
-                            if (constraints.maxWidth <= maxContentWidth) {
+                            if (constraints.maxWidth <= contentWidth) {
                               return bottom!;
                             }
                             // The action bar keeps the same width as the
@@ -163,8 +168,8 @@ class AvalonScreen extends StatelessWidget {
                               // loose maximum; see `avalon_bottom_navigation`.
                               heightFactor: 1,
                               child: ConstrainedBox(
-                                constraints: const BoxConstraints(
-                                  maxWidth: maxContentWidth,
+                                constraints: BoxConstraints(
+                                  maxWidth: contentWidth,
                                 ),
                                 child: bottom!,
                               ),

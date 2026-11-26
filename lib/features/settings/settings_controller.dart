@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/models/app_settings.dart';
+import '../../core/models/table_role.dart';
 import '../../database/database_provider.dart';
 import '../../game_engine/rules/avalon_tables.dart';
 import '../../narration_engine/models/narration_instruction.dart';
@@ -69,6 +70,11 @@ class SettingsController extends Notifier<AppSettings> {
 
   void setKingSelectionMode(KingSelectionMode mode) =>
       update((s) => s.copyWith(kingSelectionMode: mode));
+
+  /// Remembers what this device is for, so Home offers the right entry next
+  /// launch. It changes no game state and opens no socket.
+  void setTableRole(TableRole role) =>
+      update((s) => s.copyWith(tableRole: role));
 
   /// Turns the approval vote on or off for future proposals. Existing matches
   /// are untouched: the rule is read when a team is confirmed.

@@ -1,4 +1,15 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Table Mode hosts one room on the local network. INTERNET is what opens
+         the socket; nothing here reaches the internet, and solo mode never
+         opens a socket at all. Local network access is granted implicitly for
+         apps targeting SDK 36; ACCESS_LOCAL_NETWORK is only needed from SDK 37
+         (see docs/table-mode-plan.md §1). -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Scanning the board's QR. The scanner plugin declares this too; stating
+         it here keeps the permission list readable in one place. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+
     <application
         android:label="Avalon Companion"
         android:name="${applicationName}"

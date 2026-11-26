@@ -15,6 +15,13 @@ abstract final class RouteNames {
   static const history = 'history';
   static const howToPlay = 'howToPlay';
   static const settings = 'settings';
+
+  /// Table Mode. The board hosts, the phones join, the seat is where a phone
+  /// rests. None of these need a `GameState`.
+  static const tableHost = 'tableHost';
+  static const join = 'join';
+  static const joinScan = 'joinScan';
+  static const playerSeat = 'playerSeat';
 }
 
 abstract final class RoutePaths {
@@ -33,4 +40,8 @@ abstract final class RoutePaths {
   static const history = '/history';
   static const howToPlay = '/how-to-play';
   static const settings = '/settings';
+  static const tableHost = '/table';
+  static const join = '/join';
+  static const joinScan = '/join/scan';
+  static const playerSeat = '/seat';
 }

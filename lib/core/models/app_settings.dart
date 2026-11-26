@@ -1,4 +1,5 @@
 import '../../narration_engine/models/narration_instruction.dart';
+import 'table_role.dart';
 
 /// How the quest leader ("King") is chosen.
 ///
@@ -50,6 +51,7 @@ class AppSettings {
     this.kingSelectionMode = KingSelectionMode.manual,
     this.teamVoteEnabled = true,
     this.bigTable = false,
+    this.tableRole = TableRole.solo,
   });
 
   final NarrationLanguage defaultLanguage;
@@ -94,6 +96,11 @@ class AppSettings {
   /// install, so the app never presents those sizes as standard.
   final bool bigTable;
 
+  /// Which job this device has in Table Mode. `solo` keeps Home exactly as it
+  /// was; `board` and `player` hide the other entry, so a board never offers
+  /// "Join a Game" and a player's phone never offers "Tablet Mode".
+  final TableRole tableRole;
+
   bool get kingsDrawnAutomatically =>
       kingSelectionMode == KingSelectionMode.automatic;
 
@@ -118,6 +125,7 @@ class AppSettings {
     KingSelectionMode? kingSelectionMode,
     bool? teamVoteEnabled,
     bool? bigTable,
+    TableRole? tableRole,
   }) {
     return AppSettings(
       defaultLanguage: defaultLanguage ?? this.defaultLanguage,
@@ -142,6 +150,7 @@ class AppSettings {
       kingSelectionMode: kingSelectionMode ?? this.kingSelectionMode,
       teamVoteEnabled: teamVoteEnabled ?? this.teamVoteEnabled,
       bigTable: bigTable ?? this.bigTable,
+      tableRole: tableRole ?? this.tableRole,
     );
   }
 }

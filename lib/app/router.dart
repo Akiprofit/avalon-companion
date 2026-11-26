@@ -13,6 +13,10 @@ import '../features/narration/narration_screen.dart';
 import '../features/preparation/preparation_screen.dart';
 import '../features/settings/settings_screen.dart';
 import '../features/setup/setup_screen.dart';
+import '../features/table_mode/screens/join_scan_screen.dart';
+import '../features/table_mode/screens/join_screen.dart';
+import '../features/table_mode/screens/player_seat_screen.dart';
+import '../features/table_mode/screens/table_host_screen.dart';
 import '../features/team_selection/team_selection_screen.dart';
 import '../features/victory/victory_screen.dart';
 import '../features/voting/voting_screen.dart';
@@ -114,6 +118,28 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: RoutePaths.settings,
         name: RouteNames.settings,
         builder: (context, state) => const SettingsScreen(),
+      ),
+      // Table Mode sits outside the `needsGame` gate: a board hosts and a phone
+      // joins without a game in progress.
+      GoRoute(
+        path: RoutePaths.tableHost,
+        name: RouteNames.tableHost,
+        builder: (context, state) => const TableHostScreen(),
+      ),
+      GoRoute(
+        path: RoutePaths.join,
+        name: RouteNames.join,
+        builder: (context, state) => const JoinScreen(),
+      ),
+      GoRoute(
+        path: RoutePaths.joinScan,
+        name: RouteNames.joinScan,
+        builder: (context, state) => const JoinScanScreen(),
+      ),
+      GoRoute(
+        path: RoutePaths.playerSeat,
+        name: RouteNames.playerSeat,
+        builder: (context, state) => const PlayerSeatScreen(),
       ),
     ],
   );

@@ -558,6 +558,11 @@ void main() {
 
       for (final row in columns) {
         final name = row.read<String>('name').toLowerCase();
+        // The one "role" in the schema is this device's job in Table Mode
+        // (solo, board or player). It lives on the single settings row, which
+        // has no player, seat or match to tie it to, so it cannot name a
+        // character. Every other "role" stays forbidden.
+        if (table == 'settings' && name == 'table_role') continue;
         final tokens = name.split('_');
         for (final forbidden in [
           'character',
