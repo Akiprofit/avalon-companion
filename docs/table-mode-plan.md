@@ -591,10 +591,16 @@ The board ran in **Virtual Avalon** on the Galaxy A36 (`192.168.1.3`, wired for
   with nothing retyped.
 - **What the run exposed:** while the room was open the host's Wi-Fi address
   moved from `192.168.1.3` to `192.168.1.10`. The board keeps the address it
-  captured at open, so its screen, QR and announcement still said `192.168.1.3`,
-  and the seat went **AWAY** once that socket died. The board was right; the
-  address it published was not. Reopening the room is the only way to pick up a
-  new address — see `docs/board-app.md` in the board repo.
+  captured at open, so its screen and its QR still said `192.168.1.3`, and the
+  seat went **AWAY** once that socket died. The board was right; the address it
+  published was not.
+- **Fixed in board 1.0.1:** the room re-reads its Wi-Fi address every ten
+  seconds and republishes the printed line and the QR when it moves, keeping
+  the code and the seats. A blank read leaves the last address. Joining by
+  typed code was never affected — the discovery datagram carries no address,
+  and the client dials the datagram's source — so the fix is about what the
+  board shows, not about how a phone finds it. See `docs/board-app.md` in the
+  board repo.
 - **Still not done:** a real tablet.
 
 1. On the PC: `dart run tool\table_board_probe.dart --bind=lan --serve=300` in

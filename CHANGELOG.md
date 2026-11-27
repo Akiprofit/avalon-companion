@@ -43,7 +43,7 @@ development phase, in the order the plan defines them.
 | Discovery | **Works phone to phone.** On 2026-11-27 a Galaxy A32 typed the A36 board's code and found it on the first attempt, with no PC and no firewall in the path. The earlier "Nothing on this Wi-Fi answered for ABC234" was the PC's firewall dropping the UDP announcement, not the protocol |
 | Camera | **Works.** The board was restarted under a new code (`WAZ V6S`), the A32 scanned the QR and the join screen filled in the new code with nothing typed. Negative control first: with the board stopped and the QR out of view, the scanner stayed open on a live preview and decoded nothing |
 | Second phone | **Two real phones at one table**: A36 hosting, A32 joining by code and by scan, seat 1 both times, and a leave that put the board back to "0 of 14" |
-| Wi-Fi drop | **A32 client, A36 host**: Wi-Fi off → "Lost the board — reconnecting (5)…"; Wi-Fi on → seat 1, MARC, CONNECTED again with nothing retyped. The host's own Wi-Fi address changed during the run (`.3` → `.10`) and the board kept publishing the old one — a known limit, recorded in the board repo |
+| Wi-Fi drop | **A32 client, A36 host**: Wi-Fi off → "Lost the board — reconnecting (5)…"; Wi-Fi on → seat 1, MARC, CONNECTED again with nothing retyped. The host's own Wi-Fi address changed during the run (`.3` → `.10`); joining by typed code already followed it, and board 1.0.1 now republishes the printed address and the QR too |
 | Release APK | Signed **1.11.0+35** (93 517 551 bytes, 89.2 MB); SHA-256 `1C6F19C825287B1B23821F2D8DE068A0DC7D5454D2D212A1CFCBC56447D880DC`; installed in place over 1.10.1+34 |
 
 Not tested: a real tablet. Seats 2–14 are proven by synthetic clients, not by people. Phases 2–5
