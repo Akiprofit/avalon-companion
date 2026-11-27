@@ -585,8 +585,17 @@ The board ran in **Virtual Avalon** on the Galaxy A36 (`192.168.1.3`, wired for
   first: with the board stopped and its QR out of view, the scanner stayed open
   on a live camera preview and decoded nothing, so the later pop can only be the
   camera reading the new code — a cached code would have shown `QMSSQQ`.
-- **Still not done:** a client phone losing Wi-Fi while a phone (not the PC) is
-  the host, and a real tablet.
+- **Wi-Fi drop, phone-hosted board:** `cmd wifi set-wifi-enabled disabled` on the
+  A32 (kept on USB so `adb` survived) → "Lost the board — reconnecting (5)…";
+  `enabled` → the phone returned to **seat 1, MARC, CONNECTED** in the same room
+  with nothing retyped.
+- **What the run exposed:** while the room was open the host's Wi-Fi address
+  moved from `192.168.1.3` to `192.168.1.10`. The board keeps the address it
+  captured at open, so its screen, QR and announcement still said `192.168.1.3`,
+  and the seat went **AWAY** once that socket died. The board was right; the
+  address it published was not. Reopening the room is the only way to pick up a
+  new address — see `docs/board-app.md` in the board repo.
+- **Still not done:** a real tablet.
 
 1. On the PC: `dart run tool\table_board_probe.dart --bind=lan --serve=300` in
    the Virtual Avalon repo — it prints the code and the Wi-Fi address, and keeps

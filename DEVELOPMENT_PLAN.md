@@ -1547,11 +1547,11 @@ Phases, each with a stop condition:
 | Discovery | **Works phone to phone.** On 2026-11-27 the A32 typed the A36 board's code and found it on the first attempt, with no PC and no firewall in the path. The earlier "Nothing on this Wi-Fi answered for ABC234" was the PC's firewall dropping the UDP announcement, not the protocol |
 | Camera | **Works.** With the board restarted under a new code (`WAZ V6S`), the A32 scanned the QR and filled in the new code with nothing typed. Negative control first: with the board stopped and the QR out of view, the scanner stayed open on a live preview and decoded nothing |
 | Second phone | **Two real phones at one table**: A36 hosting, A32 joining by code and by scan, seat 1 both times, and a leave that put the board back to "0 of 14" |
+| Wi-Fi drop | **A32 client, A36 host**: Wi-Fi off → "Lost the board — reconnecting (5)…"; Wi-Fi on → seat 1, MARC, CONNECTED again with nothing retyped. The host's own Wi-Fi address changed during the run (`.3` → `.10`) and the board kept publishing the old one — a known limit, recorded in the board repo |
 | Release APK | Signed **1.11.0+35** (89.2 MB, up from 71.8 MB because the camera scanner bundles ML Kit); SHA-256 `1C6F19C825287B1B23821F2D8DE068A0DC7D5454D2D212A1CFCBC56447D880DC`; permissions `INTERNET`, `CAMERA`, `ACCESS_NETWORK_STATE`, with `android.hardware.camera` marked not required |
 
-Not tested, and said plainly: a real tablet, and a client phone losing Wi-Fi while
-another phone (rather than a PC) hosts. Seats 2–14 are covered by the synthetic
-clients, not by people.
+Not tested, and said plainly: a real tablet. Seats 2–14 are covered by the
+synthetic clients, not by people.
 
 Traps worth keeping:
 
