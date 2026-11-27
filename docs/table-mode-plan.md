@@ -563,8 +563,30 @@ done in that run and are still to do.
   reused connection.
 - **Leave:** confirmation dialog → Home; `netstat` showed no established socket,
   so the leave frame arrived and the seat was released.
-- **Not done:** the camera scan (a phone cannot scan its own screen), a second
-  phone, and phone-to-phone discovery.
+- **Not done in this run:** the camera scan (a phone cannot scan its own screen),
+  and phone-to-phone discovery.
+
+### B2. Two phones, 2026-11-27
+
+The board ran in **Virtual Avalon** on the Galaxy A36 (`192.168.1.3`, wired for
+`adb`; the room itself is on Wi-Fi) and this app, 1.11.0+35, on a **Galaxy A32**
+(`192.168.1.4`), on the same home Wi-Fi. No PC was involved in the connection.
+
+- **Discovery:** typed `QMSSQQ` on the A32 and tapped **Find the table** → the
+  join screen showed **"FOUND THE BOARD"** on the first attempt. Phone-to-phone
+  UDP discovery works; the "Nothing on this Wi-Fi answered" failure recorded
+  above was the PC's firewall, not the protocol.
+- **Join:** seat **1**, **MARC**, CONNECTED; the A36's board read **"1 of 14"**.
+- **Leave:** confirmation dialog → board back to **"0 of 14"**; the seat was
+  released over the wire.
+- **Camera scan:** with the board restarted (new code **WAZ V6S**), tapping
+  **Scan the board's code** and holding the A32 at the A36's QR moved the app to
+  **"FOUND THE BOARD WAZ V6S"** with nothing typed. A negative control came
+  first: with the board stopped and its QR out of view, the scanner stayed open
+  on a live camera preview and decoded nothing, so the later pop can only be the
+  camera reading the new code — a cached code would have shown `QMSSQQ`.
+- **Still not done:** a client phone losing Wi-Fi while a phone (not the PC) is
+  the host, and a real tablet.
 
 1. On the PC: `dart run tool\table_board_probe.dart --bind=lan --serve=300` in
    the Virtual Avalon repo — it prints the code and the Wi-Fi address, and keeps
@@ -594,18 +616,24 @@ proportions, and the report will say exactly that — it is not a tablet.
 
 ### D. If no second Android device exists
 
+**A second phone did exist on 2026-11-27**, so this section no longer describes the
+state of the world; it is kept as the fallback wording. The run is in **B2** above.
+
 Say it plainly, in the CHANGELOG and in the chat:
 
-- **Verified on hardware:** one real Android phone (Galaxy A36) running the
-  companion as client against a board on the PC, over real Wi-Fi; typed address,
-  seat 1, real Wi-Fi drop and same-seat return, and a clean leave. Separately, the
-  board app ran on the A36 as host against eight synthetic clients over Wi-Fi.
+- **Verified on hardware:** two real Android phones. A Galaxy A36 hosting the
+  board and a Galaxy A32 running this app as client, over real Wi-Fi: typed-code
+  discovery found the board first try, seat 1, a clean leave that freed the seat,
+  and a camera scan of the QR that filled in the new code with nothing typed.
+  Separately, the A36 ran the companion as client against a board on the PC
+  (typed address, real Wi-Fi drop, same-seat return) and as host against eight
+  synthetic clients over Wi-Fi.
 - **Verified without a second phone:** eight concurrent clients, the one-minute
   soak, presence and reconnect, driven by `tool/table_client_probe.dart` over the
   same network against the real board.
-- **Not verified:** eight physical phones, two phones scanning at once, the camera
-  scan at all, phone-to-phone discovery, and a real tablet. Those lines are
-  written as "not tested" — never implied.
+- **Not verified:** eight physical phones, two phones scanning at once, a client
+  phone losing Wi-Fi while a phone (rather than the PC) hosts, and a real tablet.
+  Those lines are written as "not tested" — never implied.
 - The stop condition is still measured on what exists: if a single real phone
   cannot reach the board, or takes more than 15 s to join, Phase 1 stops there.
 

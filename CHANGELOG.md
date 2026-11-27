@@ -40,11 +40,13 @@ development phase, in the order the plan defines them.
 | Privacy | `table_privacy_test.dart` reads the source: no Table Mode file names a character, a role or an allegiance; a seat serialises exactly seat/name/connected; the board screen never sees a token; `GameState` gained no field |
 | Probe, loopback | 8 synthetic phones: slowest join 722 ms against the 15 000 ms budget, a dropped phone back at its seat in 11–28 ms, 8 of 8 still seated after a minute, every seat released on leave |
 | Device | **Galaxy A36 (SM-A366B), real Wi-Fi, board on the PC**: typed the address, joined as seat 1 (MARC, CONNECTED). Wi-Fi off → "Lost the board — reconnecting (3)…"; Wi-Fi on → same seat 1 on a new TCP socket. Leave → seat released, socket closed |
-| Discovery | **Did not work against a PC board** — "Nothing on this Wi-Fi answered for ABC234". Windows Firewall drops the UDP announcement; the typed address carried the run. Phone-to-phone discovery is untested |
+| Discovery | **Works phone to phone.** On 2026-11-27 a Galaxy A32 typed the A36 board's code and found it on the first attempt, with no PC and no firewall in the path. The earlier "Nothing on this Wi-Fi answered for ABC234" was the PC's firewall dropping the UDP announcement, not the protocol |
+| Camera | **Works.** The board was restarted under a new code (`WAZ V6S`), the A32 scanned the QR and the join screen filled in the new code with nothing typed. Negative control first: with the board stopped and the QR out of view, the scanner stayed open on a live preview and decoded nothing |
+| Second phone | **Two real phones at one table**: A36 hosting, A32 joining by code and by scan, seat 1 both times, and a leave that put the board back to "0 of 14" |
 | Release APK | Signed **1.11.0+35** (93 517 551 bytes, 89.2 MB); SHA-256 `1C6F19C825287B1B23821F2D8DE068A0DC7D5454D2D212A1CFCBC56447D880DC`; installed in place over 1.10.1+34 |
 
-Not tested: no camera scan (a phone cannot scan its own screen), no second physical phone, no
-tablet. Seats 2–14 are proven by synthetic clients, not by people. Phases 2–5 of Table Mode —
+Not tested: a real tablet, and a client phone losing Wi-Fi while another phone (rather than a
+PC) hosts. Seats 2–14 are proven by synthetic clients, not by people. Phases 2–5 of Table Mode —
 cast, deal, votes, quest cards, board skin — are not built.
 
 ## [1.10.1] — Signed, dated (2026-11-25)
